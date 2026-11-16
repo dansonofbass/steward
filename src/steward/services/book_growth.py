@@ -1,7 +1,7 @@
 """Growth toward an oak (phase 17 spec 3.4): five milestones worked out from the book's own data with no new tracking,
 and the stage, the count of milestones met, kept as a high-water mark in the fact growth.stage so the tree never
-shrinks. The answer is counts and keys only: no amount, name or note leaves here. (services/growth.py is the investment
-page's year, unrelated.)"""
+shrinks. The answer is counts, keys and a calendar month: no amount, name or note leaves here.
+(services/growth.py is the investment page's year, unrelated.)"""
 from __future__ import annotations
 
 from datetime import date
@@ -23,13 +23,19 @@ NOTE = "Growth toward an oak (phase 17): the highest stage reached."
 
 
 def first_month_sorted(db: Session, today: date) -> bool:
+    """Whether a historical calendar month is fully sorted."""
+    return first_sorted_month(db, today) is not None
+
+
+def first_sorted_month(db: Session, today: date) -> str | None:
     """1. A calendar month before this one with at least one transaction (transfers aside) and none still waiting in
-    Review: every row has a category, or someone looked and chose Ignore."""
+    Review: every row has a category, or someone looked and chose Ignore. Return the earliest qualifying YYYY-MM
+    so Home can name the first sorted month, even when other months still wait (issue #33)."""
     month = func.strftime("%Y-%m", Transaction.posted_at)
     waiting = func.sum(case((and_(Transaction.category == "uncategorized", Transaction.reviewed_at.is_(None)), 1), else_=0))
     q = (select(month).where(Transaction.is_transfer.is_(False), Transaction.posted_at < today.replace(day=1))
-         .group_by(month).having(waiting == 0).limit(1))
-    return db.scalar(q) is not None
+         .group_by(month).having(waiting == 0).order_by(month).limit(1))
+    return db.scalar(q)
 
 
 def set_aside_covered(db: Session, today: date) -> bool:
@@ -56,9 +62,11 @@ def history_days(db: Session, today: date) -> int:
 def milestones(db: Session, today: date) -> list[dict]:
     """4 and 5: a year (365 days) and five years of history, from the earliest transaction."""
     days = history_days(db, today)
-    met = {"first_month": first_month_sorted(db, today), "covered": set_aside_covered(db, today),
+    month = first_sorted_month(db, today)
+    met = {"first_month": month is not None, "covered": set_aside_covered(db, today),
            "checklist": checklist_done(db, today), "year": days >= YEAR_DAYS, "five_years": days >= FIVE_YEAR_DAYS}
-    return [{"key": k, "met": met[k]} for k in MILESTONES]
+    return [{"key": k, "met": met[k], **({"month": month} if k == "first_month" and month is not None else {})}
+            for k in MILESTONES]
 
 
 def stored_stage(db: Session) -> int:

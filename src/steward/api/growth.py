@@ -1,6 +1,6 @@
 """Growth toward an oak (phase 17 spec 3.4): GET /growth, the book's stage, its five milestones and whether the person
 asking has seen this stage; POST /growth/seen, that person's own mark, kept on their membership in the directory.
-Household books only: a parent book answers 404. Only counts and keys leave; nothing here is logged."""
+Household books only: a parent book answers 404. Only counts, keys and a calendar month leave; nothing here is logged."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Response

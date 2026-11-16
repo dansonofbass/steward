@@ -11,6 +11,21 @@ const KEYS = ['first_month', 'covered', 'checklist', 'year', 'five_years'] as co
 const growth = (stage: number, met: boolean[], seen: boolean) => ({ stage, seen, milestones: KEYS.map((key, i) => ({ key, met: met[i] })) });
 
 describe('the growth tree (phase 17 spec 3.4)', () => {
+  it('names the completed month on Home (issue #33)', async () => {
+    const g = growth(1, [true, false, false, false, false], false);
+    stubFetch({ '/api/growth': { ...g, milestones: [{ ...g.milestones[0], month: '2026-09' }, ...g.milestones.slice(1)] },
+      'POST /api/growth/seen': () => new Response(null, { status: 204 }) });
+    wrapBook(<HomeTree />);
+    expect(await screen.findByRole('status')).toHaveTextContent('New growth: September 2026 is fully sorted.');
+  });
+
+  it('keeps December in its own year and falls back safely for older APIs', () => {
+    const g = growth(1, [true, false, false, false, false], false);
+    expect(newGrowthLine({ ...g, milestones: [{ ...g.milestones[0], month: '2026-12' }, ...g.milestones.slice(1)] }))
+      .toBe('New growth: December 2026 is fully sorted.');
+    expect(newGrowthLine(g)).toBe('New growth: a past month fully sorted.');
+  });
+
   it('a new stage hops once on Home, says which milestone, and marks it seen', async () => {
     const fetchMock = stubFetch({ '/api/growth': growth(3, [true, false, true, true, false], false), 'POST /api/growth/seen': () => new Response(null, { status: 204 }) });
     wrapBook(<HomeTree />);

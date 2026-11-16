@@ -4,7 +4,7 @@ import { api, json } from './client';
 
 /** GET /api/growth (phase 17 spec 3.4): the book's stage 0 to 5, its five milestones in order, and whether this person
  *  has seen this stage. Warmed with Home's other requests (routes.tsx HOME_WARM): same key, path and options. */
-export type Growth = { stage: number; milestones: { key: MilestoneKey; met: boolean }[]; seen: boolean };
+export type Growth = { stage: number; milestones: { key: MilestoneKey; met: boolean; month?: string }[]; seen: boolean };
 export const GROWTH_PATH = '/api/growth';
 export const GROWTH_OPTIONS = { retry: false, staleTime: 60_000 } as const;
 export const useGrowth = (enabled = true) =>

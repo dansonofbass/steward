@@ -5,8 +5,9 @@ import { currentBook } from '../../api/book';
 import { seeGrowth, useGrowth, type Growth } from '../../api/growth';
 import { useIsHousehold } from '../../book/BookContext';
 import { soundOn } from '../../lib/celebrations';
+import { monthLabel } from '../../lib/format';
 import { gw } from '../../lib/gatewayName';
-import { fill, GROWTH_ALL, GROWTH_NEXT, MILESTONE_NAME, MILESTONE_NOT_YET, MILESTONE_REACHED, NEW_GROWTH, NEW_GROWTH_PLAIN, nextLine, TREE_LABEL } from '../../lib/lines';
+import { fill, GROWTH_ALL, GROWTH_NEXT, MILESTONE_NAME, MILESTONE_NOT_YET, MILESTONE_REACHED, NEW_GROWTH, NEW_GROWTH_MONTH, NEW_GROWTH_PAST_MONTH, NEW_GROWTH_PLAIN, nextLine, TREE_LABEL } from '../../lib/lines';
 import { momentAllowed } from '../../lib/momentAllowed';
 import { setQueryDataIfStillIn } from '../../queryClient';
 import { Acorn } from '../../ui/Acorn';
@@ -29,6 +30,13 @@ export function progressLine(g: Growth): string {
  *  kept), or a plain one when the tree holds a stage its data no longer shows. */
 export function newGrowthLine(g: Growth): string {
   const met = [...g.milestones].reverse().find((m) => m.met);
+  if (met?.key === 'first_month') {
+    // YYYY-MM from the qualifying transactions, never from the device's current date (issue #33).
+    const month = met.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(met.month)
+      ? monthLabel(`${met.month}-01`)
+      : null;
+    return month ? fill(NEW_GROWTH_MONTH, { month }) : NEW_GROWTH_PAST_MONTH;
+  }
   return met ? fill(NEW_GROWTH, { milestone: MILESTONE_NAME[met.key] }) : NEW_GROWTH_PLAIN;
 }
 

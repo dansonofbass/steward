@@ -30,6 +30,55 @@ def test_a_month_before_this_one_with_every_row_sorted_or_looked_at(db):
     assert G.first_month_sorted(db, TODAY) is True
 
 
+def test_sorted_month_is_named_while_current_month_still_waits_in_review(db):
+    """Issue #33: a month-level milestone must not imply an empty Review queue."""
+    from steward.services.review import waiting_filter
+
+    chk = make_account(db, "Checking")
+    make_txn(db, chk, date(2026, 9, 3), -100, "PAST", category="dining")
+    pending = make_txn(db, chk, date(2026, 10, 3), -200, "CURRENT")
+    view = G.growth_view(db, TODAY, None)
+    assert list(db.scalars(select(Transaction.id).where(waiting_filter(AT)))) == [pending.id]
+    assert view["milestones"][0] == {"key": "first_month", "met": True, "month": "2026-09"}
+    assert view["stage"] == 1 and view["seen"] is False
+    assert G.growth_view(db, TODAY, 1)["seen"] is True
+    assert _facts(db) == ["1"]
+
+
+def test_sorted_month_uses_earliest_qualifying_month_not_insertion_order(db):
+    chk = make_account(db, "Checking")
+    make_txn(db, chk, date(2026, 9, 3), -100, "LATER", category="dining")
+    make_txn(db, chk, date(2026, 7, 3), -100, "EARLIER", category="dining")
+    make_txn(db, chk, date(2026, 6, 3), -100, "UNRESOLVED")
+    assert G.milestones(db, TODAY)[0]["month"] == "2026-07"
+
+
+def test_sorted_month_requires_resolved_nontransfer_data(db):
+    chk = make_account(db, "Checking")
+    assert G.milestones(db, TODAY)[0] == {"key": "first_month", "met": False}
+    make_txn(db, chk, date(2026, 8, 3), -100, "TRANSFER", is_transfer=True)
+    row = make_txn(db, chk, date(2026, 9, 3), -100, "WAITING")
+    row.snoozed_until = datetime(2026, 11, 1, tzinfo=timezone.utc)
+    db.commit()
+    assert G.milestones(db, TODAY)[0] == {"key": "first_month", "met": False}
+    row.reviewed_at = AT  # Ignore resolves the row; snoozing alone does not.
+    db.commit()
+    assert G.growth_view(db, TODAY, None)["milestones"][0]["month"] == "2026-09"
+    row.reviewed_at = None
+    db.commit()
+    view = G.growth_view(db, TODAY, None)
+    assert view["milestones"][0] == {"key": "first_month", "met": False}
+    assert view["stage"] == 1
+    assert _facts(db) == ["1"]
+
+
+def test_sorted_month_keeps_the_year_across_january(db):
+    chk = make_account(db, "Checking")
+    make_txn(db, chk, date(2026, 12, 31), -100, "DECEMBER", category="dining")
+    make_txn(db, chk, date(2027, 1, 1), -100, "JANUARY")
+    assert G.milestones(db, date(2027, 1, 3))[0]["month"] == "2026-12"
+
+
 def test_covered_is_a_linked_set_aside_covering_its_next_installment_before_it_is_due(db):
     fund = make_account(db, "Car fund", type="savings")
     sa = SetAside(name="Car insurance", kind="yearly", amount_cents=120_000, due_month=12, due_day=1,

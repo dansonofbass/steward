@@ -195,5 +195,7 @@ export const MILESTONE_NOT_YET = ', not yet';
 export const GROWTH_NEXT = '{n} of 5: {next} comes next';
 export const GROWTH_ALL = '5 of 5. A full-grown oak.';
 export const NEW_GROWTH = 'New growth: {milestone}.';
+export const NEW_GROWTH_MONTH = 'New growth: {month} is fully sorted.';
+export const NEW_GROWTH_PAST_MONTH = 'New growth: a past month fully sorted.';
 export const NEW_GROWTH_PLAIN = 'New growth.';
 export const TREE_LABEL = "Steward's oak, {n} of 5 grown";

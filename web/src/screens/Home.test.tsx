@@ -17,6 +17,21 @@ async function ready() {
 }
 
 describe('Home (phase 11 spec)', () => {
+  it('names the sorted past month beside current Review work (issue #33)', async () => {
+    stubFetch({ ...ROUTES,
+      '/api/growth': { stage: 1, seen: false, milestones: [
+        { key: 'first_month', met: true, month: '2026-09' }, { key: 'covered', met: false },
+        { key: 'checklist', met: false }, { key: 'year', met: false }, { key: 'five_years', met: false },
+      ] },
+      'POST /api/growth/seen': NO_CONTENT,
+      '/api/review': { uncategorized: [], count: 1, duplicates: [], duplicate_count: 0, top_categories: [],
+        business: [], business_count: 0, background: { pending: 0, done: 0, waiting: false } },
+    });
+    wrapBook(<Home />);
+    expect(await screen.findByText('1 to sort in Review')).toBeInTheDocument();
+    expect(await screen.findByText('New growth: September 2026 is fully sorted.')).toBeInTheDocument();
+  });
+
   it('marks home-ready once, only after /api/home and /api/accounts both answer', async () => {
     let release!: () => void;
     const gate = new Promise<void>((r) => { release = r; });
