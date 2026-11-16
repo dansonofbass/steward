@@ -1,0 +1,7 @@
+.sample-ribbon {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-1) var(--s-3);
+  padding: var(--s-1) var(--s-4); background: var(--surface-2); color: var(--ink); border-bottom: 1px solid var(--line);
+}
+.sample-ribbon__name { font-size: var(--fs-1); letter-spacing: 0.08em; text-transform: uppercase; }
+.sample-ribbon__acts { display: flex; align-items: center; gap: var(--s-3); }
+.sample-ribbon__error { flex-basis: 100%; font-size: var(--fs-1); color: var(--ink-muted); }

@@ -1,0 +1,29 @@
+# The demo household, on this box only (docs/quickstart/demo.md):
+#   docker compose -f compose.demo.yml up          then open http://localhost:8420 and sign in with a demo login
+# Steward itself holds 8420 too. Beside a running install, pick another port for the demo:
+#   STEWARD_DEMO_PORT=8425 docker compose -f compose.demo.yml up          then open http://localhost:8425
+# Everything in it is made up, and it lives in a throwaway volume: docker compose -f compose.demo.yml down -v
+# removes it. STEWARD_ENV is demo, not prod, because a real install refuses to start while a demo login exists.
+name: steward-demo
+services:
+  steward:
+    image: ghcr.io/steward-money/steward:0.1.0
+    ports:
+      - "127.0.0.1:${STEWARD_DEMO_PORT:-8420}:8420"
+    environment:
+      STEWARD_BASE_URL: http://localhost:${STEWARD_DEMO_PORT:-8420}
+      STEWARD_ENV: demo
+      STEWARD_ALLOW_DEMO: "1"
+      STEWARD_BACKUP_AT: ""
+      STEWARD_SYNC_HOURS: "0"
+    volumes:
+      - demo-data:/data
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    command:
+      - sh
+      - -c
+      - steward init-key && steward migrate && { [ -e /data/.demo-seeded ] || { steward seed-demo && touch /data/.demo-seeded; }; } && exec steward serve
+
+volumes:
+  demo-data: {}

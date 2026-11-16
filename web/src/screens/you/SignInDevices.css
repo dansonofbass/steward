@@ -1,0 +1,1 @@
+.device-form { display: flex; flex-direction: column; gap: var(--s-4); max-width: 560px; }   /* a password or a name needs a field, not the page */

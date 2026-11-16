@@ -1,0 +1,114 @@
+/* Settings › Import (import/export spec, Screen: Import). Its own chunk with the page. */
+.imp-drop { border: 2px dashed var(--line); border-radius: var(--r-l); padding: var(--s-5) var(--s-4); display: grid;
+  justify-items: start; gap: var(--s-2); background: var(--surface); }
+.imp-drop.is-dragging { outline: 3px solid var(--ink); outline-offset: 2px; }
+.imp-drop__title { font-size: var(--fs-3); font-weight: 600; margin: 0; }
+.imp-rows { display: grid; gap: var(--s-2); margin-top: var(--s-4); }
+.imp-row { border: 1px solid var(--line); border-radius: var(--r-m); padding: var(--s-3); background: var(--surface); }
+.imp-row__line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-2) var(--s-3); align-items: center; }
+.imp-row__name { font-weight: 600; overflow-wrap: anywhere; }
+.imp-row__tag { grid-column: 1; color: var(--ink-muted); font-size: var(--fs-2); }
+.imp-row__tag--warn { color: var(--warn); }
+.imp-row__account { grid-column: 1; max-width: 100%; min-height: 44px; }
+.imp-row__remove { grid-column: 2; grid-row: 1; min-width: 44px; min-height: 44px; }
+/* Wide: the name, the account and the remove on one line; the status tag under the name takes the row's full width, so
+   a long one ("Scanned · reading on the gateway, about 20 s a page · page 1 of 2") never wraps in a narrow column. */
+@media (min-width: 900px) {
+  .imp-row__line { grid-template-columns: minmax(0, 1fr) minmax(0, 16rem) auto; }
+  .imp-row__name { grid-column: 1; grid-row: 1; }
+  .imp-row__account, .imp-row__pad { grid-column: 2; grid-row: 1; }
+  .imp-row__remove { grid-column: 3; grid-row: 1; }
+  .imp-row__tag { grid-column: 1 / -1; grid-row: 2; }
+}
+.imp-row__nb { white-space: nowrap; }
+.imp-row__note { margin: var(--s-2) 0 0; overflow-wrap: anywhere; }
+.imp-confirm { display: grid; gap: var(--s-3); margin-top: var(--s-3); }
+.imp-confirm__table { table-layout: fixed; }
+.imp-confirm__table th, .imp-confirm__table td { padding-inline: var(--s-1); }
+.imp-confirm__table td { white-space: normal; overflow-wrap: anywhere; }
+.imp-confirm__table select { width: 100%; min-width: 0; max-width: 12rem; min-height: 40px; padding-left: var(--s-2); padding-right: 24px;
+  background-position: right 3px center; text-overflow: ellipsis; }
+.imp-confirm__q { border: 0; padding: 0; margin: 0; display: grid; gap: var(--s-2); }
+.imp-confirm__q legend { font-weight: 600; margin-bottom: var(--s-2); }
+.imp-confirm__choice { display: flex; gap: var(--s-2); align-items: center; min-height: 44px; }
+.imp-confirm__warn { color: var(--warn); margin: 0; }
+.imp-pv { display: grid; gap: var(--s-2); margin: var(--s-3) 0; }
+.imp-pv > div { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); border-bottom: 1px solid var(--line); padding: var(--s-2) 0; }
+.imp-pv dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }   /* "6 · Look" on one line */
+.imp-pv__notes { color: var(--ink-muted); font-size: var(--fs-2); display: grid; gap: var(--s-1); overflow-wrap: anywhere; }
+ul.imp-pv__notes { margin-bottom: var(--s-3); }                  /* the dl's own space, before the Import button */
+.imp-look { display: grid; gap: var(--s-4); }
+.imp-look__rows { display: grid; gap: var(--s-3); overflow-wrap: anywhere; }
+.imp-look__rows p { margin: 0; }
+.imp-look__group h4 { margin: 0; }
+.link.imp-set__toggle { text-align: left; min-height: 44px; color: var(--ink); }   /* --accent is too dim on the night ground */
+.imp-set__files { padding-left: var(--s-4); }
+.imp-result:focus { outline: none; }
+.imp-joy { margin: var(--s-2) 0 0; font-family: var(--font-display); }
+.imp-joy--lively { animation: imp-joy-in var(--dur-screen) var(--ease) both; }
+@keyframes imp-joy-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .imp-joy--lively { animation: none; } }
+.imp-layout__actions { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+.imp-row__look { text-align: left; justify-self: start; min-height: 44px; padding: 0; }
+.imp-joy__mark { width: 1.1em; height: 1.1em; vertical-align: -0.15em; margin-right: var(--s-1); }
+.imp-row__pad { display: none; }
+@media (min-width: 900px) { .imp-row__pad { display: block; } }
+.imp-st { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); margin-top: var(--s-3); }
+.imp-st__check, .imp-st__gap { margin: 0; font-weight: 600; }
+.imp-st__gap:focus { outline: 2px solid var(--ink); outline-offset: 2px; }
+.imp-st__section h4 { margin: 0 0 var(--s-1); display: flex; gap: var(--s-2); align-items: baseline; flex-wrap: wrap; }
+.imp-st__table td, .imp-st__review td { overflow-wrap: anywhere; }
+.imp-st__table td.num, .imp-st__review td.num, .imp-st__review input.num { text-align: right; font-variant-numeric: tabular-nums; }
+.imp-st__table td.num, .imp-st__table th.num { white-space: nowrap; }
+.imp-st__review input { width: 100%; min-width: 0; min-height: 44px; }
+.imp-st__review .icon-btn { min-width: 44px; min-height: 44px; }
+/* Each row stacks, wide or narrow: date and amount on a line, the description on a line of its own with the whole row's
+   width (a bank's descriptions run long and the settings column is narrow), the page and the remove beside them. The
+   column heads go; each input already carries its label. The page never scrolls sideways. */
+.imp-st__review, .imp-st__review tbody { display: block; }
+.imp-st__review thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.imp-st__review tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; gap: var(--s-2);
+  align-items: center; padding: var(--s-3); border-bottom: 1px solid var(--line); }
+.imp-st__review td { display: block; padding: 0; border: 0; min-width: 0; }
+.imp-st__review td:nth-child(1) { grid-column: 1; grid-row: 1; }
+.imp-st__review td:nth-child(3) { grid-column: 2; grid-row: 1; }
+.imp-st__review td:nth-child(5) { grid-column: 3; grid-row: 1; }
+.imp-st__review td:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+.imp-st__review td:nth-child(4) { grid-column: 1 / -1; grid-row: 3; text-align: left; font-size: var(--fs-1); color: var(--ink-muted); }
+.imp-st__review td:nth-child(4)::before { content: 'Page '; }
+.imp-st__review td:nth-child(4):empty, .imp-st__review td[colspan="2"] { display: none; }
+.imp-st__review .imp-st__rm td { grid-column: 1 / -1; grid-row: auto; }
+@media (min-width: 640px) {
+  .imp-st__review tr { grid-template-columns: 11rem 9rem minmax(0, 1fr) 44px; }
+  .imp-st__review td:nth-child(4) { grid-column: 3; grid-row: 1; }
+  .imp-st__review td:nth-child(5) { grid-column: 4; }
+}
+/* Holdings review reuses the stacked rows with its own cells: symbol and remove on a line, the name on a line of its
+   own, shares and value below; wide, all five in a row. */
+.imp-st__held tr:not(.imp-st__rm) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; }
+.imp-st__held tr:not(.imp-st__rm) td:nth-child(1) { grid-column: 1 / 3; grid-row: 1; }
+.imp-st__held tr:not(.imp-st__rm) td:nth-child(5) { grid-column: 3; grid-row: 1; }
+.imp-st__held tr:not(.imp-st__rm) td:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+.imp-st__held tr:not(.imp-st__rm) td:nth-child(3) { grid-column: 1; grid-row: 3; }
+.imp-st__held tr:not(.imp-st__rm) td:nth-child(4) { grid-column: 2 / -1; grid-row: 3; display: block; font-size: inherit; color: inherit; }
+.imp-st__held td:nth-child(4)::before { content: none; }
+@media (min-width: 640px) {
+  .imp-st__held tr:not(.imp-st__rm) { grid-template-columns: 5.5rem minmax(0, 1fr) 6.5rem 8rem 44px; }
+  .imp-st__held tr:not(.imp-st__rm) td:nth-child(n) { grid-row: 1; }
+  .imp-st__held tr:not(.imp-st__rm) td:nth-child(1) { grid-column: 1; }
+  .imp-st__held tr:not(.imp-st__rm) td:nth-child(2) { grid-column: 2; }
+  .imp-st__held tr:not(.imp-st__rm) td:nth-child(3) { grid-column: 3; }
+  .imp-st__held tr:not(.imp-st__rm) td:nth-child(4) { grid-column: 4; }
+  .imp-st__held tr:not(.imp-st__rm) td:nth-child(5) { grid-column: 5; }
+}
+/* The check mark draws once, in CSS only, and only with Celebrations on (static under reduced motion). */
+.imp-joy--lively .imp-joy__mark path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: imp-mark 600ms var(--ease) forwards; }
+@keyframes imp-mark { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .imp-joy--lively .imp-joy__mark path { animation: none; stroke-dashoffset: 0; } }
+.imp-row__retry { min-height: 44px; padding: 0; }
+.imp-st__scan { text-decoration: underline dotted var(--warn); text-underline-offset: 3px; }
+/* Phase 17: the receipt's line (its coins play from its right edge), and the oops face beside a hiccup's words. */
+.imp-done { position: relative; display: flex; align-items: center; min-height: 56px; margin: 0; padding-right: 72px; font-weight: 600; }
+/* The face shares the tag's grid cell, at its start, so it reads as beside the words on both widths. */
+.imp-row .oops-acorn { grid-row: 2; grid-column: 1; justify-self: start; align-self: center; z-index: 1; }
+.imp-row .oops-acorn + .imp-row__tag { grid-row: 2; padding-inline-start: 28px; }

@@ -1,0 +1,170 @@
+/* Spending (phase 11b): the month, Over time, one category and Set targets. Every value is a token, so light and dark
+   both work. From web/mockups/spending.css. All CSS is one global bundle, so every class here starts with sp- (Plan
+   has its own .chart, and Accounts' .kind once took Inventory's look); the is-* states only ever follow an sp- class. */
+.sp-head { display: flex; flex-direction: column; gap: var(--s-3); }
+.sp-months { display: flex; align-items: center; gap: var(--s-2); margin-left: -10px; }
+.sp-months h1 { flex: none; padding: 0 var(--s-1); }
+.sp-months__btn { display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; color: var(--ink); cursor: pointer; transition: background-color var(--dur-quick) var(--ease); }
+.sp-months__btn:hover:not([disabled]) { background: var(--surface-2); }
+.sp-months__btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.sp-months__btn[disabled] { color: var(--ink-muted); opacity: 0.5; cursor: default; }
+.sp-total { display: flex; flex-direction: column; gap: var(--s-1); }
+.sp-total__big { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2); font-family: var(--font-display); font-size: var(--fs-6); line-height: 1.1; font-feature-settings: "tnum"; letter-spacing: -0.01em; }
+.sp-of { font-size: var(--fs-4); color: var(--ink-muted); }
+.sp-total__line { display: flex; flex-wrap: wrap; gap: 2px var(--s-2); color: var(--ink-muted); font-size: var(--fs-2); }
+.sp-total__part { display: inline-flex; gap: var(--s-2); }
+.sp-total__sep { color: var(--line); }
+.sp-total__lead { color: var(--ink); font-weight: 600; }
+.sp-span { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; max-width: 280px; padding: 3px; gap: 3px; border-radius: var(--r-pill); background: var(--surface-2); }
+.sp-span button { min-height: 44px; border: 0; border-radius: var(--r-pill); background: transparent; font: inherit; font-weight: 600; color: var(--ink-muted); cursor: pointer; }
+.sp-span button.is-on { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+/* Phase 17 (spec 2.2, D7): in the dark phases the selected segment is the plum fill, lighter than its track, never a
+   darker "pressed in" pill. */
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .sp-span, .theme-dark .sp-span { background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .sp-span button.is-on, .theme-dark .sp-span button.is-on { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+.sp-cols { display: flex; flex-direction: column; gap: var(--s-6); }
+.screen.spending .sp-side { gap: var(--s-6); }
+@media (min-width: 1100px) { .sp-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-6) var(--s-7); align-items: start; } }
+
+/* Pace rows: the row is a grid; its name is the link and covers the row, so "Set one" can be a link of its own. */
+.sp-paces { padding: 0; overflow: hidden; }
+.sp-pace { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto 20px; grid-template-areas: "name amt go" "bar bar go" "state state go"; align-items: center; gap: var(--s-1) var(--s-3); padding: var(--s-3) var(--s-4); min-height: 64px; color: inherit; text-decoration: none; }
+.sp-pace + .sp-pace { border-top: 1px solid var(--line); }
+.sp-pace:hover { background: var(--surface-2); }
+div.sp-pace--unsorted:hover { background: transparent; }
+.sp-pace__name { grid-area: name; font-weight: 600; color: inherit; text-decoration: none; }
+.sp-pace__go::after { content: ""; position: absolute; inset: 0; }
+.sp-pace__go:focus-visible { outline: none; }
+.sp-pace:has(.sp-pace__go:focus-visible), a.sp-pace:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.sp-pace__set { position: relative; z-index: 1; }
+.sp-pace__amt { grid-area: amt; text-align: right; white-space: nowrap; }
+.sp-pace__amt .muted { font-size: var(--fs-1); }
+.sp-pace__chev { grid-area: go; color: var(--ink-muted); }
+.sp-pace__bar { grid-area: bar; position: relative; display: block; height: 8px; border-radius: 4px; background: var(--track); }
+.sp-pace__fill { position: absolute; left: 0; top: 0; height: 100%; max-width: 100%; border-radius: 4px; background: var(--chart-out); }
+.sp-pace__fill.is-clear { background: var(--warn); }
+.sp-pace__fill.is-little { background: var(--ink); }
+.sp-pace__fill.is-none { background: var(--line); }
+.sp-pace__bar--unsorted .sp-pace__fill { background: repeating-linear-gradient(135deg, var(--chart-out) 0 3px, transparent 3px 6px); }
+.sp-pace__today { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; }
+.sp-pace__today::after { content: ""; position: absolute; left: -3px; top: -3px; width: 8px; height: 3px; background: var(--ink); border-radius: 1px; }
+.sp-pace__state { grid-area: state; font-size: var(--fs-1); color: var(--ink-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--s-2); }
+.sp-pace__state.is-clear { color: var(--warn); font-weight: 600; }
+.sp-pace__state.is-spare { color: var(--money-in); }
+.sp-pace__state .link { min-height: 24px; font-size: var(--fs-1); gap: 0; }
+.sp-pace-key { font-size: var(--fs-1); color: var(--ink-muted); }
+.sp-pace-key__today { display: inline-block; width: 2px; height: 14px; background: var(--ink); vertical-align: -2px; }
+
+/* Fixed costs, payments made once in a while and income */
+.sp-fixeds { padding: 0; overflow: hidden; }
+.sp-fixed { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto 20px; gap: 2px var(--s-3); align-items: center; padding: var(--s-3) var(--s-4); min-height: 60px; color: inherit; text-decoration: none; }
+.sp-fixed + .sp-fixed, .sp-fixed-label + .sp-fixed { border-top: 1px solid var(--line); }
+.sp-fixed:hover { background: var(--surface-2); }
+.sp-fixed:focus-visible, .sp-fixed:has(.sp-fixed__go:focus-visible) { outline: 2px solid var(--focus); outline-offset: -2px; }
+/* A check means paid and nothing else: neutral ink, never green (decision 1). Income keeps its green. */
+.sp-fixed > .i:first-child { grid-row: 1 / span 2; width: 24px; height: 24px; color: var(--ink); }
+.sp-fixed.is-ring > .i:first-child, .sp-fixed.is-once > .i:first-child { color: var(--ink-muted); }
+.sp-fixed.is-amber > .i:first-child, .sp-fixed.is-amber .sp-fixed__sub { color: var(--warn); }
+.sp-fixed.is-income > .i:first-child { color: var(--money-in); }
+.sp-fixed__name { font-weight: 600; }
+.sp-fixed__go { color: inherit; text-decoration: none; }
+.sp-fixed__go::after { content: ""; position: absolute; inset: 0; }
+.sp-fixed__go:focus-visible { outline: none; }
+.sp-fixed__sub { grid-column: 2; font-size: var(--fs-1); color: var(--ink-muted); }
+.sp-fixed__sub:empty { display: none; }   /* Income has no second line: its name sits in the middle of the row */
+.sp-fixed__see, .sp-giving__pencil, .sp-giving__prompt .link, .sp-giving__form { position: relative; z-index: 1; }
+.sp-fixed__see { min-height: 24px; font-size: var(--fs-1); }
+.sp-fixed .money { grid-row: 1 / span 2; grid-column: 3; text-align: right; }
+.sp-fixed.is-ring .money, .sp-fixed.is-quiet .money { color: var(--ink-muted); font-weight: 400; }
+.sp-fixed > .i:last-child, .sp-fixed > .sp-fixed__chev { grid-row: 1 / span 2; grid-column: 4; color: var(--ink-muted); }
+.sp-fixed-label { margin: 0; padding: var(--s-3) var(--s-4) var(--s-1); border-top: 1px solid var(--line); color: var(--ink-muted); }
+.sp-giving__phrase { color: var(--ink-muted); }
+.sp-giving__pencil { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; min-height: 32px; margin-left: var(--s-1); padding: 0; border: 0; background: none; color: var(--ink-muted); cursor: pointer; vertical-align: middle; }
+.sp-giving__prompt { display: block; margin-top: var(--s-1); }
+.sp-giving__prompt .link { min-height: 32px; font-size: var(--fs-1); }
+.sp-giving__form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s-2); margin-top: var(--s-2); }
+.sp-giving__label { display: flex; flex-direction: column; gap: var(--s-1); font-size: var(--fs-1); color: var(--ink); }
+.sp-giving__label .affix { width: 160px; }
+.sp-cat-kind { display: flex; flex-direction: column; gap: var(--s-2); }
+.sp-cat-kind__select { align-self: flex-start; min-height: 44px; }
+.sp-cat-head__state .is-amber { color: var(--warn); font-weight: 600; }
+
+/* Over time */
+.sp-trends { display: grid; gap: var(--s-4); }
+@media (min-width: 900px) { .sp-trends { grid-template-columns: 1fr 1fr; gap: var(--s-5); } }
+.sp-trend-card { padding: 0; overflow: hidden; }
+.sp-trend-card .sp-trend-row + .sp-trend-row { border-top: 1px solid var(--line); }
+.sp-trend-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-1) var(--s-3); padding: var(--s-3) var(--s-4) var(--s-4); color: inherit; text-decoration: none; }
+a.sp-trend-row:hover { background: var(--surface-2); }
+.sp-trend-row__name { font-weight: 600; }
+.sp-trend-row__sum { font-size: var(--fs-1); color: var(--ink-muted); text-align: right; white-space: nowrap; }
+.sp-trend-row__sum.is-over { color: var(--ink-muted); }
+.sp-trend-row__sub { grid-column: 1 / -1; font-size: var(--fs-1); color: var(--ink-muted); }
+.sp-trend-row .sp-chart { grid-column: 1 / -1; width: 100%; height: 52px; margin-top: var(--s-1); }
+.sp-trend-row .sp-chart__months { grid-column: 1 / -1; display: grid; text-align: center; }
+.sp-chart__bar { fill: var(--chart-out); }
+.sp-chart__bar.is-over { fill: var(--warn); }
+.sp-chart__bar.so-far { opacity: 0.45; }
+.sp-chart__target { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.sp-chart__month { font-size: 10px; line-height: 1.2; color: var(--ink-muted); white-space: nowrap; }
+
+/* One category */
+.sp-cat-head { display: flex; flex-direction: column; gap: var(--s-2); }
+.sp-cat-head__big { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2); font-family: var(--font-display); font-size: var(--fs-6); line-height: 1.1; font-feature-settings: "tnum"; }
+.sp-cat-head .sp-pace__bar { height: 12px; border-radius: 6px; }
+.sp-cat-head .sp-pace__fill { border-radius: 6px; }
+.sp-cat-head .sp-pace__today { top: -5px; bottom: -5px; }
+.sp-cat-head__state { display: flex; flex-wrap: wrap; gap: 2px var(--s-2); font-size: var(--fs-2); }
+.sp-cat-head__state .is-clear { color: var(--warn); font-weight: 600; }
+.sp-cat-head__state .is-spare { color: var(--money-in); }
+.sp-last3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+.sp-last3 > div { display: flex; flex-direction: column; gap: 2px; padding: var(--s-3); border-radius: var(--r-m); background: var(--surface-2); }
+.sp-last3 .money { font-weight: 600; }
+.sp-last3 .is-over { color: var(--warn); }
+.sp-last3 .small { color: var(--ink-muted); }
+.sp-cat-cols { display: flex; flex-direction: column; gap: var(--s-6); }
+@media (min-width: 900px) { .sp-cat-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-7); align-items: start; } }
+.sp-txns .txn { cursor: default; }
+.sp-txns .txn:hover { background: transparent; }
+
+/* Set targets */
+.sp-targets { padding: 0; overflow: hidden; }
+.sp-trow { display: grid; grid-template-columns: minmax(0, 1fr) 128px; grid-template-areas: "name input" "typ input" "move move"; gap: 2px var(--s-3); align-items: center; padding: var(--s-3) var(--s-4); min-height: 64px; }
+.sp-trow + .sp-trow { border-top: 1px solid var(--line); }
+.sp-trow__name { grid-area: name; font-weight: 600; }
+.sp-trow__typ { grid-area: typ; font-size: var(--fs-1); color: var(--ink-muted); }
+.sp-trow__input { grid-area: input; }
+.sp-trow__input input { width: 100%; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; min-height: 44px; }
+.sp-trow__input input::placeholder { font-weight: 400; color: var(--ink-muted); }
+.sp-trow__input.is-changed input { border-color: var(--accent-text); box-shadow: 0 0 0 1px var(--accent-text); }
+.sp-trow__value { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sp-trow__move { grid-area: move; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-4); font-size: var(--fs-1); }
+.sp-trow__move .link { min-height: 28px; font-size: var(--fs-1); border: 0; background: none; padding: 0; cursor: pointer; }
+.sp-trow__move .link.is-acc { color: var(--accent-text); font-weight: 600; }
+.sp-trow__kind { min-height: 44px; font: inherit; font-size: var(--fs-1); }
+.sp-trow--off .sp-trow__name { color: var(--ink-muted); }
+@media (min-width: 640px) { .sp-trow { grid-template-columns: minmax(0, 1fr) auto 128px; grid-template-areas: "name move input" "typ move input"; } .sp-trow__move { justify-content: flex-end; } }
+/* A field's message spans the row under it. */
+.sp-field-error { font-size: var(--fs-1); color: var(--danger); }
+.sp-trow .sp-field-error { grid-column: 1 / -1; }
+.sp-trow__input input[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
+.sp-first { display: flex; gap: var(--s-3); align-items: flex-start; }
+.sp-first__icon { flex: none; margin-top: 1px; color: var(--accent-text); }
+.sp-first__body { display: flex; flex-direction: column; gap: var(--s-2); }
+.sp-sumcard { display: grid; gap: var(--s-2); }
+.sp-sumcard__row { display: flex; justify-content: space-between; gap: var(--s-3); align-items: baseline; }
+.sp-sumcard__row.is-total { padding-top: var(--s-2); border-top: 1px solid var(--line); font-weight: 600; }
+/* A total that leads the card (Setting aside) has its line under it, not a stray one above. */
+.sp-sumcard__row.is-total:first-child { padding-top: 0; border-top: 0; padding-bottom: var(--s-2); border-bottom: 1px solid var(--line); }
+.sp-savebar { position: sticky; bottom: calc(var(--s-4) + 64px); display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); border-radius: var(--r-l); background: var(--surface); box-shadow: 0 0 0 1px var(--line), var(--shadow-raised); border-left: 4px solid var(--accent-text); }
+@media (min-width: 900px) { .sp-savebar { bottom: var(--s-4); max-width: 640px; } }
+.sp-savebar__title { font-weight: 600; }
+.sp-savebar__actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.sp-savebar__error { color: var(--danger); font-size: var(--fs-1); }
+
+/* The monthly target check (P19) and Kept targets (P20) */
+.sp-check { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); }
+.sp-check__line { margin: 0; }
+.sp-kept summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+.sp-kept__rows { list-style: none; margin: 0; padding: 0; }
+.sp-kept__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2); padding: var(--s-2) 0; border-top: 1px solid var(--line); }

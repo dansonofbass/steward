@@ -1,0 +1,112 @@
+/* Ported from the mockup's "candidate" rules: review cards, chips, switch, duplicates, sorted state. */
+.review .raw { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-1); color: var(--ink-muted); letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.review .tag { display: inline-flex; align-items: center; gap: var(--s-1); padding: 2px var(--s-2); border-radius: var(--r-pill); font: 600 0.7rem/20px var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); background: var(--surface-2); white-space: nowrap; }
+
+.rcards { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+@media (min-width: 900px) { .rcards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); align-items: start; } }
+@media (min-width: 1280px) { .rcards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.rcard { position: relative; display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); transition: transform var(--dur-state) var(--ease), opacity var(--dur-state) var(--ease); }
+.rcard__top { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--s-3); align-items: baseline; }
+.rcard__desc { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-2); font-weight: 600; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.rcard__meta { grid-column: 1 / -1; font-size: var(--fs-1); color: var(--ink-muted); }
+.rcard__reason { grid-column: 1 / -1; font-size: var(--fs-1); color: var(--ink-muted); font-style: italic; }
+.rcard__foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line); }
+.rcard__actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.rcard__switches { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+.rcard__either { margin: 0; font-size: var(--fs-1); }
+.rcard__settle { margin: 0; }
+/* Bulk sort: in selection mode each card is a compact row that picks itself (checkbox, name, date · account, amount);
+   its controls come back when the mode ends. A card a bulk sort took stays compact, saying so, until it folds away. */
+.rcard.is-compact { gap: var(--s-2); padding-top: var(--s-3); padding-bottom: var(--s-3); }
+.rcard.is-compact .rcard__settled { justify-self: start; }
+.rcard.is-picking { padding-left: calc(var(--s-4) + 34px); cursor: pointer; user-select: none; -webkit-touch-callout: none; }
+.rcard .rcard__pick { position: absolute; left: var(--s-4); top: calc(var(--s-3) + 1px); }
+.rcard.is-picked { box-shadow: 0 0 0 2px var(--accent-text); }
+.review__list-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.chip { min-height: 44px; padding: 0 var(--s-4); border: 0; border-radius: var(--r-pill); background: var(--surface-2); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+.chip:disabled { cursor: default; }
+.chip.is-on { background: var(--accent); color: var(--accent-ink); }
+.chip--guess { box-shadow: inset 0 0 0 2px var(--accent-text); }
+.chip--more { color: var(--ink-muted); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+
+.rev-switch { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+.rev-switch__track { position: relative; width: 40px; height: 24px; border-radius: var(--r-pill); background: var(--line); flex: none; transition: background-color var(--dur-quick) var(--ease); }
+.rev-switch__track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1px var(--line); transition: transform var(--dur-quick) var(--ease); }
+.rev-switch.is-on .rev-switch__track { background: var(--accent); }
+.rev-switch.is-on .rev-switch__track::after { transform: translateX(16px); }
+
+.dupes { display: grid; gap: var(--s-3); }
+.dupe { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); }
+.dupe__between { display: flex; justify-content: center; }
+@media (min-width: 640px) {
+  .dupes { grid-template-columns: 1fr auto 1fr; align-items: start; gap: var(--s-4); }
+  .dupe__between { align-self: center; }
+}
+.dupe__side { display: flex; flex-direction: column; gap: var(--s-4); }
+
+/* Nothing waiting: one quiet panel instead of an empty page. */
+.review__done { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-6) 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.review__done-title { font: italic 400 var(--fs-4)/1.3 var(--font-display); }
+/* Phase 17 (2.7): Ten in a row or a milestone as words, while motion is off. */
+.review__said { margin: 0; font: italic 400 var(--fs-3)/1.3 var(--font-display); color: var(--ink); }
+.review__counts { display: flex; flex-wrap: wrap; gap: 2px var(--s-2); color: var(--ink-muted); }
+/* The dot has empty alt text, so a screen reader doesn't read it glued to the word before ("personal·"). The plain
+   declaration is the fallback for a browser without alt text in content. */
+.review__counts > span:not(:last-child)::after { content: '·'; content: '·' / ''; margin-left: var(--s-2); color: var(--line); }
+.review__background { margin: 0; }
+.review__sorted { color: var(--ink-muted); text-decoration: underline; }
+.review__counts .strong { color: var(--ink); }
+
+.bq { margin-top: var(--s-6); }
+.bq__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); }
+.bq__row { display: grid; grid-template-columns: 1fr auto; gap: var(--s-2) var(--s-3); align-items: center; }
+.bq__what { display: grid; gap: 2px; min-width: 0; }
+.bq__name { font-weight: 600; overflow-wrap: anywhere; }
+.bq__actions { grid-column: 1 / -1; display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+/* Sorting redesign: asked up front, then the card is its own receipt for about 5 seconds. The receipt shares one grid
+   cell with the body, so the card keeps its size; transform and opacity only. */
+.rcard__body { display: flex; flex-direction: column; gap: var(--s-3); transition: opacity var(--dur-state) var(--ease); }
+.rcard__settled { align-self: center; justify-self: center; margin: 0; padding: var(--s-1) var(--s-3); border-radius: var(--r-pill); background: var(--surface-2); color: var(--ink); font-size: var(--fs-1); font-weight: 600; }
+.rcard__also { font-weight: 600; }
+.rcard__nomatch { margin: 0; font-size: var(--fs-1); }
+.rcard__undone { margin: 0; color: var(--money-in); font-size: var(--fs-1); font-weight: 600; }
+
+/* A list card takes focus after Remove when it has no Note (as a focus card does): a ring only from the keyboard. */
+.rcard:focus { outline: none; }
+.rcard:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Polish round P38: the note form, inline under the chips */
+.rcard__note { margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line); }
+.rcard__note textarea, .rcard__note input:not([type="checkbox"]) { width: 100%; }
+
+/* Review focus: the top bar (both views). The progress fill is a scaleX transform (P31). */
+.rtop { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--s-2) var(--s-3); }
+.rtop__line { display: flex; align-items: center; flex-wrap: wrap; margin: 0; color: var(--ink-muted); }
+.rtop__undo { min-height: 44px; }
+.rtop__line > [aria-hidden="true"] { margin: 0 var(--s-2); }
+.rtop__left { color: var(--ink); font-weight: 600; }
+.rtop__view { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r-pill); overflow: hidden; }
+.rtop__view button { min-height: 44px; padding: 0 var(--s-4); border: 0; background: transparent; color: var(--ink-muted); font: inherit; font-weight: 600; cursor: pointer; }
+.rtop__view button[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); }
+.rtop__view button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+/* Phase 17 (spec 2.2): Focus or List, the chosen view as the plum fill in the dark phases. */
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .rtop__view button[aria-pressed="true"], .theme-dark .rtop__view button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.rtop__track { grid-column: 1 / -1; height: 4px; border-radius: var(--r-pill); background: var(--line); overflow: hidden; }
+.rtop__fill { display: block; height: 100%; background: var(--accent-text); transform-origin: left; transition: transform var(--dur-state) var(--ease); }
+
+/* Review focus P21: an acted card in the list, one dashed line in its place. Fades in; its tag lands. */
+.slim { display: flex; align-items: center; flex-wrap: wrap; gap: 0 var(--s-1); min-height: 56px; padding: var(--s-2) var(--s-4);
+  border: 1px dashed var(--line); border-radius: var(--r-m); color: var(--ink-muted); animation: slim-in var(--dur-state) var(--ease); }
+.slim__text { min-width: 0; overflow-wrap: anywhere; color: var(--ink); }
+.slim__tag { color: var(--money-in); animation: slim-stamp var(--dur-state) var(--ease) both; }
+.slim[data-outcome="snoozed"] .slim__tag, .slim[data-outcome="ignored"] .slim__tag { color: var(--ink-muted); }
+.slim__undo { min-height: 44px; font-weight: 600; }
+@keyframes slim-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slim-stamp { from { transform: rotate(-6deg) scale(1.4); opacity: 0; } to { transform: rotate(-6deg) scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .slim, .slim__tag { animation: none; } }
+/* Phase 17: All caught up's horizon, a line under the resting acorn. */
+.review__horizon { display: flex; justify-content: flex-start; padding-left: var(--s-4); width: min(100%, 280px); padding-bottom: 1px; border-bottom: 2px solid var(--line); }
+.review__done-line { margin: 0; font-size: var(--fs-3); }

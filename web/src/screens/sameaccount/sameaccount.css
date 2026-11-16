@@ -1,0 +1,14 @@
+/* The "Same account?" card and Merge into… (same-account spec, Asking and Merging). */
+.same-list { display: flex; flex-direction: column; gap: var(--s-3); }
+.same { display: flex; flex-direction: column; gap: var(--s-2); }
+.same__head { display: flex; align-items: center; gap: var(--s-1); margin: 0; }
+.same__line { margin: 0; overflow-wrap: anywhere; }
+.same__acts { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.same__said { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-1); }
+.same__said p { margin: 0; overflow-wrap: anywhere; }
+.same__cheer { color: var(--accent-text); }
+.same-merge { display: flex; flex-direction: column; gap: var(--s-3); }
+.same-merge__choices { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+.same-merge__choice { display: grid; grid-template-columns: auto 1fr; column-gap: var(--s-2); align-items: baseline; cursor: pointer; }
+.same-merge__sub { grid-column: 2; font-size: var(--fs-1); color: var(--ink-muted); overflow-wrap: anywhere; }
+.same-merge__acts { display: flex; flex-wrap: wrap; gap: var(--s-2); }

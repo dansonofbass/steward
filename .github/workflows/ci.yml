@@ -1,0 +1,110 @@
+# CI (release spec 2026-11-05, section 6): the Python suite and the claims ledger, the web app's tests, types and
+# build, every image built (never pushed), and gitleaks over the whole history with .gitleaks.toml.
+# Every job runs only in the public repo, steward-money/steward, so on any other copy of this repo, a private one
+# included, every job is skipped and nothing runs.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  python:
+    if: github.repository == 'steward-money/steward'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ">=0.9,<0.10"
+      - run: uv sync --frozen
+      - name: Claims ledger
+        run: uv run pytest tests/test_claims.py -q
+      - name: pytest
+        run: uv run pytest -n auto -q
+
+  web:
+    if: github.repository == 'steward-money/steward'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npx vitest run
+      - run: npx tsc --noEmit
+      - run: npm run build
+
+  images:
+    if: github.repository == 'steward-money/steward'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - context: .
+            file: Dockerfile
+          - context: deploy/proxy
+            file: deploy/proxy/Dockerfile
+          - context: .
+            file: deploy/gateway/Dockerfile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          platforms: linux/amd64
+          push: false
+
+  # The GPU images are built on each person's own machine and never published (docs/guides/gpu.md). CI checks their
+  # Dockerfiles without building them: a full build needs more disk than a runner has.
+  gpu-dockerfiles:
+    if: github.repository == 'steward-money/steward'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - run: docker buildx build --check -f deploy/gateway/Dockerfile.cuda .
+      - run: docker buildx build --check -f deploy/gateway/Dockerfile.rocm .
+
+  gitleaks:
+    if: github.repository == 'steward-money/steward'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.25"
+          cache: false
+      - name: Install gitleaks (checked against Go's checksum database)
+        run: go install github.com/zricethezav/gitleaks/v8@v8.30.1
+      - name: Scan every commit, with nothing waved through
+        run: |
+          : > "$RUNNER_TEMP/none.gitleaksignore"
+          gitleaks git --config .gitleaks.toml --gitleaks-ignore-path "$RUNNER_TEMP/none.gitleaksignore" \
+            --ignore-gitleaks-allow --redact --no-banner --exit-code 1 .

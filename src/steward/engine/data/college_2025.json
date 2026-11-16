@@ -1,0 +1,49 @@
+{
+  "source": "College Board, Trends in College Pricing and Student Aid 2025, Average Estimated Full-Time Undergraduate Budgets (Enrollment-Weighted) by Sector, 2025-26 (Figure CP-1)",
+  "url": "https://research.collegeboard.org/trends/college-pricing",
+  "academic_year": "2025-26",
+  "checked": "2026-10-29",
+  "real_growth_per_year": 0.01,
+  "levels": {
+    "two_year": {
+      "years": 2,
+      "sector": "Public two-year in-district (commuter)",
+      "tuition_fees_cents": 415000,
+      "living_cents": 1717000,
+      "sources": {
+        "tuition_fees_cents": "Average Estimated Full-Time Undergraduate Budgets (Enrollment-Weighted) by Sector, 2025-26 (Figure CP-1): public two-year in-district, commuter, tuition and fees",
+        "living_cents": "Same figure, public two-year in-district, commuter: total budget minus tuition and fees (housing and food + books and supplies + transportation + other expenses)"
+      }
+    },
+    "in_state_public": {
+      "years": 4,
+      "sector": "Public four-year in-state (on campus)",
+      "tuition_fees_cents": 1195000,
+      "living_cents": 1904000,
+      "sources": {
+        "tuition_fees_cents": "Average Estimated Full-Time Undergraduate Budgets (Enrollment-Weighted) by Sector, 2025-26 (Figure CP-1): public four-year in-state, on campus, tuition and fees",
+        "living_cents": "Same figure, public four-year in-state, on campus: total budget minus tuition and fees (housing and food + books and supplies + transportation + other expenses)"
+      }
+    },
+    "out_of_state_public": {
+      "years": 4,
+      "sector": "Public four-year out-of-state (on campus)",
+      "tuition_fees_cents": 3188000,
+      "living_cents": 1904000,
+      "sources": {
+        "tuition_fees_cents": "Average Estimated Full-Time Undergraduate Budgets (Enrollment-Weighted) by Sector, 2025-26 (Figure CP-1): public four-year out-of-state, on campus, tuition and fees",
+        "living_cents": "Same figure, public four-year out-of-state, on campus: total budget minus tuition and fees (housing and food + books and supplies + transportation + other expenses)"
+      }
+    },
+    "private": {
+      "years": 4,
+      "sector": "Private nonprofit four-year (on campus)",
+      "tuition_fees_cents": 4500000,
+      "living_cents": 2047000,
+      "sources": {
+        "tuition_fees_cents": "Average Estimated Full-Time Undergraduate Budgets (Enrollment-Weighted) by Sector, 2025-26 (Figure CP-1): private nonprofit four-year, on campus, tuition and fees",
+        "living_cents": "Same figure, private nonprofit four-year, on campus: total budget minus tuition and fees (housing and food + books and supplies + transportation + other expenses)"
+      }
+    }
+  }
+}

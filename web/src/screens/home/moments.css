@@ -1,0 +1,18 @@
+/* Phase 17: Home's and Profile's moments. The tree sits small at the end of Home, never above the verdict or money. */
+/* The coins sit at the end of their own line, inside it: they never reach over the figure or the legend above. */
+.verdict__payday--came { position: relative; display: flex; align-items: center; width: fit-content; min-height: 40px; padding-right: 48px; color: var(--ink); }
+.verdict__payday--came .cel-moment { right: 0; bottom: auto; top: 0; width: 40px; height: 40px; }
+.verdict__payday--came .cel-moment svg { width: 100%; height: 100%; }
+.home-tree { display: flex; align-items: flex-end; justify-content: flex-end; gap: var(--s-3); padding: var(--s-2) 0; }
+.home-tree__line { margin: 0; font-size: var(--fs-2); color: var(--ink-muted); }
+.prof-growth { display: flex; align-items: flex-end; gap: var(--s-4); }
+.prof-growth__text { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.prof-growth__line { margin: 0; font-weight: 600; }
+.prof-growth__list { display: grid; gap: var(--s-1); font-size: var(--fs-2); color: var(--ink-muted); }
+.prof-growth__list li { display: flex; align-items: center; gap: var(--s-2); }
+.prof-growth__list li.is-met { color: var(--ink); }
+.prof-growth__list li.is-met .i { color: var(--money-in); }
+/* The state in words, for a screen reader only: the eye has the tick or the empty circle. */
+.prof-growth__state { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.gateway-back { display: inline-flex; align-items: center; gap: var(--s-1); }
+.bg-line { display: flex; align-items: center; gap: var(--s-1); }

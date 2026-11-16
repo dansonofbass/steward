@@ -1,0 +1,44 @@
+/* The category field (looks like the other selects, Field.css) and the one menu it opens (sorting redesign, The
+   picker). Nothing here animates. */
+.catmenu__trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); width: 100%;
+  min-height: 44px; padding: var(--s-2) var(--s-3); border-radius: var(--r-m); border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+}
+.catmenu__trigger:hover:not(:disabled) { border-color: var(--ink-muted); }
+.catmenu__trigger:disabled { cursor: default; opacity: 0.6; }
+.catmenu__trigger svg { flex: none; color: var(--ink-muted); }
+
+/* Desktop: placed once in page coordinates, so it scrolls with the page (lib/menuPlace.ts); a fixed height, so it
+   doesn't jump while you type. */
+.catmenu-pop {
+  position: absolute; z-index: 60; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-m);
+  box-shadow: var(--shadow-raised);
+}
+.catmenu { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.catmenu__search {
+  display: flex; align-items: center; gap: var(--s-2); padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--line); color: var(--ink-muted);
+}
+.catmenu__search input { flex: 1; min-width: 0; min-height: 36px; border: 0; background: transparent; color: var(--ink); font: inherit; outline: none; }
+.catmenu__search:focus-within { outline: 2px solid var(--focus); outline-offset: -2px; }
+/* It scrolls down, never sideways. */
+.catmenu__list { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: var(--s-1) var(--s-2) var(--s-2); }
+.catmenu__group { margin-bottom: var(--s-2); }
+/* Desktop: each group's rows in two equal columns under a full-width heading, your usual first. A grid, not CSS
+   columns: in a list of fixed height, columns that run out of room add more columns to the side, and the menu
+   scrolled sideways (JR, Oct 28). The rows read left to right, then down, the order the arrow keys take. */
+.catmenu-pop .catmenu__list--grouped .catmenu__group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-2); }
+.catmenu-pop .catmenu__list--grouped .catmenu__head { grid-column: 1 / -1; }
+.catmenu__head { margin: var(--s-2) var(--s-2) var(--s-1); font-size: var(--fs-1); font-weight: 600; color: var(--ink-muted); }
+.catmenu__opt { min-width: 0; padding: 6px var(--s-2); border-radius: var(--r-s); cursor: pointer; overflow-wrap: anywhere; }
+.catmenu__opt.is-active { background: var(--surface-2); }
+.catmenu__opt.is-current { font-weight: 600; }
+.catmenu__empty { margin: 0; padding: var(--s-3); color: var(--ink-muted); }
+
+/* Phone: a half-height sheet, the search box at the top, rows at least 44 px. */
+@media (max-width: 899px) { .catmenu-sheet.sheet { height: 60dvh; } }
+.catmenu-sheet.sheet[open] { display: flex; flex-direction: column; }   /* [open]: a display on a closed <dialog> would show it */
+.catmenu-sheet .sheet__body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.catmenu-sheet .catmenu__opt { display: flex; align-items: center; min-height: 44px; }

@@ -1,0 +1,7 @@
+.affix { position: relative; display: flex; align-items: center; }
+.affix input { width: 100%; }
+.affix__pre, .affix__post { position: absolute; color: var(--ink-muted); pointer-events: none; }
+.affix__pre { left: var(--s-3); }
+.affix__post { right: var(--s-3); font-size: var(--fs-1); }
+.affix--pre input { padding-left: 26px; }
+.affix--post input { padding-right: 64px; }

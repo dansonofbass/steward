@@ -1,0 +1,25 @@
+# Grandfathered offences against tests/test_determinism_ratchet.py: path, rule, count  # why it stays.
+# It may only shrink. Never add a line to make a new test pass: fix the test (flaky-test audit; JR's rule).
+src/steward/books/bootstrap.py	src-real-now	1  # file stamp
+src/steward/db/alembic/versions/0010_watching.py	src-real-now	2  # migration runs once at real time
+src/steward/db/alembic/versions/0021_home_value.py	src-real-now	2  # migration runs once at real time
+src/steward/db/alembic/versions/0030_profile.py	src-real-now	1  # migration runs once at real time
+src/steward/services/backup.py	src-real-now	2  # file stamp
+src/steward/services/restore_check.py	src-real-now	1  # file stamp
+tests/advisor/test_gateway_client.py	py-real-now	1  # the gateway's pairing runs on the gateway's real clock
+tests/gateway/test_live_smoke.py	py-real-now	2  # live; the gateway's real clock
+tests/test_cli.py	py-real-now	2  # backup file stamps
+tests/test_clock.py	py-real-now	2  # the real_clock test checks against the real clock
+tests/test_migration_0030.py	py-real-now	1  # compares against that migration's real clock
+web/e2e/profile-shots.spec.ts	e2e-fixed-wait	2  # screenshot tool, skipped unless SHOTS_TASK; times a mid-animation frame on purpose
+web/src/book/BookScope.test.tsx	web-sleep	1  # zero-delay flush (one macrotask), not a timed wait; absence check
+web/src/book/BookSwitcher.test.tsx	web-sleep	1  # zero-delay flush (one macrotask), not a timed wait; absence check
+web/src/queryClient.test.ts	web-sleep	2  # absence check after a sleep; passes vacuously, never flakes; the 80 ms outwaits a 30 ms retry
+web/src/screens/accounts/AccountPage.test.tsx	web-sleep	2  # absence check after a sleep; passes vacuously, never flakes
+web/src/screens/accounts/invest/Investment.joy.test.tsx	web-sleep	1  # zero-delay flush (one macrotask), not a timed wait; absence check
+web/src/screens/chat/Conversation.test.tsx	web-sleep	1  # absence check after a sleep; passes vacuously, never flakes
+web/src/screens/home/GatewayOffLine.test.tsx	web-sleep	2  # absence check after a sleep; passes vacuously, never flakes
+web/src/screens/plan/ChangeLine.off.test.tsx	web-sleep	2  # zero-delay flush (one macrotask), not a timed wait; absence check
+web/src/screens/plan/ChangeLine.test.tsx	web-sleep	1  # zero-delay flush (one macrotask), not a timed wait; absence check
+web/src/screens/spending/Targets.test.tsx	web-sleep	1  # zero-delay flush (one macrotask), not a timed wait; absence check
+web/src/screens/spending/setasides/SetAside.test.tsx	web-sleep	1  # absence check after a sleep; passes vacuously, never flakes

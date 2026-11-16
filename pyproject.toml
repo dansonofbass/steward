@@ -1,0 +1,72 @@
+[project]
+name = "steward"
+version = "0.1.0"
+description = "Household finance vault"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy>=2.0",
+  "alembic>=1.13",
+  "sqlcipher3-binary>=0.5",
+  "argon2-cffi>=23.1",
+  "pydantic-settings>=2.4",
+  "typer>=0.12",
+  "httpx2>=2.13.1",
+  "python-multipart>=0.0.9",
+  "webauthn>=3.0",
+  "numpy>=2.0",
+  "defusedxml>=0.7",
+  "cryptography>=46",
+  "websockets>=17.1",
+  "pdfplumber>=0.11.7",
+  "pdfminer.six>=20251107",
+  "pypdfium2>=4.30",
+  "Pillow>=11.0",
+]
+
+[project.scripts]
+steward = "steward.cli:app"
+steward-gateway = "steward_gateway.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-timeout>=2.3",
+    "pytest-xdist>=3.6",
+    "pyyaml>=6",
+    "reportlab>=4.2",
+    {include-group = "gateway"},
+]
+# The gateway (spec 3.4). Never installed in the NAS image (`uv sync --frozen --no-dev`).
+gateway = [
+    "anthropic==1.11.0",
+]
+# GLiNER-PII and Presidio for the gateway's redaction (spec 4.3). The gateway's machine only.
+models = [
+    "gliner==0.2.29",
+    "presidio-analyzer==2.2.364",
+    "protobuf==7.36.2",
+    "torch==2.14.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/steward", "src/steward_boundary", "src/steward_gateway", "src/steward_pdf"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not perf and not models and not live'"
+# A test that hangs fails after two minutes instead of freezing the run (flaky-test audit S5). The perf budgets and the
+# model evals do minutes of real work and set their own ceiling (tests/perf/conftest.py, the eval files).
+timeout = 120
+markers = [
+    "perf: performance budget tests",
+    "models: real GLiNER-PII and Presidio evals; needs `uv sync --group models` (the gateway's machine)",
+    "live: calls the real Anthropic API; opt-in, JR runs it by hand on the gateway's machine",
+    "real_clock: runs on the real clock instead of the test clock (tests/conftest.py, fake_clock)",
+]

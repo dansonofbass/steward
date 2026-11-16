@@ -1,0 +1,16 @@
+.git
+data
+tests
+docs
+.venv
+node_modules
+*.db
+*.key
+.env*
+web/node_modules
+web/dist
+web/test-results
+web/playwright-report
+.superpowers
+**/__pycache__
+**/.playwright-mcp

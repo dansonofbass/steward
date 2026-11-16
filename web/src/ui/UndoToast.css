@@ -1,0 +1,29 @@
+.undo-toast { position: fixed; left: 50%; bottom: calc(var(--s-6) + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1); width: max-content; max-width: calc(100vw - 2 * var(--s-4)); padding: var(--s-3) var(--s-4);
+  background: var(--ink); color: var(--bg); border-radius: var(--r-m); box-shadow: var(--shadow-raised); z-index: 50; }
+.undo-toast .link { color: inherit; font-weight: 600; min-height: 44px; }
+/* On a phone the tab bar (64px) sits at the bottom: the toast clears it instead of covering it. */
+@media (max-width: 899px) { .undo-toast { bottom: calc(64px + var(--s-3) + env(safe-area-inset-bottom)); } }
+@media (min-width: 900px) { .undo-toast { bottom: var(--s-6); } }
+
+/* Review focus P16: the text wraps to two lines at most (the name is cut by the clamp, never the Undo); the stamp tag;
+   and, in focus on a phone, the toast clears the sticky action bar. */
+.undo-toast__text { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.undo-toast > .link { flex: none; }
+.stamp { display: inline-block; flex: none; padding: 0 var(--s-1); border: 2px solid currentColor; border-radius: 4px;
+  font: 700 0.72rem/1.5 var(--font); letter-spacing: 0.1em; text-transform: uppercase; transform: rotate(-6deg); }
+.undo-toast--lifted { bottom: calc(64px + 72px + env(safe-area-inset-bottom)); }
+@media (min-width: 900px) { .undo-toast--lifted { bottom: var(--s-6); } }
+/* Phase 17 (spec 2.3): no white slab at night. In the dark phases the toast is a raised chip (surface-2, ink, a 1px line
+   ring) and Undo (and Settle) take the plum text colour; light phases keep the ink slab above. */
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .undo-toast, .theme-dark .undo-toast { background: var(--surface-2); color: var(--ink); box-shadow: 0 0 0 1px var(--line), var(--shadow-raised); }
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .undo-toast .link, .theme-dark .undo-toast .link { color: var(--accent-text); }
+/* Phase 17: the cheer is its own full-width row (outside the receipt's 2-line clamp); UndoToast drops it if that row wraps. */
+.undo-toast__cheer { flex: 0 0 100%; min-width: 0; overflow: hidden; white-space: nowrap; }
+.undo-toast__cheer .acorn { margin-right: var(--s-1); vertical-align: -3px; }
+/* F12: the light toast is the inverted ink slab, so its acorn takes the dark acorn colours. */
+.undo-toast {
+  --acorn-nut: #F2E9EE; --acorn-leaf: #EBB3CC; --acorn-vein: #17233C; --acorn-face: #17233C;
+  --acorn-gold-nut: #E8C26A; --acorn-gold-leaf: #F3DCA0; --acorn-gold-face: #17233C;
+  --acorn-fall: #E39B5A; --acorn-snow: #DCEBFA;
+}

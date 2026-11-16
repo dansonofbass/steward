@@ -1,0 +1,18 @@
+{
+  "topic": "business",
+  "year": 2026,
+  "source": "https://www.irs.gov/instructions/i1040sc",
+  "checked": "2026-10-20",
+  "home_office": {
+    "rate_cents_per_sqft": 500,
+    "max_sqft": 300,
+    "source": "https://www.irs.gov/businesses/small-businesses-self-employed/simplified-option-for-home-office-deduction"
+  },
+  "meals_pct": 50,
+  "mileage": [
+    {"from": "2026-01-01", "to": "2026-06-30", "tenths_of_cent": 725,
+     "source": "https://www.irs.gov/newsroom/irs-sets-2026-business-standard-mileage-rate-at-725-cents-per-mile-up-25-cents"},
+    {"from": "2026-07-01", "to": "2026-12-31", "tenths_of_cent": 760,
+     "source": "https://www.irs.gov/irb/2026-29_IRB"}
+  ]
+}

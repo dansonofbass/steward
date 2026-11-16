@@ -1,0 +1,25 @@
+# The gateway with CUDA torch for GLiNER, built on your own machine (docs/guides/gpu.md). Steward never publishes it.
+# Building it downloads NVIDIA's CUDA libraries under NVIDIA's licenses, so it builds and starts only with
+# STEWARD_GPU_LICENSE_ACCEPTED=nvidia. Its bases are the app image's, pinned by digest; tests/test_gateway_image.py checks them.
+FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b AS base
+RUN useradd -u 1000 -m steward-gw \
+ && install -d -m 700 -o steward-gw -g steward-gw /etc/steward-gateway /var/lib/steward-gateway /var/cache/steward-gateway
+COPY --from=ghcr.io/astral-sh/uv:0.9@sha256:538e0b39736e7feae937a65983e49d2ab75e1559d35041f9878b7b7e51de91e4 /uv /usr/local/bin/uv
+WORKDIR /app
+ARG STEWARD_GPU_LICENSE_ACCEPTED
+# The same rule as the gateway's start-up: trim whitespace from both ends, lowercase, keep inner spaces.
+RUN v=$(printf '%s' "$STEWARD_GPU_LICENSE_ACCEPTED" | tr '\n' ' ' | LC_ALL=C sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | tr 'A-Z' 'a-z'); [ "$v" = nvidia ] || { echo "Building this image downloads NVIDIA's CUDA libraries, which come under NVIDIA's own licenses. Read them (docs/guides/gpu.md, \"Licenses\"), then set STEWARD_GPU_LICENSE_ACCEPTED=nvidia in .env and build again."; exit 1; }
+COPY pyproject.toml uv.lock ./
+COPY src ./src
+# The lock as the systemd gateway installs it: PyPI's torch with the CUDA wheels it brings. The last checks fail the
+# build if torch has no CUDA in it.
+RUN uv sync --frozen --no-dev --group gateway --group models --no-cache \
+ && /app/.venv/bin/python -c "import sys, torch; sys.exit(torch.version.cuda is None)" \
+ && /app/.venv/bin/python -c "import gliner, presidio_analyzer, anthropic, steward_gateway.app"
+COPY --chown=steward-gw:steward-gw deploy/gateway/gateway.toml /etc/steward-gateway/gateway.toml
+ENV STEWARD_GATEWAY_CONFIG_DIR=/etc/steward-gateway STEWARD_GATEWAY_STATE_DIR=/var/lib/steward-gateway HF_HOME=/var/cache/steward-gateway XDG_CACHE_HOME=/var/cache/steward-gateway HF_HUB_DISABLE_TELEMETRY=1 STEWARD_GATEWAY_GPU=nvidia PATH="/app/.venv/bin:$PATH"
+USER steward-gw
+WORKDIR /var/lib/steward-gateway
+VOLUME ["/etc/steward-gateway", "/var/lib/steward-gateway", "/var/cache/steward-gateway"]
+EXPOSE 8430
+CMD ["steward-gateway", "serve"]

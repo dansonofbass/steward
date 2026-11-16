@@ -1,0 +1,27 @@
+.you { position: relative; }
+.you__btn {
+  display: flex; align-items: center; gap: var(--s-3); min-height: 48px; padding: var(--s-1); border: 0; border-radius: var(--r-pill);
+  background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--dur-quick) var(--ease);
+}
+.you__btn:hover, .you__btn[aria-expanded='true'] { background: var(--surface-2); }
+.you__initials::before { content: attr(data-initials); }
+.you__initials {
+  display: inline-flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-ink); font-size: var(--fs-1); font-weight: 600; letter-spacing: 0.04em;
+}
+.you__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.you--rail .you__btn { width: 100%; border-radius: var(--r-m); padding: var(--s-1) var(--s-2); }
+/* The rail's menu opens above the button, at the foot of the rail. */
+.you__menu {
+  position: absolute; bottom: calc(100% + var(--s-1)); left: 0; right: 0; z-index: 50; padding: var(--s-2) var(--s-1) var(--s-1);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); box-shadow: var(--shadow-raised);
+}
+.you__email { padding: 0 var(--s-3) var(--s-2); font-size: var(--fs-1); overflow-wrap: anywhere; }
+.you__list { list-style: none; margin: 0; padding: 0; }
+.you__row {
+  display: flex; align-items: center; gap: var(--s-3); width: 100%; min-height: 48px; padding: var(--s-2) var(--s-3); border: 0;
+  border-radius: var(--r-s); background: transparent; color: var(--ink); font: inherit; text-align: left; text-decoration: none; cursor: pointer;
+}
+.you__row:hover { background: var(--surface-2); }
+.you__row svg { flex: none; color: var(--ink-muted); }
+.you--bar .you__row { min-height: 56px; }

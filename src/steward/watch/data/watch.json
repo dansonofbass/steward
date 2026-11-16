@@ -1,0 +1,35 @@
+{
+  "scam": [
+    {"kind": "gift_card", "word": "gift card", "title": "{amount} gift card at {payee}",
+     "words": ["GIFT CARD", "GIFTCARD", "GIFT CRD", "VANILLA GIFT", "ONEVANILLA", "GREEN DOT", "GOOGLE PLAY",
+               "ITUNES", "APPLE GIFT", "PREPAID CARD"]},
+    {"kind": "wire", "word": "wire transfer", "title": "{amount} wire transfer to {payee}",
+     "words": ["WIRE TRANSFER", "WIRE TRANS", "WIRE OUT", "OUTGOING WIRE", "INTL WIRE", "WIRE TO"]},
+    {"kind": "crypto", "word": "crypto exchange", "title": "{amount} to {payee}, a crypto exchange",
+     "words": ["COINBASE", "KRAKEN", "BINANCE", "CRYPTO.COM", "GEMINI TRUST", "BITCOIN", "BTC ATM", "COINME",
+               "BITPAY", "COINFLIP"]},
+    {"kind": "money_transfer", "word": "money-transfer service", "title": "{amount} sent through {payee}",
+     "words": ["WESTERN UNION", "MONEYGRAM", "RIA MONEY", "REMITLY", "WORLDREMIT", "XOOM"]},
+    {"kind": "remote_support", "word": "remote computer support",
+     "title": "{amount} to {payee}, a remote computer support service",
+     "words": ["TECH SUPPORT", "PC SUPPORT", "COMPUTER SUPPORT", "REMOTE SUPPORT", "ANYDESK", "TEAMVIEWER"]}
+  ],
+  "methods": [
+    {"method": "zelle", "pattern": "\\bZELLE\\b"},
+    {"method": "wire", "pattern": "\\bWIRE\\b"},
+    {"method": "bill_pay", "pattern": "\\bBILL ?PAY(MENT)?\\b|\\bBILLPAY\\b"},
+    {"method": "check", "pattern": "^(CHECK|CHK)\\s*#?\\s*\\d{2,}"}
+  ],
+  "recipient": {"to": "\\bTO\\s+", "name": "[A-Z][A-Z .,'&-]*",
+                "end": "\\s+(?:ON|CONF|REF|ID|MEMO|FOR)\\b|\\s*#|\\s+\\S*\\d|$"},
+  "cash": ["ATM WITHDRAWAL", "ATM WDL", "ATM WD", "ATM W/D", "ATM CASH", "CASH WITHDRAWAL", "CASH WDRL",
+           "CASH ADVANCE"],
+  "lead": ["DEBIT CARD PURCHASE", "RECURRING PAYMENT", "POS PURCHASE", "DEBIT CARD", "CHECK CARD", "CHECKCARD",
+           "PURCHASE", "POS", "SQ", "TST"],
+  "drop": ["GIFT CARD", "GIFTCARD", "GIFT CRD", "PREPAID CARD"],
+  "states": ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS",
+             "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC",
+             "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"],
+  "title_words": ["LTD"],
+  "payment_apps": ["Zelle", "Venmo", "PayPal", "Cash App"]
+}

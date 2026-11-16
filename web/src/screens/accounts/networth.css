@@ -1,0 +1,17 @@
+/* Net worth over time (plan subpages decision 6), in its own chunk on Accounts. One drawing at the size useWide picks: a narrow one for
+   a phone and a wide one from 900 px, so the labels come out about the same size on both. */
+.nw-chart { display: block; width: 100%; height: auto; overflow: visible; }
+.nw-chart text { font: 14px var(--font); fill: var(--ink-muted); }
+.nw-chart .nw-grid { stroke: var(--line); stroke-width: 1; }
+.nw-chart .nw-line { fill: none; stroke: var(--accent-text); stroke-width: 2.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.nw-chart.nw-wide { max-width: 464px; }   /* the wide viewBox width: never drawn bigger than drawn, so text stays 12.5px */
+.nw-chart.nw-wide text { font-size: 12.5px; }
+
+/* The last 90 days, small, under the years (the sparkline that used to sit on Home). */
+.nw-recent { margin-top: var(--s-4); display: flex; flex-direction: column; gap: var(--s-1); max-width: 464px; }
+.nw-recent p { margin: 0; }
+
+/* The investable part of net worth, shaded under the line (investment views spec). */
+.nw-chart .nw-band { fill: color-mix(in srgb, var(--accent) 16%, transparent); stroke: none; }
+.nw-key { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent); }

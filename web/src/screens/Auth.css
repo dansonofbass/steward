@@ -1,0 +1,20 @@
+/* Sign-in, forgot and reset. Ported from the approved login mockup; every value is a token. */
+.login { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: var(--s-8) var(--s-4) var(--s-7); gap: var(--s-6); }
+/* Sign-in: the mark over the wordmark, above the card. */
+.login__brand { display: flex; flex-direction: column; align-items: center; gap: var(--s-3); }
+.login__panel { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: var(--s-5); }
+.wordmark { font: 400 var(--fs-6)/1.05 var(--font-display); letter-spacing: -0.01em; }
+.wordmark--small { font-size: var(--fs-4); }
+.wordmark--small a { color: inherit; text-decoration: none; }
+.login__heading { margin-top: var(--s-3); }
+.login__lede { color: var(--ink-muted); margin-top: var(--s-2); }
+.btn--block { width: 100%; }
+.or { display: flex; align-items: center; gap: var(--s-3); color: var(--ink-muted); font-size: var(--fs-1); }
+.or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.login form { display: flex; flex-direction: column; gap: var(--s-4); }
+.login__forgot { align-self: flex-start; font-size: var(--fs-2); }
+.login__passkey { display: flex; flex-direction: column; gap: var(--s-3); }
+@media (min-width: 900px) {
+  .login { justify-content: center; padding-top: var(--s-7); }
+  .login__panel--card { padding: var(--s-6); background: var(--surface); box-shadow: 0 0 0 1px var(--line), var(--shadow-raised); border-radius: var(--r-l); }
+}

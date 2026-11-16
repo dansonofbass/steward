@@ -1,0 +1,4 @@
+.card { background: var(--surface); box-shadow: 0 0 0 1px var(--line); border-radius: var(--r-l); padding: var(--s-4); }
+
+/* A fieldset used as a card (Appearance's groups) keeps the card's ring only, not the browser's groove border too. */
+fieldset.card { border: 0; }

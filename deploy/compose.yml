@@ -1,0 +1,251 @@
+# Steward with Docker Compose (docs/quickstart/install.md). In this folder:
+#   cp .env.example .env && chmod 600 .env          then set STEWARD_BASE_URL in .env
+#   mkdir -p data && sudo chown 1000:1000 data       Steward runs as user 1000 and keeps everything in data/
+#   docker compose run --rm steward steward setup     the first run: prints a one-time link to make your account
+#   docker compose up -d
+# Alone, Steward answers on this box only, at http://localhost:8420. To reach it from a phone, pick one way in with
+# COMPOSE_PROFILES in .env (docs/guides/access.md):
+#   tailscale  Tailscale's HTTPS, on your tailnet only (recommended). Its auth key goes in tailscale.env.
+#   domain     your own domain, through Caddy. proxy.env holds the name and how Caddy proves it's yours.
+#   lan        HTTPS on your own network, from Caddy's own certificate authority. proxy.env holds the name.
+#   gateway    Ask (Claude), through the gateway on this box; add ollama for a local model (docs/guides/gateway.md).
+#   gateway-nvidia, gateway-amd   the gateway and Ollama on a GPU, instead of gateway and ollama. The GPU gateway is built on this machine (docs/guides/gpu.md).
+# The images are published at the first release; until then they can't be pulled.
+name: steward
+
+x-proxy: &proxy
+  image: ghcr.io/steward-money/steward-proxy:0.1.0
+  restart: unless-stopped
+  env_file:
+    - path: proxy.env
+      required: false
+  read_only: true
+  tmpfs:
+    - /tmp
+  # Root in the container, with every capability dropped but binding 443 and 80, so it works on kernels without
+  # unprivileged low ports too. It writes only its certificates, in the caddy-data volume.
+  user: "0:0"
+  cap_drop: ["ALL"]
+  cap_add: ["NET_BIND_SERVICE"]
+  security_opt: ["no-new-privileges:true"]
+  volumes:
+    - caddy-data:/data
+  depends_on:
+    - steward
+
+x-gateway: &gateway
+  image: ghcr.io/steward-money/steward-gateway:0.1.0
+  restart: unless-stopped
+  volumes:
+    - gateway-config:/etc/steward-gateway
+    - gateway-state:/var/lib/steward-gateway
+    - gateway-models:/var/cache/steward-gateway
+  networks:
+    - gateway-private
+    - gateway-egress
+  # A service name such as gateway or ollama is answered only by Compose, never by this box's resolver.
+  dns_search: ["."]
+  dns_opt: ["ndots:1"]
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  # The first start downloads the redaction model before the gateway listens.
+  healthcheck:
+    test: ["CMD", "python", "-c", "import socket;socket.create_connection(('127.0.0.1', 8430), 5).close()"]
+    interval: 60s
+    timeout: 10s
+    retries: 3
+    start_period: 15m
+
+x-ollama: &ollama
+  image: ollama/ollama:0.40.15@sha256:0e59999e0e8f9fd4e704bd788a89b7e4cad399367fb1365f8c102ac662288761
+  restart: unless-stopped
+  volumes:
+    - ollama-models:/root/.ollama
+  networks:
+    - gateway-private
+    - gateway-egress
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+
+services:
+  steward:
+    image: ghcr.io/steward-money/steward:0.1.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8420:8420"
+    env_file: .env
+    volumes:
+      - ./data:/data
+      # Backups on another disk: uncomment this, and set STEWARD_BACKUP_DIR=/backups in .env.
+      # - /path/to/another/disk/steward-backups:/backups
+    networks:
+      - default
+      - gateway-private
+    # A service name such as gateway or ollama is answered only by Compose, never by this box's resolver.
+    dns_search: ["."]
+    dns_opt: ["ndots:1"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8420/api/health')"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+
+  tailscale:
+    image: tailscale/tailscale:v1.104.1@sha256:87c55d6be56ad85b3d8bceca5f87f73de288c609131460dd1be1874c250cc41d
+    profiles: ["tailscale"]
+    restart: unless-stopped
+    env_file:
+      - path: tailscale.env
+        required: false
+    environment:
+      TS_HOSTNAME: steward
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "true"
+      TS_ACCEPT_DNS: "false"
+      TS_AUTH_ONCE: "true"
+      TS_SERVE_CONFIG: /config/serve.json
+      # tailscaled uploads its own logs to Tailscale unless told not to. The cost: Tailscale's support can't read them.
+      TS_TAILSCALED_EXTRA_ARGS: --no-logs-no-support
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./tailscale/serve.json:/config/serve.json:ro
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "tailscale", "ip", "-4"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      - steward
+
+  # Your own domain. STEWARD_PROXY_BIND in .env is the address it listens on: 127.0.0.1 (this box only) until you set
+  # this box's LAN address. With STEWARD_TLS=http, 80 and 443 must be open to the internet.
+  proxy:
+    <<: *proxy
+    profiles: ["domain"]
+    ports:
+      - "${STEWARD_PROXY_BIND:-127.0.0.1}:443:443"
+      - "${STEWARD_PROXY_BIND:-127.0.0.1}:80:80"
+
+  # LAN only: the same proxy with Caddy's own certificate authority (docs/guides/access.md, "LAN only").
+  proxy-lan:
+    <<: *proxy
+    profiles: ["lan"]
+    environment:
+      STEWARD_TLS: internal
+    ports:
+      - "${STEWARD_PROXY_BIND:-127.0.0.1}:443:443"
+
+  # Ask, through the gateway on this box (docs/guides/gateway.md). It publishes no port. Steward reaches it at
+  # http://gateway:8430 on gateway-private, which has no way out; it reaches Claude through gateway-egress.
+  gateway:
+    <<: *gateway
+    profiles: ["gateway"]
+
+  # A local model for the gateway: categorizing, chat titles and scanned statements. The gateway's start line
+  # (docker compose logs gateway) names the models to pull with docker compose exec ollama ollama pull <model>.
+  ollama:
+    <<: *ollama
+    profiles: ["ollama"]
+
+  # The gateway on an NVIDIA GPU (docs/guides/gpu.md). Built on this machine from Steward's release source the first
+  # time (10 to 20 minutes, several GB); Steward never publishes it.
+  gateway-nvidia:
+    <<: *gateway
+    image: steward-gateway-cuda:local
+    pull_policy: build
+    build:
+      context: https://github.com/steward-money/steward.git#v0.1.0
+      dockerfile: deploy/gateway/Dockerfile.cuda
+      args:
+        STEWARD_GPU_LICENSE_ACCEPTED: ${STEWARD_GPU_LICENSE_ACCEPTED:-}
+    profiles: ["gateway-nvidia"]
+    environment:
+      STEWARD_GPU_LICENSE_ACCEPTED: ${STEWARD_GPU_LICENSE_ACCEPTED:-}
+    networks:
+      gateway-private:
+        aliases: ["gateway"]
+      gateway-egress:
+        aliases: ["gateway"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
+
+  # Ollama on the same NVIDIA GPU (docs/guides/gpu.md). It starts only once its gateway is healthy, so neither runs
+  # until the license is accepted. Its image is Ollama's, under Ollama's own license; Compose may pull it before that.
+  ollama-nvidia:
+    <<: *ollama
+    profiles: ["gateway-nvidia"]
+    networks:
+      gateway-private:
+        aliases: ["ollama"]
+      gateway-egress: {}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
+    depends_on:
+      gateway-nvidia:
+        condition: service_healthy
+
+  # The gateway on an AMD GPU (docs/guides/gpu.md); not yet tested on real hardware. Built on this machine from
+  # Steward's release source the first time (10 to 20 minutes, several GB); Steward never publishes it.
+  gateway-amd:
+    <<: *gateway
+    image: steward-gateway-rocm:local
+    pull_policy: build
+    build:
+      context: https://github.com/steward-money/steward.git#v0.1.0
+      dockerfile: deploy/gateway/Dockerfile.rocm
+      args:
+        STEWARD_GPU_LICENSE_ACCEPTED: ${STEWARD_GPU_LICENSE_ACCEPTED:-}
+    profiles: ["gateway-amd"]
+    environment:
+      STEWARD_GPU_LICENSE_ACCEPTED: ${STEWARD_GPU_LICENSE_ACCEPTED:-}
+    networks:
+      gateway-private:
+        aliases: ["gateway"]
+      gateway-egress:
+        aliases: ["gateway"]
+    devices: ["/dev/kfd", "/dev/dri"]
+    group_add: ["${STEWARD_RENDER_GID:-video}"]
+
+  # Ollama on the same AMD GPU (docs/guides/gpu.md). It starts only once its gateway is healthy. Its image is Ollama's,
+  # under Ollama's own license; Compose may pull it before the license is accepted.
+  ollama-amd:
+    <<: *ollama
+    image: ollama/ollama:0.40.15-rocm@sha256:557fbb820145948aaba383e8214e18bb3f597f4fffb08585458c70c253e7c342
+    profiles: ["gateway-amd"]
+    networks:
+      gateway-private:
+        aliases: ["ollama"]
+      gateway-egress: {}
+    devices: ["/dev/kfd", "/dev/dri"]
+    depends_on:
+      gateway-amd:
+        condition: service_healthy
+
+networks:
+  # Steward, the gateway and Ollama; nothing on it reaches the internet.
+  gateway-private:
+    internal: true
+  # The gateway's and Ollama's way out: Claude, Hugging Face and Ollama's model library.
+  gateway-egress: {}
+
+volumes:
+  tailscale-state: {}
+  caddy-data: {}
+  gateway-config: {}
+  gateway-state: {}
+  gateway-models: {}
+  ollama-models: {}

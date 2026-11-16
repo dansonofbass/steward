@@ -1,0 +1,37 @@
+/* The first run (guided setup spec 2): one column on a phone, a grid of two cards from 720px. Tokens only. */
+.welcome { gap: var(--s-5); }
+.welcome__head { display: flex; flex-direction: column; gap: var(--s-2); }
+.welcome__hello, .welcome__step { display: flex; flex-direction: column; gap: var(--s-4); min-width: 0; }
+.welcome__hello { align-items: flex-start; }
+.welcome__title { margin: 0; overflow-wrap: anywhere; }
+.welcome__lede { margin: 0; font-size: var(--fs-3); }
+.welcome__acorn { flex: none; }
+.welcome__headline { display: flex; align-items: center; gap: var(--s-3); }
+.welcome__said { min-height: 0; }
+.welcome__said:empty { display: none; }
+.welcome__said p { margin: 0; color: var(--ink-muted); }
+.welcome__zone { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.welcome__actions { display: flex; flex-direction: column; gap: var(--s-3); align-self: stretch; }
+.welcome__cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+.welcome__card { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-3); min-width: 0; }
+.welcome__card h2 { margin: 0; }
+.welcome__card p { margin: 0; }
+.welcome__done { display: flex; align-items: center; gap: var(--s-2); color: var(--ink); }
+.welcome__done .i { color: var(--accent-text); flex: none; }
+.welcome__start { align-self: flex-start; }
+.welcome__foot { display: flex; align-items: center; justify-content: flex-end; gap: var(--s-4); flex-wrap: wrap; }
+.welcome__later { margin: 0; }
+.welcome__rows { display: flex; flex-direction: column; gap: var(--s-4); }
+.welcome__row { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
+.welcome__row .welcome__said { display: flex; align-items: center; gap: var(--s-2); padding-inline: var(--s-3); }
+.welcome__row .welcome__said:empty { display: none; }
+.welcome__panel { padding: var(--s-3); }
+.welcome__planted { align-items: flex-start; }
+@media (min-width: 720px) {
+  .welcome__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .welcome__actions { flex-direction: row; align-self: flex-start; }
+}
+.welcome__skip { margin: 0; align-self: flex-end; }
+/* Inline, not inline-flex: a flex box takes the icon's baseline and lifts the word off the line of text. */
+.welcome__nav { white-space: nowrap; }
+.welcome__nav .i { color: var(--accent-text); vertical-align: -0.2em; }

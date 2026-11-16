@@ -1,0 +1,8 @@
+/* The mark (Mark.tsx). Its colours follow the sky: tokens.css sets --mark-* in the dark phases; light phases fall back
+   to the accent for the tile and light tints for the acorn and its leaf. */
+.brand-mark { display: block; flex: none; }
+.brand-mark__tile { fill: var(--mark-tile, var(--accent)); }
+.brand-mark__ink { fill: var(--mark-ink, #FBF3F6); }
+.brand-mark__soft { fill: var(--mark-soft, #E8C9D6); }
+.brand-mark__ink-line { stroke: var(--mark-ink, #FBF3F6); }
+.brand-mark__tile-line { stroke: var(--mark-tile, var(--accent)); }

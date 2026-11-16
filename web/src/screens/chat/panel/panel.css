@@ -1,0 +1,11 @@
+/* Ask about this (phase 13 spec, The panel): Ask inside the Sheet (a bottom sheet up to 85vh on phones, scrolling
+   inside; 420 px on the right from 900 px). The chip sits under the title; the box is the panel's foot. */
+.askpanel .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.askpanel .sheet__body { display: flex; flex-direction: column; gap: var(--s-4); }
+.askpanel__chip:empty { display: none; }
+.askpanel .askp__foot { padding: var(--s-3) 0 0; background: transparent; }
+/* The first-use tip: above the box on a phone; beside the panel, to its left, from 900 px (First-use highlight). */
+@media (min-width: 900px) {
+  .askpanel .ask-tour { position: fixed; right: calc(420px + var(--s-4)); bottom: var(--s-7); width: 300px;
+    box-shadow: var(--shadow-raised), inset 0 0 0 2px var(--warn); }
+}

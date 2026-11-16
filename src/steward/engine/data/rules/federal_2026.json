@@ -1,0 +1,38 @@
+{
+  "topic": "federal",
+  "year": 2026,
+  "checked": "2026-10-21",
+  "source": [
+    "IRS Rev. Proc. 2025-32, sections 4.01 (tables 1 and 3), 4.03, 4.05, 4.14, 4.26 and 2.12, https://www.irs.gov/pub/irs-drop/rp-25-32.pdf",
+    "IRS Form 1040-ES (2026), What's New and line 12b instructions: deduction for people 65 and over, charitable deduction without itemizing, 0.5% charitable floor, limit on itemized deductions, 110% prior-year rule, https://www.irs.gov/pub/irs-pdf/f1040es.pdf",
+    "26 U.S.C. 164(b)(7)(A)(ii) and (B)(ii)(II): state and local tax cap $40,400, phase-down above $505,000 for 2026, https://www.law.cornell.edu/uscode/text/26/164",
+    "26 U.S.C. 86 (Social Security thresholds, not indexed), 1411 (net investment income tax), 1401(b)(2) and 3101(b)(2) (Additional Medicare Tax), 213(a) (7.5% medical floor), 1211(b) (capital loss limit), 121(b) (home sale exclusion, not indexed), 24(h) (child tax credit phase-out, $500 other-dependent credit), 68 (2/37 limit on itemized deductions), 6654(d) (estimated tax safe harbor)",
+    "26 U.S.C. 6072(a) (returns due the 15th day of April after the year); IRS, Get an extension to file your tax return (\"until October 15 to file\"), https://www.irs.gov/filing/get-an-extension-to-file-your-tax-return; Form 1040-ES (2026): four equal payments, at least $1,000 owed, the fourth not needed when the return is filed by February 1, 2027"
+  ],
+  "brackets": {
+    "mfj": [[0, 0.10], [24800, 0.12], [100800, 0.22], [211400, 0.24], [403550, 0.32], [512450, 0.35], [768700, 0.37]],
+    "single": [[0, 0.10], [12400, 0.12], [50400, 0.22], [105700, 0.24], [201775, 0.32], [256225, 0.35], [640600, 0.37]]
+  },
+  "standard_deduction": {"mfj": 32200, "single": 16100},
+  "aged_additional": {"mfj": 1650, "single": 2050},
+  "ltcg": {"mfj": [98900, 613700], "single": [49450, 545500]},
+  "ss_thresholds": {"mfj": [32000, 44000], "single": [25000, 34000]},
+  "medical_floor": 0.075,
+  "capital_loss_limit": 3000,
+  "home_sale_exclusion": {"mfj": 500000, "single": 250000},
+  "salt_cap": {"amount": 40400, "threshold": 505000, "rate": 0.30, "floor": 10000},
+  "over_65_deduction": {"amount": 6000, "threshold": {"mfj": 150000, "single": 75000}, "rate": 0.06, "last_year": 2028},
+  "charity": {"non_itemizer_cap": {"mfj": 2000, "single": 1000}, "itemized_floor": 0.005},
+  "itemized_limit": {"numerator": 2, "denominator": 37},
+  "qbi": {"rate": 0.20, "threshold": {"mfj": 403500, "single": 201750}, "phase_in": {"mfj": 150000, "single": 75000},
+          "minimum_deduction": 400, "minimum_qbi": 1000, "wage_limit_rate": 0.50},
+  "child_credit": {"per_child": 2200, "refundable_per_child": 1700, "other_dependent": 500, "child_under_age": 17,
+                   "phase_out_start": {"mfj": 400000, "single": 200000}, "phase_out_per_1000": 50,
+                   "earned_income_floor": 2500, "refundable_rate": 0.15},
+  "niit": {"rate": 0.038, "threshold": {"mfj": 250000, "single": 200000}},
+  "additional_medicare": {"rate": 0.009, "threshold": {"mfj": 250000, "single": 200000}},
+  "estimates": {"current_year_share": 0.90, "prior_year_share": 1.00, "high_income_prior_year_share": 1.10,
+                "high_income_agi": 150000, "due": ["04-15", "06-15", "09-15", "01-15"],
+                "shares": [0.25, 0.25, 0.25, 0.25], "minimum_owed": 1000, "skip_fourth_if_filed_by": "02-01"},
+  "returns": {"due": "04-15", "extended_due": "10-15"}
+}

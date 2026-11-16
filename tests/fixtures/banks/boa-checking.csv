@@ -1,0 +1,11 @@
+Description,,Summary Amt.
+Beginning balance as of 10/14/2024,,"1,500.00"
+Total credits,,"2,100.00"
+Total debits,,"-172.52"
+Ending balance as of 10/31/2024,,"3,427.48"
+
+Date,Description,Amount,Running Bal.
+10/14/2024,Beginning balance as of 10/14/2024,,"1,500.00"
+10/15/2024,"NORTHWIND PAYROLL DES:PAYROLL","2,100.00","3,600.00"
+10/16/2024,"GREENLEAF MARKET 0412","-54.12","3,545.88"
+10/17/2024,"CITY POWER DES:AUTOPAY","-118.40","3,427.48"

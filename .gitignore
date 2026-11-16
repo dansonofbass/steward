@@ -1,0 +1,33 @@
+data/
+!src/steward/data/
+!src/steward/engine/data/
+!src/steward/inventory/data/
+!src/steward/watch/data/
+*.db
+*.env
+.env*
+node_modules/
+__pycache__/
+.venv/
+!.env.example
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+web/e2e/.data/
+*.tsbuildinfo
+web/e2e/screenshots-books/
+web/e2e/screenshots-inventory/
+web/e2e/screenshots-watching/
+web/e2e/screenshots-chat/
+web/e2e/screenshots-same/
+web/e2e/screenshots-taxes/
+web/e2e/screenshots-gate/
+web/e2e/screenshots-16i/
+*.token
+history.key
+
+# Local agent workspaces (SDD ledgers, brainstorm screens)
+.superpowers/
+# Playwright MCP's screenshots and logs, which can show real data
+.playwright-mcp/

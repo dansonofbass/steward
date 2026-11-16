@@ -1,0 +1,36 @@
+// The "Same account?" card and Merge into… (same-account spec, Asking and Merging). The spec's copy is verbatim; the
+// one/none variants are the plan's (Engineering choice 14). **…** is bold (lib/receipt.ts rich()).
+export const SAME_ACCOUNT = 'Same account?';
+export const HELD_LINE = '**{name}** came in again from **{bank}** through another login. It looks like your **{candidate}** ({where}).';
+export const SAME_BALANCE_AND = 'Same balance, and {n} of its transactions match.';
+export const SAME_BALANCE_AND_ONE = 'Same balance, and 1 of its transactions matches.';
+export const SAME_BALANCE = 'Same balance.';
+export const N_OF_ITS_MATCH = '{n} of its transactions match.';
+export const ONE_OF_ITS_MATCHES = '1 of its transactions matches.';
+export const PAIR_LINE = '**{candidate}** and **{name}** at {bank} look like the same account: {evidence}.';
+export const N_MATCH = '{n} transactions match';
+export const ONE_MATCHES = '1 transaction matches';
+export const PAIR_SAME_BALANCE = 'they have the same balance';
+export const MERGE_THEM = 'Merge them';
+export const THEYRE_DIFFERENT = "They're different";
+export const VIEWER = 'A manager of this book can answer this.';
+export const MERGED = 'Merged. {name} now gets updates from both logins; {dropped} and {kept}.';
+export const DROPPED_N = '{n} copies were dropped';
+export const DROPPED_ONE = '1 copy was dropped';
+export const DROPPED_NONE = 'no copies were dropped';
+export const KEPT_N = '{n} new transactions kept';
+export const KEPT_ONE = '1 new transaction kept';
+export const KEPT_NONE = 'nothing new was kept';
+export const CHEER = 'One account, as it should be.';
+export const KEPT_APART = 'Kept apart.';
+export const MERGE_TITLE = 'Merge {name} into…';
+export const MERGE_BODY = 'Its feed and history join the account you choose, and this one goes. You can undo it for 15 minutes.';
+export const MERGE_CHOOSE = 'Merge it into';
+export const COUNTING = 'Counting what matches…';
+export const WILL_DROP_N = '{n} transactions match and will be dropped';
+export const WILL_DROP_ONE = '1 transaction matches and will be dropped';
+export const WILL_DROP_NONE = 'No transactions match';
+export const WILL_MOVE_N = '{n} will move over';
+export const WILL_MOVE_ONE = '1 will move over';
+export const WILL_MOVE_NONE = 'nothing will move over';
+export const MERGE_CONFIRM = 'Merge into {name}';

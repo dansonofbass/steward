@@ -1,0 +1,12 @@
+.topbar {
+  position: sticky; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: var(--s-2);
+  min-height: 56px; padding: 0 var(--s-2) 0 0; background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.topbar .books--bar { position: static; flex: 1; min-width: 0; border-bottom: 0; background: transparent; }
+/* The book's name, for a person in one book; in the top bar and at the top of the rail. */
+.topbar__book, .nav__book {
+  min-width: 0; font-family: var(--font-display); font-size: var(--fs-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.topbar__book { padding: 0 var(--s-4); }
+.nav__book { display: block; padding: var(--s-2) var(--s-3); }
+@media (min-width: 900px) { .topbar { display: none; } }

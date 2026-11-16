@@ -1,0 +1,18 @@
+{
+  "report": "2026 Trustees Report",
+  "trust_fund_cut_year": 2034,
+  "trust_fund_payable": 0.83,
+  "oasi_only": {"depletion_year": 2032, "payable": 0.78},
+  "formula_year": 2026,
+  "eligibility_age": 62,
+  "earliest_claim_age": 62,
+  "latest_claim_age": 70,
+  "fra_months_born_1960_or_later": 804,
+  "early_rate_first_36_months": 0.005555555555555556,
+  "early_rate_after_36_months": 0.004166666666666667,
+  "delayed_credit_per_year": 0.08,
+  "spousal_share": 0.5,
+  "spousal_early_rate_first_36_months": 0.006944444444444444,
+  "spousal_early_rate_after_36_months": 0.004166666666666667,
+  "pia_rates": [0.9, 0.32, 0.15]
+}

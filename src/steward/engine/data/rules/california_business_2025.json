@@ -1,0 +1,17 @@
+{
+  "topic": "california_business",
+  "year": 2025,
+  "checked": "2026-10-21",
+  "source": [
+    "FTB, S corporations: 'We tax every S corporation that has California source income 1.5%'; 'S corporations are subject to the annual $800 minimum franchise tax' (page last updated 05/28/2026), https://www.ftb.ca.gov/file/business/types/corporations/s-corporations.html",
+    "EDD, Rates and Withholding: 'The SDI withholding rate for 2025 is 1.2 percent'; 'Effective January 1, 2024, Senate Bill 951 removes the taxable wage limit and maximum withholdings for each employee subject to SDI contributions', https://edd.ca.gov/en/payroll_taxes/rates_and_withholding/",
+    "EDD, Rates and Withholding: 'New employers are assigned a 3.4 percent UI rate for two to three years.'; 'The taxable wage limit is $7,000 per employee, per calendar year.'; 'The ETT rate for 2026 is 0.1 percent.'; 'The ETT taxable wage limit is $7,000 per employee, per calendar year.' (checked 2026-10-21; the page states the current year, and the 2025 rates are the same statutory 3.4% and 0.1%), https://edd.ca.gov/en/payroll_taxes/rates_and_withholding/"
+  ],
+  "scorp_franchise_rate": 0.015,
+  "minimum_franchise_tax": 800,
+  "sdi_rate": 0.012,
+  "sdi_wage_limit": null,
+  "new_employer_ui_rate": 0.034,
+  "ett_rate": 0.001,
+  "ui_ett_wage_limit": 7000
+}

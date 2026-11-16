@@ -1,0 +1,11 @@
+/* The 12-month strip on Home: lazy, so its CSS is too. */
+.mstrip { display: grid; gap: var(--s-1); padding: var(--s-2) 0; color: inherit; text-decoration: none; border-radius: var(--r-s); }
+.mstrip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.strip { display: block; width: 100%; height: 36px; overflow: visible; }
+.strip .grid { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.strip .in { fill: var(--money-in); }
+.strip .out { fill: var(--chart-out); }
+.strip .so-far { opacity: 0.45; }
+.strip__hit { fill: transparent; pointer-events: all; }
+.mstrip__foot { display: flex; justify-content: space-between; gap: var(--s-2); font-size: var(--fs-1); color: var(--ink-muted); }
+.mstrip__readout { color: var(--ink); }

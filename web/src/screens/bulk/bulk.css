@@ -1,0 +1,22 @@
+/* Bulk sort's bar and result line, pinned above the phone's tab bar, or at the foot of the page beside the rail. */
+.bulk {
+  position: fixed; z-index: 45; left: var(--s-3); right: var(--s-3); bottom: calc(57px + env(safe-area-inset-bottom) + var(--s-3));
+  display: flex; flex-direction: column; align-items: center; gap: var(--s-2); pointer-events: none;
+}
+@media (min-width: 900px) { .bulk { left: calc(220px + var(--s-6)); right: var(--s-6); bottom: var(--s-5); } }
+.bulk > * { pointer-events: auto; width: 100%; max-width: 640px; }
+.bulk__bar, .bulk__said {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4);
+  border-radius: var(--r-l); background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line), var(--shadow-raised);
+}
+.bulk__count { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; margin: 0; font-variant-numeric: tabular-nums; }
+.bulk__warn { color: var(--danger); font-size: var(--fs-1); }
+.bulk__error { order: 3; flex-basis: 100%; margin: 0 0 var(--s-1); font-size: var(--fs-1); }
+.bulk__actions { display: flex; gap: var(--s-2); flex: none; }
+.bulk__said { position: relative; min-height: 60px; }
+.bulk__facts { flex: 1 1 auto; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+/* The stamp's place, as on a Review receipt: it fits the rotated SORTED stamp beside the words. */
+.bulk__stamp { position: relative; flex: none; width: 104px; height: 44px; }
+.bulk__stamp > .cel-stamp { top: 8px; right: 4px; }
+/* The category's moment rises above the line, clear of Undo. */
+.bulk__said > .cel-moment { right: auto; left: var(--s-4); bottom: calc(100% + var(--s-2)); }

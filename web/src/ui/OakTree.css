@@ -1,0 +1,6 @@
+/* The growth tree (OakTree.tsx): tokens.css sets --tree-* in the dark phases; light uses these. */
+.oak { display: block; flex: none; overflow: visible; }
+.oak__trunk { fill: none; stroke: var(--tree-trunk, #8A6A52); stroke-linecap: round; }
+.oak__crown { fill: var(--tree-crown, #5E9A6C); }
+.oak__crown-2 { fill: var(--tree-crown-2, #477E57); }
+.oak__acorn { fill: var(--acorn-nut, #7C3352); }

@@ -1,0 +1,14 @@
+{
+  "topic": "payroll",
+  "year": 2025,
+  "checked": "2026-10-20",
+  "source": [
+    "IRS Instructions for Schedule SE (2025): maximum earnings subject to the social security part $176,100, https://www.irs.gov/pub/irs-pdf/i1040sse.pdf",
+    "SSA, Contribution and Benefit Base, https://www.ssa.gov/oact/cola/cbb.html",
+    "26 U.S.C. 1401, 1402(a)(12), 1402(b), 3101(a) and (b)(1), 3111(a) and (b) (employer 6.2% and 1.45%)"
+  ],
+  "wage_base": 176100,
+  "se": {"net_factor": 0.9235, "oasdi_rate": 0.124, "medicare_rate": 0.029, "minimum_net_earnings": 400},
+  "employee": {"oasdi_rate": 0.062, "medicare_rate": 0.0145},
+  "employer": {"oasdi_rate": 0.062, "medicare_rate": 0.0145}
+}

@@ -1,0 +1,79 @@
+.nav { background: var(--surface); border-color: var(--line); border-style: solid; border-width: 0; }
+.nav__list { list-style: none; margin: 0; padding: 0; display: flex; }
+.nav__item { flex: 1; }
+.nav__link {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-1);
+  min-height: 56px; padding: var(--s-2); color: var(--ink-muted); text-decoration: none; font-size: var(--fs-1);
+  transition: color var(--dur-quick) var(--ease), background-color var(--dur-quick) var(--ease), opacity var(--dur-quick) var(--ease);
+}
+.nav__link:active { background: var(--surface-2); opacity: 0.8; }
+.nav__link.active { color: var(--accent-text); font-weight: 600; }
+.nav__count {
+  min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--accent); color: var(--accent-ink);
+  font-size: var(--fs-1); font-weight: 600; line-height: 20px; text-align: center; font-variant-numeric: tabular-nums;
+}
+/* Home's flag count (decision 5): the danger colour while any flag not Done is urgent; plum (the accent) otherwise. */
+.nav__count--urgent { background: var(--danger); color: var(--bg); }
+.nav--bar, .nav--auto { border-top-width: 1px; padding-bottom: env(safe-area-inset-bottom); }
+/* Badge sits just past the 24 px glyph's right edge (glyph spans 50% ± 12px) with a 2 px gap, level with its top, so it never covers the strokes. */
+.nav--bar .nav__count, .nav--auto .nav__count { position: absolute; top: 4px; left: calc(50% + 14px); }
+.nav--auto { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; }
+
+.nav--rail { border-top-width: 0; border-right-width: 1px; padding: var(--s-4) var(--s-2); }
+.nav--rail .nav__list { flex-direction: column; gap: var(--s-1); }
+.nav--rail .nav__link { flex-direction: row; justify-content: flex-start; gap: var(--s-3); padding: var(--s-2) var(--s-3); border-radius: var(--r-m); font-size: var(--fs-2); }
+.nav--rail .nav__link.active { background: var(--surface-2); }
+.nav--rail .nav__count { margin-left: auto; }
+
+@media (min-width: 900px) {
+  .nav--auto { display: flex; flex-direction: column; top: 0; right: auto; width: 220px; border-top-width: 0; border-right-width: 1px; padding: var(--s-4) var(--s-2); }
+  .nav--auto .nav__list { flex-direction: column; gap: var(--s-1); }
+  .nav--auto .nav__link { flex-direction: row; justify-content: flex-start; gap: var(--s-3); padding: var(--s-2) var(--s-3); border-radius: var(--r-m); font-size: var(--fs-2); }
+  .nav--auto .nav__link.active { background: var(--surface-2); }
+  .nav--auto .nav__count { position: static; margin-left: auto; }
+}
+
+/* Six tabs on the phone (a parent book): labels stay on one line at 320 px. They measured 248 px of text there;
+   Nav.css.test.ts keeps a margin for longer labels. */
+@media (max-width: 899px) {
+  .nav__link { padding: var(--s-2) 2px; font-size: 12px; white-space: nowrap; }
+  /* The last tab's count hugs the bar's right edge, so "99+" never runs past the phone (Review Focus #5). */
+  .nav--auto .nav__item:last-child .nav__count { left: auto; right: 4px; }
+}
+
+/* The mark and the word at the very top of the rail (a link to the book's Home). Quiet: no hover motion, the word in
+   ink, the display serif. The phone bar has no room for it. */
+.nav__brand { display: none; }
+.nav__brand-name { font: 600 20px/1 var(--font-display); letter-spacing: -0.005em; color: var(--ink); }
+.nav--rail .nav__brand { display: flex; }
+@media (min-width: 900px) {
+  .nav--auto .nav__brand { display: flex; }
+}
+.nav--rail .nav__brand, .nav--auto .nav__brand {
+  align-items: center; gap: 10px; align-self: flex-start; min-height: 44px; margin-bottom: var(--s-3);
+  padding: var(--s-1) var(--s-3); border-radius: var(--r-m); text-decoration: none;
+}
+
+.nav__header { display: none; }
+.nav--rail .nav__header { display: block; margin-bottom: var(--s-3); }
+@media (min-width: 900px) {
+  .nav--auto .nav__header { display: block; margin-bottom: var(--s-3); }
+}
+
+/* The person's initials at the foot of the rail; the phone bar has no room for them. */
+.nav__foot { display: none; }
+.nav--rail { display: flex; flex-direction: column; }
+@media (min-width: 900px) {
+  .nav--auto .nav__foot, .nav--rail .nav__foot { display: block; margin-top: auto; padding: var(--s-3); border-top: 1px solid var(--line); }
+}
+
+/* Phase 17 (spec 2.1): in the dark phases the plum text is no brighter than the muted labels, so the current tab is ink
+   on its pill: the rail's surface-2 pill above, and on the phone a pill behind the icon. Light keeps the plum. */
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .nav__link.active, .theme-dark .nav__link.active { color: var(--ink); }
+@media (max-width: 899px) {
+  :root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) :is(.nav--bar, .nav--auto) .nav__link.active, .theme-dark :is(.nav--bar, .nav--auto) .nav__link.active { isolation: isolate; }
+  :root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) :is(.nav--bar, .nav--auto) .nav__link.active::before, .theme-dark :is(.nav--bar, .nav--auto) .nav__link.active::before {
+    content: ""; position: absolute; z-index: -1; top: 4px; left: 50%; width: 56px; height: 32px; margin-left: -28px;
+    border-radius: var(--r-pill); background: var(--surface-2);
+  }
+}

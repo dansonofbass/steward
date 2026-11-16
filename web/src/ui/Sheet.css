@@ -1,0 +1,39 @@
+/* A modal <dialog> (WEB-1): a bottom sheet on phones, a side panel from 900 px. dvh, so the top clears the browser's
+   own bars on a phone. The page behind is inert; these two rules stop a scroll over the backdrop, or past the end of
+   the sheet, from scrolling it (no overflow: hidden on the body, which shifted the page sideways). */
+.sheet {
+  position: fixed; inset: auto 0 0 0; margin: 0; width: 100%; max-width: none; max-height: 85dvh; overflow: auto;
+  background: var(--surface); color: var(--ink); border: 0; border-top: 1px solid var(--line);
+  border-radius: var(--r-l) var(--r-l) 0 0; padding: var(--s-4) var(--s-4) calc(var(--s-4) + env(safe-area-inset-bottom));
+}
+.sheet[open] { animation: sheet-up var(--dur-state) var(--ease); }
+.sheet:modal { overscroll-behavior: contain; }
+.sheet::backdrop { background: rgb(0 0 0 / 0.45); overflow: hidden; overscroll-behavior: contain; animation: sheet-fade var(--dur-quick) var(--ease); }
+.sheet__head { position: relative; display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-4); }
+.sheet__title { font-size: var(--fs-4); }
+.sheet__title:focus { outline: none; }
+.sheet__title:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* Discard what you typed? takes the head's place, the title and Close set aside (the title still names the sheet).
+   On a phone it wraps to two rows and the form moves down by one: Discard and Keep editing land below where Close was,
+   so a second tap there hits the question's words, never Discard. */
+.sheet__head.is-asking > :not(.sheet__ask) { display: none; }
+.sheet__ask { flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-3); }
+.sheet__ask-q { font-weight: 600; }
+.sheet__ask-acts { display: flex; gap: var(--s-2); margin-left: auto; }
+@media (min-width: 900px) {
+  .sheet {
+    inset: 0 0 0 auto; width: 420px; height: 100dvh; max-height: none; border-radius: var(--r-l) 0 0 var(--r-l);
+    border-top: 0; border-left: 1px solid var(--line);
+  }
+  .sheet[open] { animation-name: sheet-in; }
+}
+/* Static preview used on the /design page. */
+.sheet--inline { position: static; inset: auto; width: auto; max-height: none; border: 1px solid var(--line); border-radius: var(--r-l); }
+@media (min-width: 900px) { .sheet--inline { width: auto; height: auto; border: 1px solid var(--line); border-radius: var(--r-l); } }
+/* Phase 17 (spec 2.3): deeper in the dark phases, so a sheet's edge reads over navy, and the panel takes the raised
+   layers' top highlight (tokens.css). */
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .sheet::backdrop, .theme-dark .sheet::backdrop { background: rgb(0 0 0 / 0.65); }
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .sheet:modal, .theme-dark .sheet:modal { box-shadow: var(--shadow-raised); }
+@keyframes sheet-fade { from { opacity: 0; } }
+@keyframes sheet-up { from { transform: translateY(100%); } }
+@keyframes sheet-in { from { transform: translateX(100%); } }

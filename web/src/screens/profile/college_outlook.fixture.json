@@ -1,0 +1,21 @@
+{
+  "about": "Profile spec P16: the consequence line's outlook. Run by tests/engine/test_college.py and web/src/screens/profile/outlook.test.ts so the engine and the browser never drift. The table here is the fixture's own.",
+  "plan_year": 2026,
+  "growth": 0.01,
+  "levels": {
+    "two_year": {"years": 2, "tuition_fees_cents": 415000, "living_cents": 1717000},
+    "in_state_public": {"years": 4, "tuition_fees_cents": 1195000, "living_cents": 1904000},
+    "out_of_state_public": {"years": 4, "tuition_fees_cents": 3188000, "living_cents": 1904000},
+    "private": {"years": 4, "tuition_fees_cents": 4500000, "living_cents": 2047000}
+  },
+  "cases": [
+    {"name": "a toddler, private, all of it, with a 529 and contributions", "birth_year": 2023, "level": "private", "share_pct": 100, "covers_living": true, "balance_cents": 1000000, "monthly_cents": 25000, "real_return": 0.045, "expect": {"years": 4, "total_cents": 30862555, "covered_cents": 8170499}},
+    {"name": "half of in-state tuition only, no 529", "birth_year": 2015, "level": "in_state_public", "share_pct": 50, "covers_living": false, "balance_cents": 0, "monthly_cents": 0, "real_return": 0.04, "expect": {"years": 4, "total_cents": 2601096, "covered_cents": 0}},
+    {"name": "not sure yet is costed as in-state public", "birth_year": 2016, "level": "not_sure", "share_pct": 100, "covers_living": true, "balance_cents": 500000, "monthly_cents": 10000, "real_return": 0.03, "expect": {"years": 4, "total_cents": 13625784, "covered_cents": 1700465}},
+    {"name": "two-year, in college now: only the year left", "birth_year": 2007, "level": "two_year", "share_pct": 100, "covers_living": true, "balance_cents": 300000, "monthly_cents": 0, "real_return": 0.05, "expect": {"years": 1, "total_cents": 2132000, "covered_cents": 300000}},
+    {"name": "a 529 that covers all of it", "birth_year": 2012, "level": "in_state_public", "share_pct": 30, "covers_living": false, "balance_cents": 9000000, "monthly_cents": 0, "real_return": 0.04, "expect": {"years": 4, "total_cents": 1514759, "covered_cents": 1514759}},
+    {"name": "nothing to set aside at 0%", "birth_year": 2018, "level": "private", "share_pct": 0, "covers_living": true, "balance_cents": 1000000, "monthly_cents": 0, "real_return": 0.04, "expect": {"years": 4, "total_cents": 0, "covered_cents": 0}},
+    {"name": "no growth: contributions add up month by month", "birth_year": 2020, "level": "out_of_state_public", "share_pct": 100, "covers_living": true, "balance_cents": 0, "monthly_cents": 50000, "real_return": 0.0, "expect": {"years": 4, "total_cents": 23297741, "covered_cents": 7200000}},
+    {"name": "past college age", "birth_year": 2000, "level": "private", "share_pct": 100, "covers_living": true, "balance_cents": 0, "monthly_cents": 0, "real_return": 0.04, "expect": {"years": 0, "total_cents": 0, "covered_cents": 0}}
+  ]
+}

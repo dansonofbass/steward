@@ -1,0 +1,14 @@
+/* The acorn companion (Acorn.tsx). Light phases use these fallbacks; tokens.css sets --acorn-* in the dark ones. The
+   face lines read light on the plum nut in light, dark on the pale nut in dark; the golden one is dark on gold in both. */
+.acorn { display: inline-block; flex: none; overflow: visible; vertical-align: middle; }
+.acorn__nut { fill: var(--acorn-nut, #7C3352); }
+.acorn__nut-line { stroke: var(--acorn-nut, #7C3352); }
+.acorn__leaf { fill: var(--acorn-leaf, #C27A9B); }
+.acorn__vein-line { stroke: var(--acorn-vein, #7C3352); }
+.acorn__eye { fill: var(--acorn-face, #FBF3F6); }
+.acorn__face { fill: none; stroke: var(--acorn-face, #FBF3F6); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+.acorn__sweat { fill: var(--acorn-sweat, #4F8FC0); }
+.acorn__snow { fill: var(--acorn-snow, #FFFFFF); }
+.acorn--fall .acorn__leaf { fill: var(--acorn-fall, #C8742F); }
+.acorn--golden { --acorn-nut: var(--acorn-gold-nut, #B8862B); --acorn-leaf: var(--acorn-gold-leaf, #D9B25C); --acorn-face: var(--acorn-gold-face, #3A2A10); --acorn-vein: var(--acorn-gold-face, #3A2A10); }
+.acorn--golden .acorn__leaf { fill: var(--acorn-leaf); }

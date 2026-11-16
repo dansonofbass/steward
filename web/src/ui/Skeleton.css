@@ -1,0 +1,6 @@
+.skeleton { display: flex; flex-direction: column; gap: var(--s-3); }
+.skeleton__line {
+  display: block; height: 14px; border-radius: var(--r-s); background: var(--surface-2);
+  animation: skeleton-breathe calc(var(--dur-screen) * 4) ease-in-out infinite alternate;
+}
+@keyframes skeleton-breathe { from { opacity: 1; } to { opacity: 0.45; } }

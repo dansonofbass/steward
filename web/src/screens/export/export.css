@@ -1,0 +1,12 @@
+/* Settings › Export (import/export spec, Export). Its own chunk with the page. */
+.exp-rows { display: grid; gap: var(--s-4); }
+.exp-row { display: grid; gap: var(--s-2); border-bottom: 1px solid var(--line); padding-bottom: var(--s-4); }
+.exp-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.exp-row__name { font-size: var(--fs-3); margin: 0; }
+.exp-row__controls { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3); align-items: center; }
+.exp-row__controls select, .exp-date input { min-height: 44px; }
+.exp-date { display: grid; gap: var(--s-1); font-size: var(--fs-2); }
+.exp-panel { width: 100%; }
+.exp-panel fieldset { border: 1px solid var(--line); border-radius: var(--r-m); padding: var(--s-4); display: grid; gap: var(--s-3); }
+.exp-panel legend { font-weight: 600; padding: 0 var(--s-1); }
+@media (min-width: 900px) { .exp-row { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: start; } }

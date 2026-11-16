@@ -1,0 +1,24 @@
+{
+  "topic": "retirement",
+  "year": 2026,
+  "checked": "2026-10-21",
+  "source": [
+    "IRS Notice 2025-67 (2025-11-13): 401(k) deferral $24,500, catch-up $8,000 at 50 and $11,250 at 60 to 63, section 415(c) cap $72,000, compensation limit $360,000, IRA $7,500, IRA catch-up $1,100, Roth catch-up wage threshold $150,000, Roth IRA contribution phase-out $242,000-$252,000 married filing jointly and $153,000-$168,000 single, https://www.irs.gov/pub/irs-drop/n-25-67.pdf",
+    "IRS Rev. Proc. 2025-19: HSA limits $4,400 self-only and $8,750 family for 2026, https://www.irs.gov/pub/irs-drop/rp-25-19.pdf",
+    "26 U.S.C. 223(b)(3) (HSA catch-up $1,000 at 55, not indexed); 26 U.S.C. 404(h)(1)(C) and 402(h)(2) (SEP 25% of compensation; 20% of net self-employment earnings for a sole proprietor)",
+    "IRS Publication 560 (2025): a sole proprietor with no employees can adopt a section 401(k) plan after the end of the tax year (2023 and later) by the filing deadline without extensions, its elective deferrals paid in by then; SEP set up and funded by the due date including extensions; qualified plan contributions by the due date plus extensions; Deduction Worksheet for Self-Employed and Rate Table for Self-Employed (a 25% plan rate is 0.20), https://www.irs.gov/pub/irs-pdf/p560.pdf"
+  ],
+  "k401_deferral": 24500,
+  "k401_catch_up_50": 8000,
+  "k401_catch_up_60_to_63": 11250,
+  "overall_cap": 72000,
+  "compensation_cap": 360000,
+  "roth_catch_up_wage_threshold": 150000,
+  "ira": 7500,
+  "ira_catch_up_50": 1100,
+  "roth_ira_phaseout": {"mfj": [242000, 252000], "single": [153000, 168000]},
+  "hsa": {"self_only": 4400, "family": 8750, "catch_up_55": 1000},
+  "sep_rate": 0.25,
+  "self_employed_employer_rate": 0.20,
+  "solo_401k_after_year_end_from": 2023
+}

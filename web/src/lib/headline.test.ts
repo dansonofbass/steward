@@ -1,0 +1,46 @@
+import { describe, expect, it } from 'vitest';
+import type { Clause, VerdictData } from '../api/home';
+import { headline, joinClauses, ordinal } from './headline';
+
+const v = (p: Partial<VerdictData>): VerdictData => ({ opener: 'steady', problems: [], clauses: [], stale: false, best_month: false, ...p });
+const one = (c: Clause) => headline(v({ clauses: [c] }));
+
+describe('headline() (Home spec, The headline)', () => {
+  it.each([
+    [v({ clauses: [{ kind: 'spending_on_track' }, { kind: 'bills_paid' }, { kind: 'plan', age: 54, still: true }] }), "A steady month. Spending's on track, bills are paid, and the plan still says 54."],
+    [v({ opener: 'mostly', clauses: [{ kind: 'behind_until_payday', little: true }, { kind: 'over_one', category: 'dining' }] }), 'Mostly steady. A little behind until payday, and Eating out is ahead of its target.'],
+    [v({ opener: 'problem', problems: [{ kind: 'late_bill', category: 'utilities', usual_day: 12 }], clauses: [{ kind: 'spending_on_track' }, { kind: 'plan', age: 54, still: false }] }), "Utilities hasn't come out yet; it's usually by the 12th. Otherwise, spending's on track, and the plan says 54."],
+    [v({ opener: 'problem', problems: [{ kind: 'overdrawn', account: 'Checking', cents: -12000 }] }), 'Checking is overdrawn by $120.'],
+    [v({ clauses: [{ kind: 'spending_on_track' }], stale: true }), "A steady month. Spending's on track. One account hasn't updated in a few days."],
+    [v({ opener: 'new_month', clauses: [{ kind: 'plan', age: 54, still: true }] }), 'A new month. The plan still says 54.'],
+  ])('says the examples table word for word (%#)', (data, text) => {
+    expect(headline(data)).toBe(text);
+  });
+
+  it('words every copy row', () => {
+    expect(one({ kind: 'behind_until_payday', little: false })).toBe('A steady month. Behind until payday.');
+    expect(one({ kind: 'more_out_than_in' })).toBe('A steady month. More out than in so far.');
+    expect(one({ kind: 'over_many', n: 3 })).toBe('A steady month. 3 categories are ahead of their targets.');
+    expect(one({ kind: 'bill_more', category: 'utilities' })).toBe('A steady month. Utilities came in higher than usual.');
+    expect(one({ kind: 'spending_close' })).toBe("A steady month. Spending's close to its targets.");
+    expect(one({ kind: 'bills_paid' })).toBe('A steady month. Bills are paid.');
+    expect(headline(v({ opener: 'problem', problems: [{ kind: 'late_bills', n: 2 }] }))).toBe("2 bills haven't come out yet.");
+    expect(headline(v({ opener: 'problem', problems: [{ kind: 'late_bills', n: 2 }, { kind: 'overdrawn', account: 'Joint checking', cents: -9050 }] })))
+      .toBe("2 bills haven't come out yet. Joint checking is overdrawn by $91.");
+    expect(headline(v({ opener: 'mostly' }))).toBe('Mostly steady.');
+    expect(headline(v({ opener: 'empty', stale: true }))).toBe('Nothing to go on yet.');
+    expect(headline(v({ opener: 'problem', problems: [{ kind: 'overdrawn', account: 'Checking', cents: -100 }], stale: true })))
+      .toBe("Checking is overdrawn by $1. One account hasn't updated in a few days.");
+  });
+
+  it('joins 1, 2 and 3 clauses with a comma before "and", and capitalizes the first letter', () => {
+    expect(joinClauses(['a'])).toBe('a');
+    expect(joinClauses(['a', 'b'])).toBe('a, and b');
+    expect(joinClauses(['a', 'b', 'c'])).toBe('a, b, and c');
+    expect(headline(v({ clauses: [{ kind: 'spending_on_track' }, { kind: 'bills_paid' }] }))).toBe("A steady month. Spending's on track, and bills are paid.");
+  });
+
+  it('says a day of the month as people do', () => {
+    expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 31].map(ordinal)).toEqual(['1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '22nd', '23rd', '31st']);
+  });
+});

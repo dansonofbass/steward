@@ -1,0 +1,11 @@
+# The gateway in Docker Compose (docs/guides/gateway.md). The image puts this file in the gateway-config volume the
+# first time the gateway starts; later images never overwrite your copy (docs/guides/gateway.md, "On the same box, with
+# compose", says how to edit it).
+# network = "compose" lets the gateway listen inside its container (host 0.0.0.0; compose publishes no port) and use the
+# ollama service. It works only inside a container.
+network = "compose"
+host = "0.0.0.0"
+port = 8430
+ollama_url = "http://ollama:11434"
+# The budget's month starts at midnight in this time zone. Yours, like America/Chicago.
+timezone = "UTC"

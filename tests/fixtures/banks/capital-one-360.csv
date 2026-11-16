@@ -1,0 +1,4 @@
+Account Number,Transaction Description,Transaction Date,Transaction Type,Transaction Amount,Balance
+0000,Deposit from NORTHWIND PAYROLL,10/01/24,Credit,2100.00,5100.00
+0000,Debit Card Purchase - HARBOR GROCERY,10/03/24,Debit,84.12,5015.88
+0000,Withdrawal to Savings,10/05/24,Debit,500.00,4515.88

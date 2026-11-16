@@ -1,0 +1,39 @@
+{
+  "topic": "federal",
+  "year": 2025,
+  "checked": "2026-10-21",
+  "source": [
+    "IRS Rev. Proc. 2024-40, sections 2.01 (tables 1 and 3), 2.03, 2.05, 2.15(3) and 2.27, https://www.irs.gov/pub/irs-drop/rp-24-40.pdf",
+    "IRS Rev. Proc. 2025-32, sections 2.03, 2.08 and 3.01: 2025 standard deduction $31,500 / $15,750 and child tax credit $2,200 after the OBBBA, https://www.irs.gov/pub/irs-drop/rp-25-32.pdf",
+    "IRS Schedule 1-A (Form 1040) 2025, Part V: deduction for people 65 and over, https://www.irs.gov/pub/irs-pdf/f1040s1a.pdf",
+    "IRS Instructions for Schedule A (2025), line 5e worksheet: state and local tax cap $40,000, phase-down above $500,000, https://www.irs.gov/pub/irs-pdf/i1040sca.pdf",
+    "26 U.S.C. 86, 1411, 1401(b)(2), 213(a), 1211(b), 121(b), 24(h), 6654(d)",
+    "26 U.S.C. 6072(a) (returns due the 15th day of April after the year); IRS, Get an extension to file your tax return (\"until October 15 to file\"), https://www.irs.gov/filing/get-an-extension-to-file-your-tax-return; Form 1040-ES (2025), https://www.irs.gov/pub/irs-prior/f1040es--2025.pdf: four equal payments, at least $1,000 owed, the fourth not needed when the return is filed by February 2, 2026 (January 31 fell on a Saturday)"
+  ],
+  "brackets": {
+    "mfj": [[0, 0.10], [23850, 0.12], [96950, 0.22], [206700, 0.24], [394600, 0.32], [501050, 0.35], [751600, 0.37]],
+    "single": [[0, 0.10], [11925, 0.12], [48475, 0.22], [103350, 0.24], [197300, 0.32], [250525, 0.35], [626350, 0.37]]
+  },
+  "standard_deduction": {"mfj": 31500, "single": 15750},
+  "aged_additional": {"mfj": 1600, "single": 2000},
+  "ltcg": {"mfj": [96700, 600050], "single": [48350, 533400]},
+  "ss_thresholds": {"mfj": [32000, 44000], "single": [25000, 34000]},
+  "medical_floor": 0.075,
+  "capital_loss_limit": 3000,
+  "home_sale_exclusion": {"mfj": 500000, "single": 250000},
+  "salt_cap": {"amount": 40000, "threshold": 500000, "rate": 0.30, "floor": 10000},
+  "over_65_deduction": {"amount": 6000, "threshold": {"mfj": 150000, "single": 75000}, "rate": 0.06, "last_year": 2028},
+  "charity": null,
+  "itemized_limit": null,
+  "qbi": {"rate": 0.20, "threshold": {"mfj": 394600, "single": 197300}, "phase_in": {"mfj": 100000, "single": 50000},
+          "minimum_deduction": 0, "minimum_qbi": 0, "wage_limit_rate": 0.50},
+  "child_credit": {"per_child": 2200, "refundable_per_child": 1700, "other_dependent": 500, "child_under_age": 17,
+                   "phase_out_start": {"mfj": 400000, "single": 200000}, "phase_out_per_1000": 50,
+                   "earned_income_floor": 2500, "refundable_rate": 0.15},
+  "niit": {"rate": 0.038, "threshold": {"mfj": 250000, "single": 200000}},
+  "additional_medicare": {"rate": 0.009, "threshold": {"mfj": 250000, "single": 200000}},
+  "estimates": {"current_year_share": 0.90, "prior_year_share": 1.00, "high_income_prior_year_share": 1.10,
+                "high_income_agi": 150000, "due": ["04-15", "06-15", "09-15", "01-15"],
+                "shares": [0.25, 0.25, 0.25, 0.25], "minimum_owed": 1000, "skip_fourth_if_filed_by": "02-02"},
+  "returns": {"due": "04-15", "extended_due": "10-15"}
+}

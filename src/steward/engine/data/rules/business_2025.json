@@ -1,0 +1,16 @@
+{
+  "topic": "business",
+  "year": 2025,
+  "source": "https://www.irs.gov/instructions/i1040sc",
+  "checked": "2026-10-20",
+  "home_office": {
+    "rate_cents_per_sqft": 500,
+    "max_sqft": 300,
+    "source": "https://www.irs.gov/businesses/small-businesses-self-employed/simplified-option-for-home-office-deduction"
+  },
+  "meals_pct": 50,
+  "mileage": [
+    {"from": "2025-01-01", "to": "2025-12-31", "tenths_of_cent": 700,
+     "source": "https://www.irs.gov/tax-professionals/standard-mileage-rates"}
+  ]
+}

@@ -1,0 +1,6 @@
+"Date","Time","TimeZone","Name","Type","Status","Currency","Gross","Fee","Net","From Email Address","To Email Address","Transaction ID","Reference Txn ID","Balance"
+"10/02/2024","09:14:07","PDT","Harbor Books","Express Checkout Payment","Completed","USD","-24.99","0.00","-24.99","jane@example.com","shop@example.com","1AB23456CD789012E","","75.01"
+"10/03/2024","11:02:51","PDT","","General Card Deposit","Completed","USD","24.99","0.00","24.99","","jane@example.com","2BC34567DE890123F","1AB23456CD789012E","100.00"
+"10/05/2024","18:40:12","PDT","Pine Street Bakery","General Authorization","Pending","USD","-8.00","0.00","-8.00","jane@example.com","bakery@example.com","3CD45678EF901234G","","100.00"
+"10/07/2024","08:05:33","PDT","Atelier Lune","Express Checkout Payment","Completed","EUR","-30.00","0.00","-30.00","jane@example.com","atelier@example.com","4DE56789FG012345H","","100.00"
+"10/09/2024","13:22:09","PDT","Jane Doe","Mobile Payment","Completed","USD","50.00","-1.75","48.25","friend@example.com","jane@example.com","5EF67890GH123456I","","148.25"

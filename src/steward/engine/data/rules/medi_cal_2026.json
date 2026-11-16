@@ -1,0 +1,20 @@
+{
+  "topic": "medi_cal",
+  "effective_from": "2026-01-01",
+  "effective_to": null,
+  "checked": "2026-10-20",
+  "source": [
+    "DHCS All County Welfare Directors Letter 25-14 (2025-06-30): property limit reinstated for non-MAGI Medi-Cal from 2026-01-01 at $130,000 for one person and $65,000 for each additional person, up to 10, under AB 116, https://www.dhcs.ca.gov/services/medi-cal/eligibility/letters/Documents/25-14.pdf",
+    "DHCS All County Welfare Directors Letter 25-18: 30-month look-back on transfers of non-exempt property for long-term care, https://www.dhcs.ca.gov/services/medi-cal/eligibility/letters/Documents/25-18.pdf",
+    "Justice in Aging, Reinstatement of the Medi-Cal Asset Limit FAQ (exempt home, one vehicle, personal belongings; retirement accounts exempt when regular distributions are received), https://justiceinaging.org/reinstatement-of-medi-cal-asset-limit-faq/",
+    "DHCS ACWDL 26-02 (2026-01-28) is the 2026 spousal impoverishment letter and points back to ACWDL 25-14; it does not set the 2027 figures, https://www.dhcs.ca.gov/services/medi-cal/eligibility/letters/Documents/26-02.pdf"
+  ],
+  "asset_limit": {"first_person": 130000, "each_additional": 65000, "max_household": 10},
+  "exempt": ["home", "one_vehicle", "personal_belongings", "retirement_accounts_in_payout"],
+  "look_back_months": 30,
+  "scheduled": [
+    {"effective_from": "2027-07-01", "status": "reported_unconfirmed",
+     "asset_limit": {"first_person": 21000, "each_additional_first": 10000, "each_additional": 1550, "max_household": 10},
+     "note": "Reported by news coverage and attributed to the DHCS asset limit FAQ (https://www.dhcs.ca.gov/medi-cal/help/asset-limit-frequently-asked-questions/): $21,000 for one, $31,000 for two, $1,550 for each person after that. Not confirmed from a DHCS letter; left out of every projection."}
+  ]
+}

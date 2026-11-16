@@ -1,0 +1,16 @@
+{
+  "topic": "medicare",
+  "year": 2026,
+  "checked": "2026-10-20",
+  "source": [
+    "CMS fact sheet, 2026 Medicare Parts A & B Premiums and Deductibles (2025-11-14): Part B $202.90 a month, deductible $283, Part B and Part D income-related monthly adjustment amounts, https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles",
+    "42 U.S.C. 1395r(i)(4)(A): the adjustment uses modified adjusted gross income from the tax year two years before"
+  ],
+  "part_b_monthly": 202.90,
+  "part_b_deductible": 283,
+  "income_lookback_years": 2,
+  "irmaa": {
+    "single": [[0, false, 0.00, 0.00], [109000, false, 81.20, 14.50], [137000, false, 202.90, 37.50], [171000, false, 324.60, 60.40], [205000, false, 446.30, 83.30], [500000, true, 487.00, 91.00]],
+    "mfj": [[0, false, 0.00, 0.00], [218000, false, 81.20, 14.50], [274000, false, 202.90, 37.50], [342000, false, 324.60, 60.40], [410000, false, 446.30, 83.30], [750000, true, 487.00, 91.00]]
+  }
+}

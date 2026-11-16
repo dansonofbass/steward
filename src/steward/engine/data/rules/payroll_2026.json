@@ -1,0 +1,14 @@
+{
+  "topic": "payroll",
+  "year": 2026,
+  "checked": "2026-10-20",
+  "source": [
+    "SSA, Contribution and Benefit Base, 2026 wage base $184,500, https://www.ssa.gov/oact/cola/cbb.html",
+    "IRS Form 1040-ES (2026), 2026 Self-Employment Tax and Deduction Worksheet (92.35%, 2.9%, 12.4%, $184,500), https://www.irs.gov/pub/irs-pdf/f1040es.pdf",
+    "26 U.S.C. 1401, 1402(a)(12), 1402(b) ($400 minimum), 3101(a) and (b)(1) (employee 6.2% and 1.45%), 3111(a) and (b) (employer 6.2% and 1.45%)"
+  ],
+  "wage_base": 184500,
+  "se": {"net_factor": 0.9235, "oasdi_rate": 0.124, "medicare_rate": 0.029, "minimum_net_earnings": 400},
+  "employee": {"oasdi_rate": 0.062, "medicare_rate": 0.0145},
+  "employer": {"oasdi_rate": 0.062, "medicare_rate": 0.0145}
+}

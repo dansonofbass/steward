@@ -1,0 +1,2 @@
+.confirm-sheet { display: flex; flex-direction: column; gap: var(--s-4); }
+.confirm-sheet__acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }

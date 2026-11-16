@@ -1,0 +1,26 @@
+{
+  "topic": "california",
+  "year": 2025,
+  "checked": "2026-10-21",
+  "source": [
+    "FTB, 2025 California Tax Rate Schedules X and Y, https://www.ftb.ca.gov/forms/2025/2025-540-tax-rate-schedules.pdf",
+    "FTB, 2025 Personal Income Tax Booklet (Form 540): standard deduction chart, exemption credits on lines 7, 9 and 10 ($153, $153, $475), AGI Limitation Worksheet ($252,203 / $504,411, $6 per $2,500), 2025 California Tax Table (taxable income $100,000 or less), https://www.ftb.ca.gov/forms/2025/2025-540-booklet.pdf",
+    "FTB, 2026 Instructions for Form 540-ES: installments 30% / 40% / 0 / 30% due April 15, June 15, September 15 and January 15; 90% current year, 100% prior year, 110% when prior-year California AGI is over $150,000, current year only at $1,000,000 or more; the 2026 worksheet uses the 2025 tables; section B: at least $500 owed; section D: the fourth payment not needed when the return is filed by January 31, 2027, https://www.ftb.ca.gov/forms/2026/2026-540-es-instructions.pdf",
+    "FTB, 2025 Personal Income Tax Booklet, Schedule CA (540) line 29 Itemized Deductions Worksheet: reduce by the smaller of 80% of itemized deductions other than medical, investment interest and casualty losses, or 6% of federal AGI over $252,203 / $504,411; and the Behavioral Health Services Tax (1% of taxable income over $1,000,000), https://www.ftb.ca.gov/forms/2025/2025-540-booklet.pdf"
+  ],
+  "brackets": {
+    "mfj": [[0, 0.01], [22158, 0.02], [52528, 0.04], [82904, 0.06], [115084, 0.08], [145448, 0.093], [742958, 0.103], [891542, 0.113], [1485906, 0.123]],
+    "single": [[0, 0.01], [11079, 0.02], [26264, 0.04], [41452, 0.06], [57542, 0.08], [72724, 0.093], [371479, 0.103], [445771, 0.113], [742953, 0.123]]
+  },
+  "standard_deduction": {"mfj": 11412, "single": 5706},
+  "exemption_credit": {"personal": 153, "age_65": 153, "dependent": 475},
+  "credit_phase_out": {"threshold": {"mfj": 504411, "single": 252203}, "step": 2500, "per_step": 6},
+  "itemized_limit": {"threshold": {"mfj": 504411, "single": 252203}, "agi_rate": 0.06, "itemized_rate": 0.80},
+  "medical_floor": 0.075,
+  "behavioral_health_tax": {"rate": 0.01, "over": 1000000},
+  "tax_table_up_to": 100000,
+  "estimates": {"shares": [0.30, 0.40, 0.0, 0.30], "due": ["04-15", "06-15", "09-15", "01-15"],
+                "current_year_share": 0.90, "prior_year_share": 1.00, "high_income_prior_year_share": 1.10,
+                "high_income_agi": 150000, "current_year_only_agi": 1000000,
+                "minimum_owed": 500, "skip_fourth_if_filed_by": "01-31"}
+}

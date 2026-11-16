@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Steward</title>
+    <!-- The mark, an acorn with its leaf on a plum tile: src/ui/markArt.ts draws it, npm run icons regenerates these files in public/. -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- The browser bar takes the ground of the phase on screen (src/lib/sky.ts PHASE_BG): set here at first paint, then kept
+         current by src/lib/theme.ts. -->
+    <meta name="theme-color" content="#FAF8F3" />
+    <script>
+      // First paint in the right sky phase (same bands as src/lib/sky.ts): Light = day, Dark = night, else the clock, in
+      // its dark half on a device set to dark (src/lib/theme.ts DARK_SKY).
+      (function () {
+        var t = null; try { t = localStorage.getItem('steward-theme'); } catch (e) {}
+        var h = new Date().getHours();
+        var p = h < 5 ? 'night' : h < 6 ? 'dawn' : h < 7 ? 'sunrise' : h < 11 ? 'morning' : h < 15 ? 'day' : h < 18 ? 'afternoon' : h < 20 ? 'evening' : h < 21 ? 'dusk' : 'night';
+        var darkSky = { night: 'night', dawn: 'dawn', sunrise: 'dawn', morning: 'dawn', day: 'dusk', afternoon: 'dusk', evening: 'dusk', dusk: 'dusk' };
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) p = darkSky[p];
+        var phase = t === 'light' ? 'day' : t === 'dark' ? 'night' : p;
+        document.documentElement.dataset.phase = phase;
+        var bg = { night: '#0E1729', dawn: '#2D3A54', sunrise: '#FBEDDF', morning: '#F9F7F3', day: '#FAF8F3', afternoon: '#F8F2E6', evening: '#F8E4CD', dusk: '#2A3144' };
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', bg[phase]);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

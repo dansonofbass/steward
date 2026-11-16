@@ -1,0 +1,30 @@
+{
+  "topic": "care_costs",
+  "year": 2025,
+  "checked": "2026-10-20",
+  "source": [
+    "CareScout (Genworth), Cost of Care Survey 2025, Median Cost Data Tables (survey July through November 2025; document 282102, 2026-03-02): California rows of the Monthly, Daily and Home Care Median Costs tables, https://assets.carescout.com/x/8fcb50422f/282102.pdf",
+    "A Place for Mom, Senior Living Cost Planner (published 2026-02-20), https://www.aplaceformom.com/senior-living-cost-planner: California memory care median $6,850 a month (2025 move-ins) reads below CareScout's assisted living figure, so memory care is estimated at assisted living plus 25% (industry surveys put memory care about 20-30% above assisted living)"
+  ],
+  "state": "CA",
+  "figures": {
+    "in_home_hourly": {"cents": 4000, "per": "hour", "survey": "CareScout Cost of Care Survey 2025", "survey_year": 2025,
+                       "url": "https://assets.carescout.com/x/8fcb50422f/282102.pdf",
+                       "what": "Non-medical caregiver, median hourly rate"},
+    "adult_day_daily": {"cents": 9400, "per": "day", "survey": "CareScout Cost of Care Survey 2025", "survey_year": 2025,
+                        "url": "https://assets.carescout.com/x/8fcb50422f/282102.pdf",
+                        "what": "Adult day health care, median daily rate"},
+    "assisted_living_monthly": {"cents": 700000, "per": "month", "survey": "CareScout Cost of Care Survey 2025", "survey_year": 2025,
+                                "url": "https://assets.carescout.com/x/8fcb50422f/282102.pdf",
+                                "what": "Assisted living (a residential care facility in California), private one bedroom, median monthly rate"},
+    "memory_care_monthly": {"cents": 875000, "per": "month", "survey": "Estimate: assisted living plus 25%, CareScout 2025", "survey_year": 2025,
+                            "url": "https://assets.carescout.com/x/8fcb50422f/282102.pdf", "estimate": true,
+                            "what": "Memory care, estimated as the assisted living median ($7,000) plus 25%"},
+    "nursing_home_shared_monthly": {"cents": 1216700, "per": "month", "survey": "CareScout Cost of Care Survey 2025", "survey_year": 2025,
+                                    "url": "https://assets.carescout.com/x/8fcb50422f/282102.pdf",
+                                    "what": "Nursing home, semi-private room, the annual median divided by 12"},
+    "nursing_home_private_monthly": {"cents": 1517800, "per": "month", "survey": "CareScout Cost of Care Survey 2025", "survey_year": 2025,
+                                     "url": "https://assets.carescout.com/x/8fcb50422f/282102.pdf",
+                                     "what": "Nursing home, private room, the annual median divided by 12"}
+  }
+}

@@ -1,0 +1,78 @@
+/* The investment account page (investment views spec), loaded with its chunk. */
+.inv { display: flex; flex-direction: column; gap: var(--s-5); }
+.inv-sends { margin: 0; font-size: var(--fs-1); color: var(--ink-muted); }
+
+/* This year's three figures */
+.inv-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); }
+@media (max-width: 480px) { .inv-figs { grid-template-columns: 1fr; } }
+.inv-fig { display: flex; flex-direction: column; gap: 2px; padding: var(--s-3) var(--s-4); }
+.inv-fig__label { font-size: var(--fs-1); font-weight: 600; color: var(--ink-muted); }
+.inv-fig__sub { font-size: var(--fs-1); color: var(--ink-muted); }
+.inv-none { margin: 0; }
+
+/* A section */
+.inv-sec { display: flex; flex-direction: column; gap: var(--s-3); }
+.inv-sec h2 { margin: 0; }
+
+/* The chart: one drawing at the size useWide picks */
+.inv-chart { margin: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+.inv-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.inv-chart text { font: 13px var(--font); fill: var(--ink-muted); }
+.inv-chart svg.is-wide { max-width: 912px; }   /* the viewBox width: never drawn bigger than drawn, so text stays 12.5px */
+.inv-chart svg.is-wide text { font-size: 12.5px; }
+.inv-chart .grid { stroke: var(--line); stroke-width: 1; }
+.inv-chart .bal { fill: none; stroke: var(--accent-text); stroke-width: 2.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.inv-chart .put { fill: none; stroke: var(--ink-muted); stroke-width: 2; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+.inv-chart figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2); }
+.inv-legend { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--fs-1); }
+.inv-key { display: inline-block; width: 16px; border-top: 3px solid var(--accent-text); }
+.inv-key.is-put { margin-left: var(--s-2); border-top: 2px dashed var(--ink-muted); }
+
+/* The mix bar */
+.mixbar { display: flex; flex-direction: column; gap: var(--s-2); }
+.mixbar__bar { display: flex; height: 12px; overflow: hidden; border-radius: 6px; background: var(--track); }
+.mixbar__seg { min-width: 2px; }
+.mixbar__seg.is-us_stock, .mixbar__dot.is-us_stock { background: var(--accent); }
+.mixbar__seg.is-intl_stock, .mixbar__dot.is-intl_stock { background: color-mix(in srgb, var(--accent) 55%, var(--surface)); }
+.mixbar__seg.is-bond, .mixbar__dot.is-bond { background: var(--money-in); }
+.mixbar__seg.is-cash, .mixbar__dot.is-cash { background: #E8B04B; }
+.mixbar__seg.is-other, .mixbar__dot.is-other { background: var(--ink-muted); }
+.mixbar__keys { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); margin: 0; padding: 0; list-style: none; font-size: var(--fs-1); }
+.mixbar__keys li { display: inline-flex; align-items: center; gap: var(--s-1); }
+.mixbar__dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* The funds and their costs */
+.inv-table { width: 100%; border-collapse: collapse; }
+.inv-table th, .inv-table td { padding: var(--s-2) 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.inv-table td { padding-left: var(--s-3); text-align: right; white-space: nowrap; }
+.inv-table thead th { font-size: var(--fs-1); font-weight: 600; color: var(--ink-muted); }
+.inv-table thead th + th { padding-left: var(--s-3); text-align: right; white-space: nowrap; }
+.inv-sym { margin-right: var(--s-2); font-weight: 600; }
+.inv-name { color: var(--ink-muted); overflow-wrap: anywhere; }
+.inv-cost .link { position: relative; }
+.inv-cost .link::after { content: ""; position: absolute; inset: -14px -6px; } /* a 44px tap target without lifting the cell */
+.inv-costform, .inv-feeform { display: flex; flex-wrap: wrap; align-items: end; gap: var(--s-2); text-align: left; white-space: normal; }
+.inv-costform .field, .inv-feeform .field { flex: 1 1 10rem; min-width: 0; }
+@media (max-width: 600px) { .inv-costform { max-width: 9.5rem; } .inv-costform input { width: 100%; min-width: 0; box-sizing: border-box; } .inv-costform .field { flex-basis: 100%; } }
+.inv-fee, .inv-allin { margin: 0; }
+
+/* Contributions and limits */
+.inv-con { display: grid; gap: var(--s-1); margin: 0; }
+.inv-con > div { display: flex; justify-content: space-between; gap: var(--s-3); }
+.inv-con dt { color: var(--ink-muted); }
+.inv-con dd { margin: 0; text-align: right; }
+.inv-limit { margin: 0; }
+.limits-table { padding: 0; overflow: hidden; }
+.limits-row { display: flex; flex-direction: column; gap: 2px; padding: var(--s-3) var(--s-4); }
+.limits-row + .limits-row { border-top: 1px solid var(--line); }
+.limits-row p { margin: 0; font-size: var(--fs-1); color: var(--ink-muted); }
+
+/* Import positions */
+.posimp__map { display: grid; gap: var(--s-2); margin: 0; padding: 0; border: 0; }
+.posimp__line { margin: 0; font-weight: 600; }
+.posimp__table { width: 100%; border-collapse: collapse; font-size: var(--fs-1); }
+.posimp__table th, .posimp__table td { padding: var(--s-1) 0; border-bottom: 1px solid var(--line); text-align: left; }
+.posimp__table td { text-align: right; }
+
+/* A cheer (spec, Joy): copy, shown whether celebrations are on or off */
+.inv-cheer { margin: 0; font-weight: 600; color: var(--accent-text); }

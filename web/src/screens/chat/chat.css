@@ -1,0 +1,90 @@
+/* Settings → Chat. Tokens only. */
+.chat .switch { display: inline-flex; align-items: center; width: 44px; height: 26px; border-radius: var(--r-pill); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); padding: 3px; flex: none; border: 0; cursor: pointer; }
+.chat .switch::after { content: ""; width: 20px; height: 20px; border-radius: 50%; background: var(--ink-muted); }
+.chat .switch.is-on { background: var(--accent); box-shadow: none; justify-content: flex-end; }
+.chat .switch.is-on::after { background: var(--accent-ink); }
+.chat__state { display: inline-flex; align-items: center; gap: var(--s-2); }
+.chat__state svg { color: var(--ink-muted); flex: none; }
+.chat__disclosure { display: block; }
+.chat__disclosure summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.chat__usage li { display: flex; justify-content: space-between; gap: var(--s-3); padding: var(--s-1) 0; }
+.chat__download { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 44px; }
+.chat__sent + .chat__sent { border-top: 1px solid var(--line); }
+.chat__sent-row { width: 100%; justify-content: flex-start; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.chat__sent-row:hover { background: var(--surface-2); }
+.chat__parts { display: flex; flex-direction: column; gap: var(--s-3); padding: 0 var(--s-4) var(--s-4); }
+.chat__json { margin: 0; padding: var(--s-3); border-radius: var(--r-m); background: var(--surface-2); font-size: var(--fs-1); overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+
+/* Sent to Anthropic (plan B). */
+.log { padding: 0; overflow: hidden; }
+.log__day { padding: var(--s-2) var(--s-4); background: var(--surface-2); font-size: var(--fs-1); font-weight: 600; color: var(--ink-muted); border-bottom: 1px solid var(--line); }
+.log__row { width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 2px var(--s-3); padding: var(--s-3) var(--s-4); border: 0; border-bottom: 1px solid var(--line); background: none; color: inherit; font: inherit; text-align: left; align-items: start; cursor: pointer; min-height: 44px; }
+.log__row > svg { color: var(--ink-muted); margin-top: 2px; }
+.log__row.is-open { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent-text); }
+.log__what { font-weight: 600; }
+.log__meta { font-size: var(--fs-1); color: var(--ink-muted); display: flex; flex-wrap: wrap; gap: 0 var(--s-2); }
+.log__size { display: inline-flex; align-items: center; gap: var(--s-1); font-size: var(--fs-1); color: var(--ink-muted); white-space: nowrap; }
+.log__detail { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-3) var(--s-4) var(--s-4); border-bottom: 1px solid var(--line); }
+.log__facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--s-1) var(--s-3); margin: 0; font-size: var(--fs-2); }
+.log__facts dt { color: var(--ink-muted); }
+.log__facts dd { margin: 0; }
+.log__filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s-3); }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-1); font-size: var(--fs-1); }
+.checks li { display: flex; align-items: center; gap: var(--s-2); }
+.checks svg { color: var(--money-in); }
+.checks .is-off svg { color: var(--danger); }
+.chat__sentlink { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: var(--s-3); min-height: 44px; color: inherit; text-decoration: none; }
+.chat__sentlink > svg { flex: none; color: var(--ink-muted); }
+
+/* Settings → Chat overview (plan B design pass screen 7). */
+.chat__sub { display: flex; align-items: center; gap: var(--s-2); }
+.chat__cols { display: flex; flex-direction: column; gap: var(--s-6); }
+@media (min-width: 900px) { .chat__cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+.chat .stack { display: flex; flex-direction: column; gap: var(--s-4); }
+.chat .stack--tight { gap: var(--s-1); }
+.chat-set-rows { padding: 0; overflow: hidden; }
+/* Rows of a settings card: the name and its line take the room, the switch or button keeps to the right. */
+.chat-set-row > .stack { flex: 1 1 12rem; min-width: 0; }
+.chat-set-rows > * + * { border-top: 1px solid var(--line); }
+.chat__sentlink:hover { background: var(--surface-2); }
+.chat-cc { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3) var(--s-4); }
+.chat-cc > .chat-set-row, .chat-cc li.chat-set-row { padding: 0; flex-wrap: nowrap; }
+.chat-cc > p { margin: 0; }
+/* The page's sections sit a section's gap apart, as on every other page. */
+.chat__cols > .stack { gap: var(--s-6); }
+.chat-set-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-3); padding: var(--s-3) var(--s-4); }
+.chat-set-row + .chat-set-row { border-top: 1px solid var(--line); }
+.set-row__sub { font-size: var(--fs-1); color: var(--ink-muted); }
+.chat-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--money-in); flex: none; }
+.chat-dot--off { background: var(--danger); }
+.raw { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-1); padding: 0 var(--s-1); border-radius: var(--r-s); background: var(--surface-2); }
+.meter { height: 8px; border-radius: var(--r-pill); background: var(--track); overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--accent-text); }
+.meter--warn span { background: var(--warn); }
+.meter--full span { background: var(--danger); }
+.chat__budget { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s-3); }
+.chat__budget input { max-width: 10rem; }
+.split-table { width: 100%; border-collapse: collapse; font-size: var(--fs-2); }
+.split-table th { text-align: left; font-weight: 600; color: var(--ink-muted); font-size: var(--fs-1); }
+.split-table td, .split-table th { padding: var(--s-1) 0; border-bottom: 1px solid var(--line); }
+.split-table td:not(:first-child), .split-table th:not(:first-child) { text-align: right; }
+.chat__models { padding: 0; }
+.model-opt { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 2px var(--s-3); padding: var(--s-3) var(--s-4); align-items: start; min-height: 44px; cursor: pointer; }
+.model-opt + .model-opt { border-top: 1px solid var(--line); }
+.model-opt input { width: 20px; height: 20px; margin: 2px 0 0; }
+.model-opt:not(:has(input)) { grid-template-columns: minmax(0, 1fr); cursor: default; }
+
+.chat__grant {
+  display: block;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-s);
+  background: var(--surface-2);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.chat__grants select { min-height: 44px; }
+/* After .chat-set-row, so these win: a book's sent-log row keeps its chevron on the line, and Issue a grant never wraps. */
+.chat-set-row.chat__sentlink { flex-wrap: nowrap; }
+.chat-set-row.chat__sentlink > span { flex: 1; min-width: 0; }
+.chat-cc .btn { flex: none; white-space: nowrap; }
+.chat-cc > .chat-set-row > .strong { flex: 1; min-width: 0; }

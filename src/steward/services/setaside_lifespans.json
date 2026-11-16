@@ -1,0 +1,27 @@
+{
+  "topic": "setaside_lifespans",
+  "source": [
+    "InterNACHI, Standard Estimated Life Expectancy Chart for Homes (nachi.org/life-expectancy.htm)",
+    "U.S. Department of Energy, Energy Conservation Standards for Consumer Water Heaters, final rule (2024)",
+    "ENERGY STAR Qualified Water Heaters partner resource guide (2009)"
+  ],
+  "checked": {"date": "2026-10-26", "covers": ["roof lifespan", "water heater lifespan"]},
+  "needs_check": ["hvac", "car", "appliance"],
+  "items": {
+    "roof": {"label": "Roof", "lifespan_years": [20, 30], "cost_cents": [1000000, 2600000],
+             "source": "InterNACHI, Standard Estimated Life Expectancy Chart for Homes, nachi.org/life-expectancy.htm: asphalt shingle roof, 20 years (3-tab) to 30 years (architectural)",
+             "cost_source": "Cost: typical range, to be checked against Angi or HomeAdvisor roof replacement pages"},
+    "water_heater": {"label": "Water heater", "lifespan_years": [10, 15], "cost_cents": [150000, 300000],
+                     "source": "U.S. Department of Energy, Energy Conservation Program: Energy Conservation Standards for Consumer Water Heaters, final rule (2024), https://www.energy.gov/sites/default/files/2024-04/cwh_fr1.pdf: average lifetime about 15 years for storage water heaters; ENERGY STAR Qualified Water Heaters partner resource guide (2009), https://www.energystar.gov/ia/partners/manuf_res/downloads/WH_PartnerResourceGuide_2009.pdf: about 13 years. The upper end is sourced; the lower end (10) is typical",
+                     "cost_source": "Cost: typical range, to be checked against Angi or HomeAdvisor water heater installation pages"},
+    "hvac": {"label": "Heating and cooling", "lifespan_years": [15, 20], "cost_cents": [600000, 1200000],
+             "source": "Typical range, to be checked (InterNACHI chart gives 15 to 25 years for a furnace, 7 to 15 for central air, 10 to 15 for a heat pump)",
+             "cost_source": "Cost: typical range, to be checked against Angi or HomeAdvisor HVAC replacement pages"},
+    "car": {"label": "Car", "lifespan_years": [12, 15], "lifespan_miles": [150000, 200000], "cost_cents": [2000000, 3600000], "resale_bp": 2300,
+            "source": "Typical range, to be checked: age and miles from Consumer Reports and Kelley Blue Book guidance on how long cars last; sale value about 23% of the replacement cost for a car of that age",
+            "cost_source": "Cost: typical range, to be checked (a mid-size car)"},
+    "appliance": {"label": "Appliance", "lifespan_years": [10, 15], "cost_cents": [80000, 220000],
+                  "source": "Typical range, to be checked (InterNACHI chart: refrigerator 9 to 13 years, dishwasher 9, washer 5 to 15, dryer 13, range 13 to 17)",
+                  "cost_source": "Cost: typical range, to be checked against Angi or HomeAdvisor appliance pages"}
+  }
+}

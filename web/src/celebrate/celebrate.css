@@ -1,0 +1,25 @@
+/* The celebrate chunk (sorting redesign, Celebrations): loaded on the first celebration of a visit. Transform and
+   opacity only; nothing here takes a pointer. */
+.cel-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 70; pointer-events: none; }
+.cel-stamp {
+  position: absolute; top: var(--s-3); right: var(--s-3); padding: 2px var(--s-2); border: 3px solid var(--money-in);
+  border-radius: var(--r-s); color: var(--money-in); font: 800 var(--fs-3)/1.1 var(--font); letter-spacing: 0.12em;
+  transform: rotate(-12deg); pointer-events: none;
+}
+.cel-moment { position: absolute; right: var(--s-4); bottom: var(--s-4); width: 64px; height: 64px; color: var(--money-in); pointer-events: none; }
+/* Profile's moments sit over the row's own icon (a cap that lifts off, a window that lights), clear of the summary on the right. */
+.cel-moment--row { right: auto; bottom: auto; left: calc(var(--s-4) - 8px); top: 10px; width: 40px; height: 40px; }
+.cel-moment--row svg { width: 100%; height: 100%; }
+.cel-moment svg g { transform-box: fill-box; transform-origin: center; }
+.cel-pop {
+  position: fixed; top: 20%; left: 50%; z-index: 71; padding: var(--s-2) var(--s-4); border-radius: var(--r-pill);
+  background: var(--ink); color: var(--bg); font: 400 var(--fs-4)/1.2 var(--font-display); transform: translate(-50%, 0);
+  pointer-events: none;
+}
+/* Phase 17 (spec 2.3): "Ten in a row" and the milestones as a raised chip at night, not a white slab. */
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .cel-pop, .theme-dark .cel-pop { background: var(--surface-2); color: var(--ink); box-shadow: 0 0 0 1px var(--line), var(--shadow-raised); }
+
+/* Phase 17: the acorn's motion (acorn.ts). The drawing turns about its own box; sparks and z ride beside it. */
+[data-move] { transform-box: fill-box; }
+.acorn__spark { fill: var(--acorn-gold-leaf, #D9B25C); transform-box: fill-box; transform-origin: center; pointer-events: none; }
+.acorn__z { fill: var(--ink-muted); font: 700 9px var(--font); pointer-events: none; }

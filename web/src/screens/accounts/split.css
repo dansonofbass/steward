@@ -1,0 +1,13 @@
+/* Net worth at the top of Accounts (investment views spec), loaded with its chunk. */
+.nws { display: flex; flex-direction: column; gap: var(--s-1); }
+.nws h2 { margin: 0; }
+.nws__total { font-weight: 600; }
+.nws__change { margin: 0; color: var(--ink-muted); }
+.nws__lines { display: grid; margin-top: var(--s-2); border-top: 1px solid var(--line); }
+.nws__line { border-bottom: 1px solid var(--line); }
+.nws__line > summary { display: flex; align-items: center; gap: var(--s-3); min-height: 44px; cursor: pointer; }
+.nws__name { flex: 1; font-weight: 600; }
+.nws__amount { font-weight: 600; }
+.nws__accts { margin: 0 0 var(--s-2); padding: 0; list-style: none; }
+.nws__accts li { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3); min-height: 44px; font-size: var(--fs-1); }
+.nws__cheer { margin: 0; font-weight: 600; color: var(--accent-text); }

@@ -1,0 +1,9 @@
+/* The parent book's Home hero (ParentHome): moved from Home's CSS when Home's hero went (Home spec). */
+.figure { display: flex; flex-direction: column; gap: var(--s-1); }
+.money-parts { margin: 0; display: inline-flex; align-items: flex-start; font-family: var(--font-display); font-feature-settings: "tnum"; font-size: var(--fs-6); font-weight: 400; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.money-parts__sym, .money-parts__cents { font-size: var(--fs-4); line-height: 1.15; }
+.money-parts__sym { margin-right: 2px; }
+.money-parts__cents { margin-left: 2px; }
+.hero { display: grid; gap: var(--s-5); padding-bottom: var(--s-3); border-bottom: 1px solid var(--line); }
+@media (min-width: 900px) { .hero { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s-7); align-items: end; } }
+.hero.is-empty { border-bottom: 0; padding-bottom: 0; }

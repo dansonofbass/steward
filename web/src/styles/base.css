@@ -1,0 +1,127 @@
+*, *::before, *::after { box-sizing: border-box; }
+/* `hidden` always hides, even on an element whose class sets display: a closed lever's body was display:flex, so it
+   stayed on screen empty and left 28 px of padding under every lever. */
+[hidden] { display: none !important; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font: var(--fs-2)/var(--lh) var(--font); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; }
+h1 { font-size: var(--fs-5); line-height: 1.2; }
+h2 { font-size: var(--fs-4); line-height: 1.25; }
+h3 { font-size: var(--fs-3); line-height: 1.3; }
+a { color: var(--accent-text); }
+.num, .money { font-variant-numeric: tabular-nums; }
+/* Small uppercase, letter-spaced label for sections and groups ("Net worth", "Everyday"). */
+.eyebrow { font: 600 0.75rem/1.2 var(--font); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button, input, select { font: inherit; color: inherit; }
+/* Phase 17 (spec 2.2, ruling R1): Steward draws every tick and radio, in every phase, as it draws .pick-box: a muted ring,
+   then the plum fill with a white mark when on (the browser's own went muddy grey at night). The mark is a background,
+   not ::after, so no input needs a position, and nothing here moves or shows an input a screen hides (Inventory's pills).
+   At a size a finger can hit. */
+:where(input[type="checkbox"], input[type="radio"]) { margin: 0; }   /* zero weight: a screen's own margin (Settings' model radios) still wins */
+:is(input[type="checkbox"]:not(.pick-box), input[type="radio"]) { appearance: none; width: 20px; height: 20px; flex: none; border-radius: 5px; background: transparent; box-shadow: inset 0 0 0 2px var(--ink-muted); cursor: pointer; }
+input[type="radio"]:not(.pick-box) { border-radius: 50%; }
+input[type="checkbox"]:not(.pick-box):checked { box-shadow: none; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23FFFFFF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 10.5 3.5 3.5 6.5-8'/%3E%3C/svg%3E") center / 20px no-repeat; }
+input[type="radio"]:not(.pick-box):checked { box-shadow: none; background: radial-gradient(circle, var(--accent-ink) 0 4px, var(--accent) 4.5px); }
+:is(input[type="checkbox"]:not(.pick-box), input[type="radio"]):disabled:not(:checked) { box-shadow: inset 0 0 0 2px var(--line); cursor: default; }
+/* Forced colours drop box-shadows, so the drawn ring would vanish: the native control comes back. They also replace
+   background colours, so a state shown by background or shadow alone (an "on" chip or filter, a picked card, a menu
+   row with focus) gets a system-colour outline (WEB-11). base.css's selectors are the state names every screen uses;
+   forcedColors.test.ts fails on a new one that isn't here. */
+@media (forced-colors: active) {
+  :is(input[type="checkbox"]:not(.pick-box), input[type="radio"]) { appearance: auto; }
+  /* The underline is the second sign: a focused chosen chip takes the focus ring in place of this outline, and still
+     reads as chosen. */
+  :is(.is-on, .is-picked, .is-selected, .is-active, .is-current, [aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], [aria-current="page"]) {
+    outline: 2px solid Highlight; outline-offset: -2px; text-decoration: underline 2px; text-underline-offset: 3px;
+  }
+  :focus-visible { outline: 2px solid Highlight !important; outline-offset: 2px; }   /* over any outline: none */
+}
+/* Every text box and select looks the same, in a Field or not (Set targets' rows, Running ahead's figures, filters): the
+   field look, at element weight, so a screen's own class still wins. */
+input:where(:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"])), select, textarea {
+  min-height: 44px; padding: var(--s-2) var(--s-3); border-radius: var(--r-m);
+  border: 1px solid var(--line-strong); background-color: var(--surface); color: var(--ink);
+  transition: border-color var(--dur-quick) var(--ease);
+}
+input:where(:not([type="checkbox"], [type="radio"], [type="range"])):focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: 0; border-color: var(--focus); }
+/* Selects draw the app's thin chevron (a mid grey that reads on both the day and night grounds) instead of the platform's
+   bold one, so a select looks the same in a Field, a row of Set targets or a filter. */
+select { appearance: none; padding-right: 36px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%238A96A3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat;
+  background-position: right 10px center; background-size: 18px; }
+/* A button in the page's own column keeps its width (Add an account, Remove this one). */
+.screen > .btn { align-self: flex-start; }
+/* A section's heading row is as tall as a button, so two columns' headings line up whether or not one has a button. */
+.section-head { min-height: 44px; }
+.theme-light, .theme-dark { background: var(--bg); color: var(--ink); }
+/* The page shell: every screen is one column with the same padding and the same gap between its sections, so pages line
+   up with each other. A screen adds only what is its own (a grid of columns inside, a wider gap); it never re-sets these. */
+.screen { display: flex; flex-direction: column; gap: var(--s-6); min-width: 0; max-width: 1100px; margin: 0 auto; padding: var(--s-5) var(--s-4) var(--s-7); }
+@media (min-width: 900px) { .screen { padding: var(--s-7) var(--s-7) var(--s-8); } }
+/* A back link belongs to the title under it, not to the page's rhythm: it sits close above it. */
+/* A section with nothing to show takes no room: an empty one still drew the page's gap twice (Parent Home). */
+.screen > :empty { display: none; }
+.screen > .back, .screen > .sp-back, .screen > .settings__back { align-self: flex-start; margin-bottom: calc(var(--s-3) - var(--s-6)); }
+/* Layout primitives shared by every screen. */
+.stack { display: flex; flex-direction: column; gap: var(--s-4); }
+.stack--tight { gap: var(--s-2); }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.section-head > .btn { white-space: nowrap; flex: none; }
+.row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+.plain { list-style: none; margin: 0; padding: 0; }
+/* A form on a page of its own reads at form width, not across a 1000 px page. */
+.form-card { width: 100%; max-width: 720px; }
+/* A settings section: its heading, its card and the note under the card. */
+.set-sec { display: flex; flex-direction: column; gap: var(--s-3); }
+.set-sec > h3 { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-4); }
+/* A page's title with the line or two under it. */
+.page-head { display: flex; flex-direction: column; gap: var(--s-2); }
+.page-head__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.page-head h1 { display: flex; align-items: center; gap: var(--s-3); }
+/* A screen's read-only fieldset (a viewer's) holds its sections; it keeps the screen's gap between them. */
+.screen > .readonly { display: flex; flex-direction: column; gap: inherit; }
+
+/* App frame: bottom tab bar on phones, left rail at 900 px and up. */
+.app__main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+@media (min-width: 900px) {
+  .app__main { padding-bottom: 0; padding-left: 220px; }
+}
+.muted { color: var(--ink-muted); }
+.small { font-size: var(--fs-1); }
+
+/* Milestone 2: text buttons and chart legends (from web/mockups/m2.css). */
+.link { display: inline-flex; align-items: center; gap: var(--s-1); min-height: 44px; font-weight: 600; text-decoration: none; color: var(--accent-text); background: none; border: 0; padding: 0; cursor: pointer; font: inherit; font-weight: 600; }
+.link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.link .i { flex: none; }
+.legend { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); font-size: var(--fs-1); color: var(--ink-muted); }
+.legend span { display: inline-flex; align-items: center; gap: var(--s-2); }
+.swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.swatch--in { background: var(--money-in); }
+.swatch--out { background: var(--chart-out); }
+.swatch--band { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.swatch--line { height: 3px; border-radius: 2px; background: var(--accent-text); }
+.swatch--dash { height: 0; border-radius: 0; border-top: 2px dashed var(--ink-muted); background: none; }
+.strong { font-weight: 600; }
+
+/* A fieldset that only groups controls so a viewer's are disabled together (ruling 16). */
+.readonly { border: 0; padding: 0; margin: 0; min-width: 0; }
+/* Inside a stack (a form) the fieldset is the stack's only child; it passes the stack's gap on to the fields. */
+.stack > .readonly { display: flex; flex-direction: column; gap: inherit; }
+
+/* Bulk sort: a row's pick box (a real checkbox on Review, the row's own state on Transactions), and room under the list
+   for the pinned bar. */
+.pick-box { position: relative; border-radius: 6px; background: var(--surface); box-shadow: inset 0 0 0 2px var(--ink-muted); cursor: pointer; }
+/* Size and look beat the base checkbox rule (input[type="checkbox"] above); the colours stay at .pick-box's weight so
+   :checked and .is-on below win. */
+.pick-box, input[type="checkbox"].pick-box { appearance: none; display: inline-block; flex: none; width: 22px; height: 22px; margin: 0; }
+.pick-box:checked, .pick-box.is-on { background: var(--accent); box-shadow: none; }
+.pick-box:checked::after, .pick-box.is-on::after { content: ""; position: absolute; left: 8px; top: 4px; width: 5px; height: 11px; border: solid var(--accent-ink); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+.pick-box:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.screen.is-selecting { padding-bottom: calc(var(--s-8) + 96px); }
+/* Its chunk couldn't load: the line saying so sits where the bar would (bulk.css isn't there to place it). */
+.bulk-missing { position: fixed; z-index: 45; left: var(--s-3); right: var(--s-3); bottom: calc(57px + env(safe-area-inset-bottom) + var(--s-3)); }
+@media (min-width: 900px) { .bulk-missing { left: calc(220px + var(--s-6)); right: var(--s-6); bottom: var(--s-5); } }
+/* A touch held on a row picks it: the browser's own text long-press (selection, callout) mustn't race the timer. */
+@media (pointer: coarse) {
+  .rcards > .rcard, .day > .txn { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+}

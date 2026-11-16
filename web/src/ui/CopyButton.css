@@ -1,0 +1,2 @@
+/* The note stays in the page while empty (never display: none), so a screen reader knows the region before it speaks. */
+.copy { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }

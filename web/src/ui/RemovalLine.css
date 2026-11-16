@@ -1,0 +1,4 @@
+/* Empty, it stays in the page for screen readers but out of the flow, so a stack's gap doesn't count it. */
+.removal-line:empty { position: absolute; }
+.removal-line:focus { outline: none; }
+.removal-line:focus-visible > .notice { outline: 2px solid var(--focus); outline-offset: 2px; }

@@ -1,0 +1,169 @@
+Steward
+Copyright 2026 the Steward authors
+
+Steward is free software, licensed under the GNU Affero General Public License,
+version 3 or any later version (AGPL-3.0-or-later). The full text is in LICENSE.
+
+Steward uses and ships the work of others. This file names what is included, under
+which license, and where to find its source. The licenses of the many other
+dependencies that are only installed (not copied into Steward) travel with their
+own packages.
+
+
+SQLCipher and OpenSSL, in sqlcipher3-binary
+-------------------------------------------
+The Python package sqlcipher3-binary bundles SQLCipher, which encrypts the books,
+and OpenSSL, which SQLCipher uses.
+
+  SQLCipher, Copyright (c) Zetetic LLC, BSD-style license.
+  Source: https://github.com/sqlcipher/sqlcipher
+  OpenSSL, Apache License 2.0.
+  Source: https://github.com/openssl/openssl
+
+The package itself is on PyPI as sqlcipher3-binary.
+
+
+PDFium, in pypdfium2
+--------------------
+The Python package pypdfium2 bundles PDFium, which reads PDF files.
+
+  PDFium, BSD-3-Clause and Apache License 2.0, Copyright The PDFium Authors.
+  Source: https://pdfium.googlesource.com/pdfium/
+  pypdfium2: https://github.com/pypdfium2-team/pypdfium2
+
+
+certifi and tqdm
+----------------
+These two Python packages are installed with Steward and are licensed under the
+Mozilla Public License 2.0 (tqdm is also under the MIT license). Steward does not
+change them. Their source is available at:
+
+  certifi: https://github.com/certifi/python-certifi
+  tqdm: https://github.com/tqdm/tqdm
+
+The text of the Mozilla Public License 2.0 is at https://www.mozilla.org/MPL/2.0/.
+
+
+Data sources
+------------
+The tables under src/steward/engine/data/ are copied or derived from these
+published sources. SOURCES.md in that folder gives each file, its date and the
+rule for it.
+
+  SSA (Social Security Administration): national average wage index, benefit
+    formula bend points, contribution and benefit base, life table, Trustees
+    Report summary, and the early and late retirement and spousal pages.
+    https://www.ssa.gov/oact/cola/AWI.html
+    https://www.ssa.gov/oact/STATS/table4c6.html
+    https://www.ssa.gov/oact/TRSUM/index.html
+  Aswath Damodaran, Stern School of Business, New York University: Historical
+    Returns on Stocks, Bonds and Bills.
+    https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html
+    https://www.stern.nyu.edu/~adamodar/pc/datasets/histretSP.xls
+  College Board: Trends in College Pricing and Student Aid.
+    https://research.collegeboard.org/trends/college-pricing
+  CareScout (Genworth): Cost of Care Survey.
+    https://assets.carescout.com/x/8fcb50422f/282102.pdf
+  A Place for Mom: Senior Living Cost Planner.
+    https://www.aplaceformom.com/senior-living-cost-planner
+  Internal Revenue Service, California Franchise Tax Board, CMS and DHCS
+    publications: named in each rules/*.json table.
+
+
+Fonts
+-----
+Steward bundles two fonts through the fontsource packages. Both are licensed under the SIL Open Font License,
+Version 1.1, copied in full once below.
+
+  Newsreader (@fontsource-variable/newsreader)
+    Copyright 2020 The Newsreader Project Authors (http://github.com/productiontype/Newsreader)
+  Source Sans 3 (@fontsource/source-sans-3)
+    Copyright line in the package's LICENSE file: Google Inc.
+    Source Sans is a project of Adobe.
+
+-----------------------------------------------------------
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+-----------------------------------------------------------
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide
+development of collaborative font projects, to support the font creation
+efforts of academic and linguistic communities, and to provide a free and
+open framework in which fonts may be shared and improved in partnership
+with others.
+
+The OFL allows the licensed fonts to be used, studied, modified and
+redistributed freely as long as they are not sold by themselves. The
+fonts, including any derivative works, can be bundled, embedded,
+redistributed and/or sold with any software provided that any reserved
+names are not used by derivative works. The fonts and derivatives,
+however, cannot be released under any other type of license. The
+requirement for fonts to remain under this license does not apply
+to any document created using the fonts or their derivatives.
+
+DEFINITIONS
+"Font Software" refers to the set of files released by the Copyright
+Holder(s) under this license and clearly marked as such. This may
+include source files, build scripts and documentation.
+
+"Reserved Font Name" refers to any names specified as such after the
+copyright statement(s).
+
+"Original Version" refers to the collection of Font Software components as
+distributed by the Copyright Holder(s).
+
+"Modified Version" refers to any derivative made by adding to, deleting,
+or substituting -- in part or in whole -- any of the components of the
+Original Version, by changing formats or by porting the Font Software to a
+new environment.
+
+"Author" refers to any designer, engineer, programmer, technical
+writer or other person who contributed to the Font Software.
+
+PERMISSION & CONDITIONS
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Font Software, to use, study, copy, merge, embed, modify,
+redistribute, and sell modified and unmodified copies of the Font
+Software, subject to the following conditions:
+
+1) Neither the Font Software nor any of its individual components,
+in Original or Modified Versions, may be sold by itself.
+
+2) Original or Modified Versions of the Font Software may be bundled,
+redistributed and/or sold with any software, provided that each copy
+contains the above copyright notice and this license. These can be
+included either as stand-alone text files, human-readable headers or
+in the appropriate machine-readable metadata fields within text or
+binary files as long as those fields can be easily viewed by the user.
+
+3) No Modified Version of the Font Software may use the Reserved Font
+Name(s) unless explicit written permission is granted by the corresponding
+Copyright Holder. This restriction only applies to the primary font name as
+presented to the users.
+
+4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font
+Software shall not be used to promote, endorse or advertise any
+Modified Version, except to acknowledge the contribution(s) of the
+Copyright Holder(s) and the Author(s) or with their explicit written
+permission.
+
+5) The Font Software, modified or unmodified, in part or in whole,
+must be distributed entirely under this license, and must not be
+distributed under any other license. The requirement for fonts to
+remain under this license does not apply to any document created
+using the Font Software.
+
+TERMINATION
+This license becomes null and void if any of the above conditions are
+not met.
+
+DISCLAIMER
+THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
+DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
+OTHER DEALINGS IN THE FONT SOFTWARE.

@@ -1,0 +1,3 @@
+# torch's CPU build for the gateway image (deploy/gateway/Dockerfile), the version uv.lock pins, from
+# https://download.pytorch.org/whl/cpu. tests/test_gateway_image.py fails when uv.lock moves torch and this doesn't.
+torch==2.14.1+cpu --hash=sha256:5a6363570c753812540a05eb82380e329469cbe668643e88111414c12627711f

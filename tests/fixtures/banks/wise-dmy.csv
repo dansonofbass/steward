@@ -1,0 +1,4 @@
+TransferWise ID,Date,Amount,Currency,Description,Payment Reference,Running Balance
+TRANSFER-0000001,15-10-2024,-12.50,USD,Card transaction at CAFE LUNE,,987.50
+TRANSFER-0000002,18-10-2024,250.00,USD,Received money from JANE DOE,rent,1237.50
+TRANSFER-0000003,21-10-2024,-40.00,USD,Card transaction at HARBOR GROCERY,,1197.50

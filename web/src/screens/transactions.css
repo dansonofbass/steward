@@ -1,0 +1,89 @@
+/* Ported from the mockup's "candidate" rules: TxnRow, DateHeader, FilterButton, Segmented, Radio row, split panes. */
+
+.split { display: flex; flex-direction: column; gap: var(--s-6); }
+.split__list { min-width: 0; }
+@media (min-width: 900px) {
+  .split { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-6); align-items: start; }
+  /* The detail column is there only while a transaction is open; otherwise the list takes the page's width. */
+  .split:has(> .split__detail) { grid-template-columns: minmax(0, 1fr) 380px; }
+  .split__detail { position: sticky; top: var(--s-6); }
+}
+.detail-pane { background: var(--surface); border-radius: var(--r-l); box-shadow: 0 0 0 1px var(--line); padding: var(--s-4); }
+.detail__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-4); }
+.detail__receipt { margin: 0; }
+.detail__title { font-size: var(--fs-4); min-width: 0; overflow-wrap: anywhere; }
+.detail-facts { display: grid; grid-template-columns: auto 1fr; gap: var(--s-2) var(--s-4); margin: 0 0 var(--s-5); font-size: var(--fs-2); }
+.detail-facts dt { color: var(--ink-muted); font-size: var(--fs-1); padding-top: 2px; }
+.detail-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.detail-facts .raw { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-1); }
+.btn--block { width: 100%; }
+
+.search { position: relative; }
+.search > svg { position: absolute; left: var(--s-3); top: 34px; color: var(--ink-muted); pointer-events: none; }
+.search input { padding-left: 40px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.filter { display: inline-flex; align-items: center; gap: var(--s-1); min-height: 44px; padding: 0 var(--s-3) 0 var(--s-4); border: 0; box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r-pill); background: var(--surface); color: var(--ink); white-space: nowrap; font-weight: 600; cursor: pointer; }
+.filter.is-on { background: var(--accent); box-shadow: none; color: var(--accent-ink); }
+
+.day { display: flex; flex-direction: column; }
+.day__head { padding: var(--s-5) 0 var(--s-2); border-bottom: 1px solid var(--line); }
+.txn { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--s-3); width: 100%; padding: var(--s-3) 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.txn:hover { background: var(--surface-2); }
+.txn__name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.txn__name.is-raw { font-weight: 400; color: var(--ink-muted); font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-1); letter-spacing: 0.02em; align-self: center; }
+.txn__meta { font-size: var(--fs-1); color: var(--ink-muted); display: flex; gap: var(--s-1); align-items: center; min-width: 0; }
+.txn__transfer { display: inline-flex; align-items: center; gap: var(--s-1); }
+.txn .money { text-align: right; }
+.txn__tag { grid-column: 1 / -1; justify-self: start; margin-top: 2px; }
+.txn__note { grid-column: 1 / -1; justify-self: start; margin-top: 2px; }
+.notes { margin-bottom: var(--s-5); }
+.txn-note__form { display: grid; gap: var(--s-2); }
+.txn.is-selected { background: var(--surface-2); margin: 0 calc(var(--s-3) * -1); width: calc(100% + var(--s-5)); padding-left: var(--s-3); padding-right: var(--s-3); border-radius: var(--r-m); border-bottom-color: transparent; box-shadow: inset 3px 0 0 var(--accent-text); }
+.txn--skeleton { display: block; cursor: default; }
+/* Bulk sort: each row shows its pick box, and a picked row is tinted. */
+.txn.is-picking { position: relative; padding-left: 40px; user-select: none; -webkit-touch-callout: none; }
+.txn.is-picking > .pick-box { position: absolute; left: 6px; top: 50%; margin-top: -11px; }
+.txn.is-picked { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.filters > .filter--end { margin-left: auto; }
+.txn-more { display: flex; justify-content: center; padding: var(--s-5) 0; }
+
+.tag { display: inline-flex; align-items: center; gap: var(--s-1); padding: 2px var(--s-2) 2px 6px; border-radius: var(--r-pill); font: 600 0.7rem/20px var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); background: var(--surface-2); white-space: nowrap; }
+
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; gap: 3px; border-radius: var(--r-pill); background: var(--surface-2); }
+.seg button { display: flex; align-items: center; justify-content: center; gap: var(--s-2); min-height: 44px; border: 0; border-radius: var(--r-pill); background: transparent; font: inherit; font-weight: 600; color: var(--ink-muted); cursor: pointer; }
+.seg button.is-on { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+/* Phase 17 (spec 2.2, D7): the plum fill on a page-coloured track in the dark phases (Plan's levers, Taxes, Business
+   years, How often, Business or personal). */
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .seg, .theme-dark .seg { background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
+:root:is([data-phase="night"], [data-phase="dawn"], [data-phase="dusk"]) .seg button.is-on, .theme-dark .seg button.is-on { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+
+.select { position: relative; }
+.select select { appearance: none; padding-right: 40px; width: 100%; background-image: none; }   /* the wrapper draws its own chevron */
+.select > svg { position: absolute; right: var(--s-3); bottom: 12px; pointer-events: none; color: var(--ink-muted); }
+
+.lines { padding: 0; overflow: hidden; list-style: none; margin: 0; }
+.line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); padding: var(--s-3) var(--s-4); min-height: 56px; }
+.line + .line { border-top: 1px solid var(--line); }
+.option { cursor: pointer; }
+.option:hover { background: var(--surface-2); }
+.option[aria-selected="true"] { font-weight: 600; box-shadow: inset 3px 0 0 var(--accent-text); }
+
+.txn-radio-row { display: flex; align-items: center; gap: var(--s-3); cursor: pointer; flex: 1 1 auto; min-height: 44px; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
+.radio { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--ink-muted); flex: none; display: grid; place-items: center; }
+.txn-radio-row[aria-checked="true"] .radio { border-color: var(--accent-text); }
+.txn-radio-row[aria-checked="true"] .radio::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.txn-radio-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.date-custom { flex-direction: column; align-items: stretch; }
+.date-custom .grid-2 { padding-left: calc(20px + var(--s-3)); }
+.grid-2 { display: grid; gap: var(--s-3); }
+@media (min-width: 640px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+.pct-input { max-width: 8ch; }
+.detail .stack--tight { display: flex; flex-direction: column; gap: var(--s-2); }
+.detail__either { margin: 0; font-size: var(--fs-1); }
+
+/* Came from (JR, Oct 31): the detail's line, and the bar over one file's rows. */
+.came-from { margin: var(--s-2) 0 var(--s-5); overflow-wrap: anywhere; }
+.batch-bar { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3); align-items: center; padding: var(--s-3);
+  border: 1px solid var(--line); border-radius: var(--r-m); background: var(--surface); }
+.batch-bar__name { font-weight: 600; overflow-wrap: anywhere; }

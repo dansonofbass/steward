@@ -1,0 +1,37 @@
+# steward-proxy, STEWARD_TLS=dns-cloudflare (the default): a Let's Encrypt certificate proved through a DNS record, so it
+# works on a private address. STEWARD_DOMAIN and CLOUDFLARE_API_TOKEN come from proxy.env; start.sh checks STEWARD_DOMAIN
+# first, because {$STEWARD_DOMAIN} is pasted into this file as text.
+{
+	# This container shares the Tailscale sidecar's network, and in userspace mode the sidecar hands tailnet
+	# connections to any port listening there. So nothing may listen but 443: no admin API, no plain HTTP,
+	# no HTTP/3.
+	admin off
+	persist_config off
+	auto_https disable_redirects
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+	servers {
+		protocols h1 h2
+	}
+	# Caddy keeps no access log here, but an error line (a 502 while Steward restarts, say) carries the request. The
+	# filter drops the request's address whole, path and query: a search, a book's slug (/b/, /api/b/, /api/books/),
+	# a category and a link's token all live there. It also drops the headers and the client address. Steward's own
+	# log names the route's template instead (P10). tests/test_proxy_files.py holds every Caddyfile to this block.
+	log {
+		format filter {
+			wrap json
+			request>uri delete
+			request>headers delete
+			request>remote_ip delete
+			request>remote_port delete
+			request>client_ip delete
+		}
+	}
+}
+
+{$STEWARD_DOMAIN} {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+		resolvers 1.1.1.1 1.0.0.1
+	}
+	reverse_proxy steward:8420
+}

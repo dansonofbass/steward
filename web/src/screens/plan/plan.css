@@ -1,0 +1,265 @@
+/* ---------- Plan: the two ages (candidate: Ages) ---------- */
+.ages { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); }
+.age { display: flex; flex-direction: column; gap: 2px; }
+.age__label { display: flex; align-items: center; gap: var(--s-1); font-size: var(--fs-2); color: var(--ink-muted); }
+.age__n { font: 400 64px/1 var(--font-display); font-feature-settings: "tnum"; letter-spacing: -0.02em; }
+.age--likely .age__n { color: var(--ink-muted); }
+.age__year { font-size: var(--fs-2); color: var(--ink-muted); }
+.age__was { font-size: var(--fs-1); color: var(--money-in); font-weight: 600; }
+.ages-wrap { display: flex; flex-direction: column; gap: var(--s-4); padding-bottom: var(--s-5); border-bottom: 1px solid var(--line); }
+.saved-by { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-3); font-size: var(--fs-1); color: var(--ink-muted); }
+.saved-by .i { color: var(--ink-muted); }
+.saved-by .link { min-height: 32px; font-size: var(--fs-1); }
+
+/* ---------- Plan setup checklist ---------- */
+.progress { display: flex; align-items: center; gap: var(--s-3); font-size: var(--fs-1); color: var(--ink-muted); }
+.progress__bar { flex: 1; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.progress__bar span { display: block; height: 100%; background: var(--money-in); border-radius: 3px; }
+
+/* ---------- Plan layout ---------- */
+.plan { display: flex; flex-direction: column; gap: var(--s-6); }
+.sec { display: flex; flex-direction: column; gap: var(--s-3); }
+.sec__intro { color: var(--ink-muted); font-size: var(--fs-2); }
+.grid-cards { display: grid; gap: var(--s-5); }
+@media (min-width: 900px) { .grid-cards { grid-template-columns: 1fr 1fr; align-items: start; } }
+.setup__title .tag { margin-left: var(--s-2); vertical-align: 1px; }
+
+.plan-screen .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.plan-screen .lede { font-size: var(--fs-3); }
+.ages .age__n, .ages .age__year { transition: opacity var(--dur-state) var(--ease); }
+.ages.is-pending .age__n { opacity: 0.55; }
+.age__n--none { font-size: var(--fs-4); line-height: 1.2; }
+.last-saved { padding: var(--s-3) var(--s-4); border-radius: var(--r-m); box-shadow: 0 0 0 1px var(--line); }
+.last-saved__ages { font: 400 var(--fs-4)/1.25 var(--font-display); }
+
+/* ---------- Levers (candidate: LeverRow, Slider) ---------- */
+.levers { padding: 0; overflow: hidden; }
+.lever { display: flex; flex-direction: column; }
+.lever + .lever { border-top: 1px solid var(--line); }
+.lever__head { display: grid; grid-template-columns: 24px 1fr auto 20px; align-items: center; gap: 2px var(--s-3); min-height: 64px; padding: var(--s-3) var(--s-4); width: 100%; border: 0; background: none; text-align: left; cursor: pointer; }
+.lever__head > .i:first-child { color: var(--ink-muted); width: 24px; height: 24px; }
+.lever__head > .i:last-child { color: var(--ink-muted); }
+.lever__name { font-weight: 600; }
+.lever__try { grid-column: 2; font-size: var(--fs-1); color: var(--ink-muted); }
+.lever__effect { grid-row: 1 / span 2; grid-column: 3; text-align: right; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lever__effect.is-earlier { color: var(--money-in); }
+.lever__effect.is-none { color: var(--ink-muted); font-weight: 400; }
+.lever__head > .i:last-child { grid-row: 1 / span 2; grid-column: 4; }
+.lever.is-open .lever__head > .i:last-child { transform: rotate(180deg); }
+.lever__body { display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-1) var(--s-4) var(--s-5) calc(var(--s-4) + 24px + var(--s-3)); }
+.lever .tag { margin-left: var(--s-2); vertical-align: 1px; }
+@media (max-width: 420px) { .lever__body { padding-left: var(--s-4); } }
+
+/* One slider per lever (design pass decision 4). Value, track, scale ends and actions share one grid, so the
+   left and right edges line up at 390 px: the rail is inset by the thumb radius, the scale is three equal columns. */
+.slider { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-2) var(--s-3); }
+.slider__top { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: var(--s-3); }
+.slider__label { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--fs-1); font-weight: 600; color: var(--ink-muted); }
+.slider__value { font-size: var(--fs-3); font-weight: 600; font-variant-numeric: tabular-nums; }
+.slider__saved { font-size: var(--fs-1); color: var(--ink-muted); text-align: right; font-variant-numeric: tabular-nums; }
+.slider__track { grid-column: 1 / -1; position: relative; height: 32px; }
+.slider__rail { position: absolute; left: 12px; right: 12px; top: 0; bottom: 0; }
+.slider__rail::before { content: ""; position: absolute; left: 0; right: 0; top: 14px; height: 4px; border-radius: 2px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); }
+.slider__fill { position: absolute; left: 0; top: 14px; height: 4px; border-radius: 2px; background: var(--accent-text); }
+.slider__thumb { position: absolute; top: 4px; width: 24px; height: 24px; margin-left: -12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--surface), var(--shadow-thumb); }
+.slider--try .slider__fill { background: transparent; border-top: 2px dashed var(--accent-text); height: 0; top: 15px; }
+.slider--try .slider__thumb { background: var(--surface); box-shadow: inset 0 0 0 3px var(--accent-text), var(--shadow-thumb); }
+.slider__ghost { position: absolute; top: 9px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--ink-muted); opacity: 0.7; }
+.slider__ticks { position: absolute; left: 0; right: 0; top: 22px; height: 6px; display: flex; justify-content: space-between; }
+.slider__ticks i { width: 1px; height: 6px; background: var(--line); }
+.slider__scale { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); font-size: var(--fs-1); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.slider__scale span:nth-child(2) { text-align: center; }
+.slider__scale span:nth-child(3) { text-align: right; }
+.slider__actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); }
+.slider__actions .btn { min-height: 44px; }
+.slider__actions .link { min-height: 44px; font-size: var(--fs-1); }
+.slider__actions .link--quiet { color: var(--ink-muted); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; }
+.slider__note { grid-column: 1 / -1; font-size: var(--fs-1); color: var(--ink-muted); }
+.pair { display: grid; gap: var(--s-3); }
+@media (min-width: 640px) { .pair { grid-template-columns: 1fr 1fr; } }
+.mini-field { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); min-height: 44px; padding: 0 var(--s-3); border-radius: var(--r-m); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--fs-2); }
+.mini-field span:first-child { color: var(--ink-muted); font-size: var(--fs-1); font-weight: 600; }
+.mini-field strong { font-variant-numeric: tabular-nums; }
+/* Lever head on the phone: name on its own line, then the suggestion and its effect side by side. */
+.lever__head { grid-template-columns: 24px 1fr auto 20px; }
+.lever__name { grid-column: 2 / 4; }
+/* The second line reads as one sentence: suggestion · effect ("Your consulting last year was $18,000 · about 8 months earlier"). */
+.lever__try { grid-column: 2 / 4; grid-row: 2; }
+.lever__try .lever__effect { display: inline; text-align: left; white-space: nowrap; }
+.lever__head > .i:first-child { grid-row: 1 / span 2; align-self: start; margin-top: 2px; }
+.lever__head > .i:last-child { grid-row: 1 / span 2; grid-column: 4; }
+.lever__effect.is-inuse { color: var(--accent-text); }
+.lever__head { font: inherit; color: inherit; transition: background-color var(--dur-quick) var(--ease); }
+.lever__head:hover { background: var(--surface-2); }
+.lever__head:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.lever__head > .i:last-child { transition: transform var(--dur-state) var(--ease); }
+.lever__effect { transition: color var(--dur-state) var(--ease); }
+.lever__effect.is-later { color: var(--ink); }
+/* Muted, not faded: at 0.55 opacity the effect fell below AA contrast in dark mode (T7). */
+.lever__effect.is-pending, .lever__effect.is-stale { color: var(--ink-muted); }
+.tag--changed { margin-left: var(--s-2); background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-text); }
+.lever .tag--changed { padding: 1px var(--s-2); font: 600 0.7rem/18px var(--font); vertical-align: 2px; }
+.slider > .seg { grid-column: 1 / -1; }
+.slider__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.slider__track:has(.slider__input:focus-visible) .slider__thumb { outline: 2px solid var(--focus); outline-offset: 3px; }
+.slider__thumb, .slider__fill { transition: left var(--dur-quick) var(--ease), width var(--dur-quick) var(--ease); }
+.slider__actions .link--quiet:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.mini-field select { border: 0; background-color: transparent; font: inherit; font-weight: 600; color: inherit; min-height: 40px; }
+.college-child { display: flex; flex-direction: column; gap: var(--s-2); }
+/* A kid's college select keeps the app's chevron and, when "In-state public · about $31,000 a year" won't fit beside the
+   name (the phone), drops to its own full-width line instead of running under the chevron. */
+.college-child .mini-field { flex-wrap: wrap; column-gap: var(--s-3); row-gap: 0; padding-top: 2px; padding-bottom: 2px; }
+.college-child .mini-field select { flex: 1 1 auto; min-width: 0; max-width: 100%; padding-left: 0; text-overflow: ellipsis; }
+
+/* "Plan not updated" bar (candidate: SaveBar). */
+.savebar { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); border-radius: var(--r-l); background: var(--surface); box-shadow: 0 0 0 1px var(--line), var(--shadow-raised); border-left: 4px solid var(--accent-text); }
+.savebar__text { display: flex; flex-direction: column; gap: 2px; }
+.savebar__title { font-weight: 600; }
+.savebar__actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.savebar__actions .btn { flex: 1 1 auto; }
+.savebar--done { border-left-color: var(--money-in); box-shadow: 0 0 0 1px var(--line); }
+.savebar--done .savebar__text > span:first-child { display: flex; align-items: center; gap: var(--s-2); font-weight: 600; }
+.savebar--done .i { color: var(--money-in); }
+.savebar__error { color: var(--danger); font-size: var(--fs-1); }
+.savebar--pinned { position: fixed; z-index: 30; left: var(--s-4); right: var(--s-4); bottom: calc(64px + env(safe-area-inset-bottom) + var(--s-2)); animation: savebar-rise var(--dur-state) var(--ease); }
+@media (min-width: 900px) { .savebar--pinned { left: calc(220px + var(--s-6)); right: var(--s-6); bottom: var(--s-5); max-width: 720px; } }
+/* While the bar is pinned, the page foot leaves room for it so it never covers the last section. --savebar-h is the
+   height the bar takes above the page's own bottom padding (on phones that padding already clears the tab bar). */
+.plan { --savebar-h: 120px; }
+@media (min-width: 900px) { .plan { --savebar-h: calc(120px + var(--s-5)); } }
+.plan--savebar { padding-bottom: calc(var(--savebar-h) + var(--s-4)); }
+@keyframes savebar-rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .savebar--pinned { animation: none; } }
+.history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.history__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-3); padding: var(--s-3) 0; border-top: 1px solid var(--line); }
+
+/* Results sections (mockups/m2.css) */
+/* ---------- Bar charts (candidate: BarChart, hand-built SVG) ---------- */
+.chart { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font: 12px var(--font); fill: var(--ink-muted); }
+.chart .t-strong { fill: var(--ink); font-weight: 600; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .in { fill: var(--money-in); }
+.chart .out { fill: var(--chart-out); }
+.chart .so-far { opacity: 0.45; }
+.chart .sel { fill: var(--surface-2); }
+/* ---------- Band chart ---------- */
+.band { display: flex; flex-direction: column; gap: var(--s-3); }
+.band__words { font-size: var(--fs-2); }
+.chart .band-area { fill: color-mix(in srgb, var(--accent) 18%, transparent); }
+.chart .band-mid { fill: none; stroke: var(--accent-text); stroke-width: 2.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.chart .band-edge { fill: none; stroke: var(--accent-text); stroke-width: 1; opacity: 0.55; vector-effect: non-scaling-stroke; }
+.chart .retire { stroke: var(--ink-muted); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.chart .end-label { font-size: 12px; font-weight: 600; fill: var(--ink); }
+.chart-wrap { position: relative; }
+
+/* ---------- Next dollar ---------- */
+.nd { padding: 0; margin: 0; list-style: none; overflow: hidden; }
+.nd__step { display: grid; grid-template-columns: 1fr auto; gap: var(--s-1) var(--s-3); padding: var(--s-3) var(--s-4); align-items: start; }
+.nd__step + .nd__step { border-top: 1px solid var(--line); }
+.nd__n { font-size: var(--fs-1); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.nd__title { font-weight: 600; }
+.nd__figs { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); margin: 0; }
+.nd__figs div { display: flex; gap: var(--s-1); align-items: baseline; }
+.nd__figs dt { font-size: var(--fs-1); color: var(--ink-muted); }
+.nd__figs dd { margin: 0; font-weight: 600; }
+.nd__why { grid-column: 1 / -1; margin: 0; font-size: var(--fs-1); color: var(--ink-muted); }
+.nd__step > .link, .nd__answers, .nd__rate { grid-column: 1 / -1; }
+.nd__answers { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.nd__rate { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s-2); }
+.nd__rate .field { flex: 1 1 12rem; margin: 0; }
+.nd__rate input { min-height: 44px; }
+.nd__settings { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-3); font-size: var(--fs-1); color: var(--ink-muted); }
+.nd__foot { font-size: var(--fs-1); color: var(--ink-muted); }
+/* The two lines under Next dollar read as one note: the Change link keeps a 32 px target, not 44, so they sit together. */
+.nd__notes { display: flex; flex-direction: column; gap: var(--s-1); }
+.nd__settings .link { min-height: 32px; font-size: var(--fs-1); }
+
+.status-pill { display: inline-flex; align-items: center; gap: var(--s-1); padding: 2px var(--s-2) 2px var(--s-1); border-radius: var(--r-pill); font-size: var(--fs-1); font-weight: 600; white-space: nowrap; }
+.status-pill--done { color: var(--money-in); background: color-mix(in srgb, var(--money-in) 12%, transparent); }
+.status-pill--not { color: var(--ink); background: var(--surface-2); }
+.status-pill--cant { color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--line); }
+
+/* ---------- How it works, its own page (plan subpages decision 5) ---------- */
+.how-list { margin: 0; padding-left: var(--s-5); display: flex; flex-direction: column; gap: var(--s-2); }
+.how-list li.warn::marker { color: var(--warn); }
+.facts { display: grid; grid-template-columns: 1fr auto; gap: var(--s-2) var(--s-4); margin: 0; font-size: var(--fs-2); }
+.facts dt { color: var(--ink); }
+.facts dd { margin: 0; color: var(--ink-muted); text-align: right; font-size: var(--fs-1); padding-top: 2px; }
+.facts dd.warn { color: var(--warn); font-weight: 600; }
+
+.facts__row { display: contents; }
+.facts dt .link { min-height: 32px; font-weight: 400; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.chart .warn, .i.warn { color: var(--warn); }
+
+/* A cross-link line (Business, Taxes): the icon, the sentence, and the link under the sentence, the same way each time. */
+.plan-business { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: var(--s-2); align-items: start; margin: 0; }
+.plan-business > .i { margin-top: 1px; color: var(--ink-muted); }
+.plan-business > .link { grid-column: 2; justify-self: start; min-height: 32px; }
+
+/* The Plan in one sentence (roadmap 14), above the two ages. */
+.plan-headline { display: flex; flex-direction: column; gap: var(--s-1); }
+.plan-headline__main { font: 400 var(--fs-4)/1.25 var(--font-display); text-wrap: balance; }
+.plan-headline__odds { color: var(--ink-muted); }
+.plan-headline .plan-headline__main { transition: opacity var(--dur-state) var(--ease); }
+.plan-headline.is-pending .plan-headline__main { opacity: 0.55; }
+
+/* ---------- The Overview (plan subpages decision 2) ---------- */
+.plan-card { display: flex; flex-direction: column; gap: var(--s-3); }
+.plan-card__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+.plan-card__list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-1) var(--s-3); }
+.plan-card__name { font-weight: 600; }
+.plan-card__effect { color: var(--money-in); font-weight: 600; white-space: nowrap; }
+.plan-card__step { display: flex; align-items: baseline; gap: var(--s-1); margin: 0; }
+.plan-card__link { display: inline-flex; align-items: center; gap: var(--s-1); align-self: flex-start; min-height: 44px; margin-top: auto; }
+.plan-cards { align-items: stretch; }
+.plan-saved { display: flex; flex-direction: column; gap: var(--s-3); }
+/* The band chart's one drawing at its wide size, from 900 px: never drawn bigger than its viewBox (860 + 48), so the
+   labels stay at text size instead of scaling up with the column. */
+.chart.chart--wide { max-width: 908px; }
+.chart.chart--wide text { font-size: 12.5px; }
+
+/* What changed since the last saved plan (plan subpages), under the two ages. */
+.change { display: flex; flex-direction: column; gap: var(--s-1); }
+.change__line { display: flex; align-items: baseline; gap: var(--s-2); margin: 0; font-size: var(--fs-2); }
+.change__line.is-up .change__arrow { color: var(--money-in); }
+.change__line.is-down .change__arrow, .change__line.is-same { color: var(--ink-muted); }
+.change__cheer { margin: 0; font: 400 var(--fs-3)/1.3 var(--font-display); color: var(--money-in); }
+
+/* ---------- Try changes (plan subpages decision 3) ---------- */
+.plan-try { max-width: 760px; }
+/* The pinned bar: sticky in CSS, so nothing listens to scrolling. It sits under the SaveBar when that pins (z-index 30).
+   Under 900 px the sticky TopBar (56 px plus its line, z-index 30) is on screen, so the bar pins below it. */
+.trybar {
+  position: sticky; top: calc(57px + var(--s-2)); z-index: 20; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: var(--s-1) var(--s-4); padding: var(--s-3) var(--s-4); border-radius: var(--r-l); background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line), var(--shadow-raised);
+}
+@media (min-width: 900px) { .trybar { top: var(--s-2); } }
+.trybar__age { display: flex; align-items: baseline; gap: var(--s-2); margin: 0; }
+.trybar__label { font-size: var(--fs-2); color: var(--ink-muted); }
+.trybar__n { font: 400 var(--fs-5)/1 var(--font-display); font-feature-settings: "tnum"; transition: opacity var(--dur-state) var(--ease); }
+.trybar__was { font-size: var(--fs-1); color: var(--money-in); font-weight: 600; }
+.trybar__line { margin: 0; font-size: var(--fs-1); color: var(--ink-muted); }
+.trybar.is-pending .trybar__n { opacity: 0.55; }
+
+.moves dd { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--s-2); color: var(--ink); font-size: var(--fs-2); }
+.moves { align-items: center; }
+.moves dd { padding-top: 0; }
+.moves__change { min-height: 32px; font-size: var(--fs-1); }
+.how-notices { margin-top: var(--s-2); }
+.how-folds { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.how-fold { border-bottom: 1px solid var(--line); }
+.how-fold > summary { display: flex; align-items: center; justify-content: space-between; min-height: 48px; cursor: pointer; list-style: none; color: var(--ink-muted); }
+.how-fold > summary::-webkit-details-marker { display: none; }
+.how-fold > summary::after { content: "›"; font-size: var(--fs-3); transition: transform var(--dur-quick) var(--ease); }
+.how-fold[open] > summary::after { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .how-fold > summary::after { transition: none; } }
+.how-fold > .how-list { padding-bottom: var(--s-3); }
+
+/* Ask about this (P18): the button ends the Plan's tab row on Overview and How it works. */
+.plan-tabs-row { display: flex; align-items: center; gap: var(--s-3); }
+.plan-tabs-row > .subnav { flex: 1 1 auto; min-width: 0; }
+.plan-tabs-row > .ask-about { flex: none; }
+.plan-ready { display: flex; align-items: center; gap: var(--s-2); margin: 0 0 var(--s-3); font-weight: 600; }
+.plan-ready .i { color: var(--money-in); }
