@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="452" viewBox="0 0 880 452" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-labelledby="title desc">
+<title id="title">What leaves your machine when you ask Steward a question</title>
+<desc id="desc">Steward sends your question through your own gateway. Account and payee names become aliases such as Account 1 and Payee 4, notes and account numbers stay on your machine, and figures such as spending by category go through. The answer comes back in aliases and Steward puts the real names back on your screen.</desc>
+<defs><marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#42505C"/></marker><marker id="headA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7C3352"/></marker></defs>
+<rect width="880" height="452" rx="18" fill="#FAF8F3"/>
+<text x="28" y="52" font-size="19" font-weight="650" fill="#17212A" text-anchor="start">On your machine</text>
+<text x="28" y="76" font-size="14" font-weight="400" fill="#42505C" text-anchor="start">What Steward holds</text>
+<text x="560" y="52" font-size="19" font-weight="650" fill="#17212A" text-anchor="start">Claude</text>
+<text x="560" y="76" font-size="14" font-weight="400" fill="#42505C" text-anchor="start">What it sees</text>
+<rect x="352" y="38" width="176" height="326" rx="16" fill="#7C3352" fill-opacity="0.07" stroke="#7C3352" stroke-width="1.5"/>
+<path d="M440.0 56 l11 4 v8 c0 7 -5 11 -11 14 c-6 -3 -11 -7 -11 -14 v-8 z" fill="none" stroke="#7C3352" stroke-width="1.8" stroke-linejoin="round"/>
+<path d="M435.5 69 l3.2 3.2 l6 -6.4" fill="none" stroke="#7C3352" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="440.0" y="100" font-size="16" font-weight="650" fill="#17212A" text-anchor="middle">Your gateway</text>
+<line x1="320" y1="129.0" x2="558" y2="129.0" stroke="#42505C" stroke-width="1.5" marker-end="url(#head)"/>
+<rect x="388.0" y="117.0" width="104" height="24" rx="12" fill="#FAF8F3" stroke="#D9D8D4"/>
+<text x="440.0" y="133.5" font-size="12.5" font-weight="400" fill="#42505C" text-anchor="middle">name → alias</text>
+<rect x="28" y="104" width="292" height="50" rx="10" fill="#FFFFFF" stroke="#D9D8D4"/>
+<text x="44" y="134.0" font-size="15" font-weight="400" fill="#17212A" text-anchor="start">Joint checking ••4417</text>
+<text x="304" y="134.0" font-size="15" font-weight="600" fill="#17212A" text-anchor="end" font-variant-numeric="tabular-nums">$4,212</text>
+<rect x="560" y="104" width="292" height="50" rx="10" fill="#FFFFFF" stroke="#D9D8D4"/>
+<rect x="570" y="115.0" width="91.39999999999999" height="28" rx="8" fill="#7C3352" fill-opacity="0.12"/>
+<text x="577" y="134.0" font-size="15" font-weight="650" fill="#7C3352" text-anchor="start">Account 1</text>
+<text x="836" y="134.0" font-size="15" font-weight="600" fill="#17212A" text-anchor="end" font-variant-numeric="tabular-nums">$4,212</text>
+<line x1="320" y1="193.0" x2="558" y2="193.0" stroke="#42505C" stroke-width="1.5" marker-end="url(#head)"/>
+<rect x="388.0" y="181.0" width="104" height="24" rx="12" fill="#FAF8F3" stroke="#D9D8D4"/>
+<text x="440.0" y="197.5" font-size="12.5" font-weight="400" fill="#42505C" text-anchor="middle">name → alias</text>
+<rect x="28" y="168" width="292" height="50" rx="10" fill="#FFFFFF" stroke="#D9D8D4"/>
+<text x="44" y="198.0" font-size="15" font-weight="400" fill="#17212A" text-anchor="start">Venmo to Dana</text>
+<text x="304" y="198.0" font-size="15" font-weight="600" fill="#17212A" text-anchor="end" font-variant-numeric="tabular-nums">−$120</text>
+<rect x="560" y="168" width="292" height="50" rx="10" fill="#FFFFFF" stroke="#D9D8D4"/>
+<rect x="570" y="179.0" width="74.19999999999999" height="28" rx="8" fill="#7C3352" fill-opacity="0.12"/>
+<text x="577" y="198.0" font-size="15" font-weight="650" fill="#7C3352" text-anchor="start">Payee 4</text>
+<text x="836" y="198.0" font-size="15" font-weight="600" fill="#17212A" text-anchor="end" font-variant-numeric="tabular-nums">−$120</text>
+<line x1="320" y1="257.0" x2="388.0" y2="257.0" stroke="#42505C" stroke-width="1.5" stroke-dasharray="3 4"/>
+<rect x="388.0" y="245.0" width="104" height="24" rx="12" fill="#FAF8F3" stroke="#42505C" stroke-dasharray="3 3"/>
+<text x="440.0" y="261.5" font-size="12.5" font-weight="400" fill="#42505C" text-anchor="middle">stops here</text>
+<rect x="28" y="232" width="292" height="50" rx="10" fill="#FFFFFF" stroke="#D9D8D4"/>
+<text x="44" y="262.0" font-size="15" font-weight="400" fill="#17212A" text-anchor="start">Note: braces for Theo</text>
+<rect x="560" y="232" width="292" height="50" rx="10" fill="none" stroke="#D9D8D4" stroke-dasharray="5 5"/>
+<text x="576" y="262.0" font-size="15" font-weight="400" fill="#42505C" text-anchor="start" font-style="italic">Never sent</text>
+<line x1="320" y1="321.0" x2="558" y2="321.0" stroke="#42505C" stroke-width="1.5" marker-end="url(#head)"/>
+<rect x="388.0" y="309.0" width="104" height="24" rx="12" fill="#FAF8F3" stroke="#D9D8D4"/>
+<text x="440.0" y="325.5" font-size="12.5" font-weight="400" fill="#42505C" text-anchor="middle">sent as is</text>
+<rect x="28" y="296" width="292" height="50" rx="10" fill="#FFFFFF" stroke="#D9D8D4"/>
+<text x="44" y="326.0" font-size="15" font-weight="400" fill="#17212A" text-anchor="start">Eating out, November</text>
+<text x="304" y="326.0" font-size="15" font-weight="600" fill="#17212A" text-anchor="end" font-variant-numeric="tabular-nums">$386</text>
+<rect x="560" y="296" width="292" height="50" rx="10" fill="#FFFFFF" stroke="#D9D8D4"/>
+<text x="576" y="326.0" font-size="15" font-weight="400" fill="#17212A" text-anchor="start">Eating out, November</text>
+<text x="836" y="326.0" font-size="15" font-weight="600" fill="#17212A" text-anchor="end" font-variant-numeric="tabular-nums">$386</text>
+<line x1="844" y1="396" x2="36" y2="396" stroke="#7C3352" stroke-width="1.8" marker-end="url(#headA)"/>
+<rect x="190.0" y="381" width="500" height="30" rx="15" fill="#FAF8F3"/>
+<text x="440.0" y="401" font-size="14.5" font-weight="600" fill="#17212A" text-anchor="middle">The answer comes back in aliases. Steward puts the real names back.</text>
+<text x="440.0" y="426" font-size="12.5" font-weight="400" fill="#42505C" text-anchor="middle">Steward never connects to Claude; only your gateway does. A local model there also looks for names Steward doesn't hold, and can miss one.</text>
+</svg>

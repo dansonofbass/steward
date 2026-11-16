@@ -3,15 +3,20 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+# Typer forces coloured output when GITHUB_ACTIONS, FORCE_COLOR or PY_COLORS is set, and the escape codes split
+# option names such as --max-age-hours in the CLI tests' output. It reads this once, when typer.rich_utils is
+# first imported, so it's set before anything imports Typer. tests/test_cli.py checks it holds.
+os.environ["_TYPER_FORCE_DISABLE_TERMINAL"] = "1"
 
-from steward.app import create_app
-from steward.db.keys import ensure_key
-from steward.logs import START_LINES
-from steward.settings import Settings
-from steward_gateway.logs import QUIET
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy.orm import Session  # noqa: E402
+
+from steward.app import create_app  # noqa: E402
+from steward.db.keys import ensure_key  # noqa: E402
+from steward.logs import START_LINES  # noqa: E402
+from steward.settings import Settings  # noqa: E402
+from steward_gateway.logs import QUIET  # noqa: E402
 
 # Every logger the gateway's setup_logging() touches: the root, the gateway's own, the quiet libraries and uvicorn's,
 # and Steward's own (steward.logs.configure).

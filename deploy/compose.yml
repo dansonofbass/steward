@@ -151,14 +151,14 @@ services:
     <<: *ollama
     profiles: ["ollama"]
 
-  # The gateway on an NVIDIA GPU (docs/guides/gpu.md). Built on this machine from Steward's release source the first
-  # time (10 to 20 minutes, several GB); Steward never publishes it.
+  # The gateway on an NVIDIA GPU (docs/guides/gpu.md). Built on this machine the first time (10 to 20 minutes, several
+  # GB), from the source in this clone: the context is the folder above this one. Steward never publishes it.
   gateway-nvidia:
     <<: *gateway
     image: steward-gateway-cuda:local
     pull_policy: build
     build:
-      context: https://github.com/steward-money/steward.git#v0.1.0
+      context: ..
       dockerfile: deploy/gateway/Dockerfile.cuda
       args:
         STEWARD_GPU_LICENSE_ACCEPTED: ${STEWARD_GPU_LICENSE_ACCEPTED:-}
@@ -198,14 +198,15 @@ services:
       gateway-nvidia:
         condition: service_healthy
 
-  # The gateway on an AMD GPU (docs/guides/gpu.md); not yet tested on real hardware. Built on this machine from
-  # Steward's release source the first time (10 to 20 minutes, several GB); Steward never publishes it.
+  # The gateway on an AMD GPU (docs/guides/gpu.md); not yet tested on real hardware. Built on this machine the first
+  # time (10 to 20 minutes, several GB), from the source in this clone, as gateway-nvidia is. Steward never
+  # publishes it.
   gateway-amd:
     <<: *gateway
     image: steward-gateway-rocm:local
     pull_policy: build
     build:
-      context: https://github.com/steward-money/steward.git#v0.1.0
+      context: ..
       dockerfile: deploy/gateway/Dockerfile.rocm
       args:
         STEWARD_GPU_LICENSE_ACCEPTED: ${STEWARD_GPU_LICENSE_ACCEPTED:-}

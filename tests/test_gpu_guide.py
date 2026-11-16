@@ -8,7 +8,6 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 GUIDE = ROOT / "docs" / "guides" / "gpu.md"
-VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
 HEADINGS = ("## Find out what you have", "## Licenses", "## The one-time build", "## NVIDIA", "## AMD",
             "## Check it worked", "## Intel GPUs and NPUs")
 
@@ -68,7 +67,7 @@ def test_the_build_says_what_it_takes_and_what_it_downloads():
     build = section(GUIDE.read_text(), "## The one-time build")
     for line in ("docker compose --profile gateway-nvidia build", "docker compose --profile gateway-amd build",
                  "10 to 20 minutes", "several GB", "steward-gateway-cuda:local", "Steward never publishes",
-                 "docker compose pull"):
+                 "docker compose pull", "from the Steward source in your clone", "`git pull` the clone"):
         assert line in build, line
 
 
@@ -91,10 +90,16 @@ def test_after_the_switch_the_gateway_guides_commands_use_the_gpu_service_names(
     assert f"`docker compose exec ollama-{vendor} ollama pull <model>`" in steps
 
 
-def test_detection_is_fetched_from_the_release_and_checked_where_it_runs():
-    find = section(GUIDE.read_text(), "## Find out what you have")
-    assert f"https://raw.githubusercontent.com/steward-money/steward/v{VERSION}/deploy/gateway/detect-gpu.sh" in find
-    assert "| sh" not in find                               # downloaded and read first, never piped into a shell
+def test_detection_runs_from_the_clone_and_is_checked_where_it_runs():
+    """From the clone the GPU gateway builds from (public issue #11): no download from a tag, which can be moved to
+    other code after the guide was read."""
+    doc = GUIDE.read_text()
+    find = section(doc, "## Find out what you have")
+    assert "`deploy/gateway/detect-gpu.sh`" in find and "From the `deploy` folder" in find
+    assert "less gateway/detect-gpu.sh\nsh gateway/detect-gpu.sh" in find
+    assert (ROOT / "deploy" / "gateway" / "detect-gpu.sh").is_file()
+    assert not re.search(r"\b(curl|wget)\b|raw\.githubusercontent|https://github\.com/steward-money", doc)
+    assert "| sh" not in find                               # read first, never piped into a shell
     check = section(GUIDE.read_text(), "## Check it worked")
     assert "steward-gateway hardware" in check and "Runs on an NVIDIA GPU." in check
 

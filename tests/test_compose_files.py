@@ -243,12 +243,62 @@ NVIDIA_GPU = {"resources": {"reservations": {"devices": [{"driver": "nvidia", "c
 ACCEPT = {"STEWARD_GPU_LICENSE_ACCEPTED": "${STEWARD_GPU_LICENSE_ACCEPTED:-}"}
 
 
+# Public issue #11: the GPU gateways once built from a tag on GitHub, which can be moved to other code. They build from
+# the clone compose.yml sits in (docs/quickstart/install.md clones it), so what is built is the source beside the file.
+# Compose hands a context to BuildKit, which fetches a URL, git@..., github.com/... or anything ending .git or holding #.
+REMOTE = re.compile(r"^(?:[a-z][a-z0-9+.-]*://|git@|github\.com/)|\.git$|#", re.I)
+COMPOSE_FILES = sorted(DEPLOY.rglob("compose*.yml"))
+
+
 @pytest.mark.parametrize("vendor, image", [("nvidia", "cuda"), ("amd", "rocm")])
-def test_a_gpu_gateway_is_built_on_this_machine_from_the_release_and_never_pulled(vendor, image):
+def test_a_gpu_gateway_is_built_on_this_machine_from_this_clone_and_never_pulled(vendor, image):
     s = services()[f"gateway-{vendor}"]
     assert s["image"] == f"steward-gateway-{image}:local" and s["pull_policy"] == "build"
-    assert s["build"] == {"context": f"https://github.com/steward-money/steward.git#v{VERSION}",
-                          "dockerfile": f"deploy/gateway/Dockerfile.{image}", "args": ACCEPT}
+    assert s["build"] == {"context": "..", "dockerfile": f"deploy/gateway/Dockerfile.{image}", "args": ACCEPT}
+    assert (DEPLOY / s["build"]["context"]).resolve() == ROOT
+    assert (ROOT / s["build"]["dockerfile"]).is_file()
+
+
+def contexts(path: Path) -> list[tuple[str, str]]:
+    """Every build context a compose file names, with its service: the main one and any additional_contexts."""
+    out = []
+    for name, s in (yaml.safe_load(path.read_text()).get("services") or {}).items():
+        b = s.get("build")
+        if isinstance(b, str):
+            out.append((name, b))
+        elif b is not None:
+            extra = b.get("additional_contexts") or {}
+            extra = extra.values() if isinstance(extra, dict) else [e.split("=", 1)[-1] for e in extra]
+            out += [(name, c) for c in (b.get("context", "."), *extra)]
+    return out
+
+
+@pytest.mark.parametrize("path", COMPOSE_FILES, ids=lambda p: str(p.relative_to(DEPLOY)))
+def test_no_compose_file_builds_from_a_remote_source(path):
+    assert [(n, c) for n, c in contexts(path) if REMOTE.search(c)] == []
+
+
+def test_the_remote_source_check_finds_a_git_or_http_context(tmp_path):
+    for c in ("https://github.com/steward-money/steward.git#v0.1.0", "http://example.com/ctx.tar.gz",
+              "git://github.com/x/y", "git@github.com:x/y.git", "github.com/x/y", "ssh://git@github.com/x/y",
+              "example.com/x/y.git", "../steward#main"):
+        assert REMOTE.search(c), c
+    for c in ("..", ".", "../deploy", "gateway", "proxy"):
+        assert not REMOTE.search(c), c
+    compose = {"services": {"a": {"build": {"context": "..", "additional_contexts": {"src": "https://x/y.git"}}},
+                            "b": {"build": {"context": ".", "additional_contexts": ["t=github.com/x/y"]}},
+                            "c": {"build": "git@github.com:x/y.git"}, "d": {"image": "x"}}}
+    path = tmp_path / "compose.yml"
+    path.write_text(yaml.safe_dump(compose))
+    assert [c for _, c in contexts(path) if REMOTE.search(c)] == ["https://x/y.git", "github.com/x/y",
+                                                                  "git@github.com:x/y.git"]
+
+
+def test_the_gpu_build_context_leaves_out_the_households_data_and_settings():
+    """The context is the clone's top folder, and deploy/ beside compose.yml holds data/ and the settings files."""
+    ignored = (ROOT / ".dockerignore").read_text().splitlines()
+    for pattern in ("deploy/data", "**/.env*", "**/*.env", "**/*.db", "**/*.key", "**/*.token"):
+        assert pattern in ignored, pattern
 
 
 @pytest.mark.parametrize("vendor", ["nvidia", "amd"])

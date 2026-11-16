@@ -1,0 +1,52 @@
+# Weekly update checks for everything Steward pins: base images (by digest), the third-party images in
+# deploy/compose.yml, GitHub Actions (by commit), and the packages in uv.lock and web/package-lock.json. Minor and
+# patch updates come as one pull request per ecosystem; a major update comes on its own.
+# tests/test_supply_chain.py checks that every folder with a Dockerfile is listed here.
+# torch and triton stay out of the uv group and come as their own pull request: deploy/gateway/torch-cpu.txt and
+# torch-rocm.txt pin the same torch by hand, with hashes from PyTorch's index, so a torch bump stays red until both are
+# regenerated (tests/test_gateway_image.py ties them to uv.lock).
+version: 2
+updates:
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /deploy/gateway
+      - /deploy/proxy
+    schedule:
+      interval: weekly
+    groups:
+      docker-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker-compose
+    directory: /deploy
+    schedule:
+      interval: weekly
+    groups:
+      compose-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      uv-minor-and-patch:
+        update-types: [minor, patch]
+        exclude-patterns: [torch, triton]
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]

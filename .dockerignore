@@ -14,3 +14,11 @@ web/playwright-report
 .superpowers
 **/__pycache__
 **/.playwright-mcp
+# deploy/compose.yml builds the GPU gateways from the clone's top folder, so the household's data folder and settings
+# files beside it in deploy/ stay out of the build context.
+deploy/data
+**/.env*
+**/*.env
+**/*.db
+**/*.key
+**/*.token

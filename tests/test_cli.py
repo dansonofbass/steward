@@ -430,3 +430,13 @@ def test_backup_refuses_a_folder_that_holds_the_key(settings):
     _prepared(settings)
     r = runner.invoke(app, ["backup", "--dir", str(settings.data_dir)])
     assert r.exit_code == 1 and "holds the encryption key" in r.output
+
+
+def test_cli_output_is_plain_even_where_ci_forces_colour():
+    """GitHub Actions sets GITHUB_ACTIONS, which makes Typer colour its output; conftest turns that off so the CLI
+    tests read the same text everywhere."""
+    import typer.rich_utils
+
+    assert typer.rich_utils.FORCE_TERMINAL is False
+    r = runner.invoke(app, ["restore-check", "--max-age-hours", "0"])
+    assert "\x1b[" not in r.output

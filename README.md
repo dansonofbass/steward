@@ -4,10 +4,10 @@
 
 Ask AI about your money without handing it your money.
 
-<p>
-<img src="docs/screenshots/home.png" width="240" alt="Home: the month so far, with income, spending and what needs a look">
-<img src="docs/screenshots/review.png" width="240" alt="Review: one transaction at a time, sorted with a tap">
-<img src="docs/screenshots/ask.png" width="240" alt="Ask: a plain question about spending, answered from your own books">
+<p align="center">
+<img src="docs/screenshots/home.png" width="230" alt="Home: the month so far, with income, spending and what needs a look">&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="docs/screenshots/review.png" width="230" alt="Review: one transaction at a time, sorted with a tap">&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="docs/screenshots/ask.png" width="230" alt="Ask: a plain question about spending, answered from your own books">
 </p>
 
 <img src="docs/screenshots/plan.png" width="720" alt="Plan: when you can retire, and what would move it">
@@ -35,12 +35,10 @@ Each promise links to its proof in the [claims ledger](docs/CLAIMS.md).
 
 ### Private
 
-```text
-Your machine                          Your gateway                   Claude
-Steward + your books  --question-->   checks for identifiers  ---->  sees figures
-(names, notes, numbers)                                              and aliases
-                      <--answer----
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/privacy-flow-dark.svg">
+  <img src="docs/images/privacy-flow-light.svg" width="880" alt="Your question goes from Steward through your gateway to Claude. Account and payee names become aliases such as Account 1 and Payee 4, notes never leave your machine, and figures such as spending by category go through as they are. The answer comes back in aliases, and Steward puts the real names back.">
+</picture>
 
 - Steward never connects to Claude itself; only your gateway does. [P14](docs/CLAIMS.md#p14)
 - Claude never receives the names Steward holds, except in store rows a manager approves. A model on your gateway looks for other names and can miss one. [P4](docs/CLAIMS.md#p4)
@@ -66,6 +64,10 @@ For the rest, read the [threat model](docs/explanations/threat-model.md), [Priva
 ## Scope
 
 Steward 0.1.0 is early. It is for US households of one or two adults, on x86_64 Linux with Docker (Podman isn't supported yet). Transactions come from SimpleFIN or files. The gateway is optional.
+
+## How Steward is made
+
+Steward is designed and directed by its maintainer, JR, and largely written with Claude, Anthropic's AI model. JR reviewed and approved every change, from the architecture and design to how each feature works, and JR's own family runs its money on Steward. Each change is tested, and the 0.1.0 release passed security, privacy and thoughtfulness reviews and a timed install from the public docs. The [release reviews](docs/reviews/) say what they found.
 
 ## License
 

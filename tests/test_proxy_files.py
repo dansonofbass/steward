@@ -13,10 +13,15 @@ CLOUDFLARE_MODULE = "v0.2.4"
 BUILDER = "caddy:2.11.7-builder@sha256:d842facfd63b960922e57444ff76fd8f0793a66dfdcf481af8026e1f4e6a39b4"
 RUNTIME = "caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f"
 TOKEN = "0" * 40
+CURL = "8.23.0-r0"      # Alpine's curl in the runtime base's branch; the build fails once Alpine drops it
 
 
 def dockerfile() -> str:
     return (PROXY / "Dockerfile").read_text()
+
+
+def test_proxy_installs_only_a_pinned_curl():
+    assert re.findall(r"apk add (.*?) &&", dockerfile()) == [f"--no-cache curl={CURL}"]
 
 
 def test_proxy_bases_are_pinned_by_digest():

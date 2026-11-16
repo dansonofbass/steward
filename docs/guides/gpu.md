@@ -1,17 +1,16 @@
 # Speed up the gateway with a GPU
 
-A GPU makes redaction and the local model much faster. Steward never installs drivers or toolkits: you install the vendor's own. Steward never publishes a GPU image either: your machine builds one once, from Steward's release source.
+A GPU makes redaction and the local model much faster. Steward never installs drivers or toolkits: you install the vendor's own. Steward never publishes a GPU image either: your machine builds one once, from the Steward source in your clone.
 
 This page is for the gateway described in [the gateway guide](gateway.md). Nothing here is needed for it to work; the CPU image is the default.
 
 ## Find out what you have
 
-Download the release's detection script, read it, then run it. It only looks: it installs nothing and writes nothing.
+The detection script is in your clone of Steward, at `deploy/gateway/detect-gpu.sh`. Read it, then run it. It only looks: it installs nothing and writes nothing. From the `deploy` folder:
 
 ```
-curl -fsSLO https://raw.githubusercontent.com/steward-money/steward/v0.1.0/deploy/gateway/detect-gpu.sh
-less detect-gpu.sh
-sh detect-gpu.sh
+less gateway/detect-gpu.sh
+sh gateway/detect-gpu.sh
 ```
 
 On a machine where the gateway is already installed, `steward-gateway hardware` prints the same. On an NVIDIA machine with Docker's NVIDIA runtime it looks like this:
@@ -68,13 +67,12 @@ docker compose --profile gateway-amd build
 
 Run the one for your GPU. Expect 10 to 20 minutes on a first build and several GB of disk. On the test machine, the NVIDIA image came to 6.2 GB, and a rebuild with warm caches took about two minutes.
 
-It downloads:
+It builds from the Steward source in your clone, the folder above `deploy`, and downloads:
 
-- Steward's source at this release, from GitHub;
 - the Python base image;
 - the gateway's Python packages from PyPI, including the vendor's GPU libraries (for AMD, PyTorch's ROCm build from PyTorch's index).
 
-The result is `steward-gateway-cuda:local` (or `steward-gateway-rocm:local`) on your machine only. Steward never publishes it. `docker compose pull` skips it. After an upgrade, `docker compose up -d` rebuilds it from the new release, quickly where nothing changed.
+The result is `steward-gateway-cuda:local` (or `steward-gateway-rocm:local`) on your machine only. Steward never publishes it. `docker compose pull` skips it. To upgrade, `git pull` the clone and build again ([upgrade](upgrade.md), step 2). A rebuild is quick where nothing changed.
 
 ## NVIDIA
 

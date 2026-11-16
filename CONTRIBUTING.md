@@ -5,6 +5,7 @@ Thank you for helping. This page covers how to run Steward's code and tests, wha
 ## Before you send a change
 
 - Sign off every commit with `git commit -s`. That adds a `Signed-off-by:` line, which certifies that you wrote the change or have the right to submit it under the project's license (the [Developer Certificate of Origin](https://developercertificate.org/)). Steward is AGPL-3.0-or-later; see `LICENSE`.
+- AI help is welcome. Say in the pull request which parts an AI tool wrote, and review and test them as you would your own: your sign-off covers them too. Steward itself is largely written with Claude (see "How Steward is made" in the README).
 - Comments and tests in the code sometimes say `spec N` or `ruling N`. Those refer to design notes that are not public. New work cites public issues instead.
 - The yearly refresh of the tax tables (`src/steward/engine/data/rules/`) is best effort. If a table is out of date, an issue or a pull request with the new figures and their source is welcome.
 - If you run a changed copy for other people, point the Source code link on the About page at your own source. It is `SOURCE_URL` in `web/src/screens/you/aboutCopy.ts`. The AGPL (section 13) requires that people using a changed copy over a network can get its source.
