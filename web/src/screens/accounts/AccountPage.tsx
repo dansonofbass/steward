@@ -6,6 +6,7 @@ import { useAccounts } from '../../api/hooks';
 import type { Account, AccountType } from '../../api/types';
 import { aboutFor, type Surface } from '../../ask/about';
 import { useBook, useCanEdit } from '../../book/BookContext';
+import { useItemTitle } from '../../frame/itemTitle';
 import { Link, Navigate, useNavigate } from '../../book/links';
 import { isInvestment } from '../../lib/accountKinds';
 import {
@@ -73,6 +74,7 @@ export default function AccountPage() {
   const [updating, setUpdating] = useState(false);
   const [merging, setMerging] = useState(false);
   const [merged, setMerged] = useState<MergeReply | null>(null);
+  useItemTitle(accounts.data?.accounts.find((x) => String(x.id) === id)?.name);
   // The same loading and error states as an inventory item's page; the error keeps ‹ Accounts as a way out.
   // The class `transactions` gives the error the same column and spacing as the page with its transactions.
   if (accounts.isPending) return <div className="screen" aria-busy="true"><Skeleton lines={8} /></div>;
@@ -88,7 +90,7 @@ export default function AccountPage() {
   if (!a) return <Navigate to="/accounts" replace />;
   const today = new Date();
   const invest = isInvestment(a.type);
-  const owner = ownerOptions(book?.owners, a.owner).find((o) => o.value === a.owner)?.label;
+  const owner = a.owner_label ?? ownerOptions(book?.owners, a.owner).find((o) => o.value === a.owner)?.label;
   // Of its type; one whose type isn't set yet (a newer duplicate, often) can go into any: the kept one's type stands.
   const others = accounts.data.accounts.filter((x) => x.id !== a.id && x.is_active && x.source === 'simplefin'
     && (a.type === 'unknown' || x.type === a.type));

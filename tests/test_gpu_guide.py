@@ -82,12 +82,13 @@ def test_the_vendor_steps_link_the_vendors_own_pages_and_accept_the_license():
 
 @pytest.mark.parametrize("vendor", ["nvidia", "amd"])
 def test_after_the_switch_the_gateway_guides_commands_use_the_gpu_service_names(vendor):
-    """docs/guides/gateway.md says `docker compose exec gateway ...` and `... exec ollama ollama pull`; under a GPU
-    profile those services aren't running, so each vendor's steps say which names to use instead."""
+    """docs/guides/gateway.md says `docker compose exec gateway ...`; under a GPU profile that service isn't running,
+    so each vendor's steps say which names to use instead. A pull still goes through ollama-pull (issue #4), which
+    writes the models volume every Ollama shares."""
     steps = section(GUIDE.read_text(), "## NVIDIA" if vendor == "nvidia" else "## AMD")
     assert "[gateway guide](gateway.md)" in steps
     assert f"use `gateway-{vendor}` and `ollama-{vendor}` in place of `gateway` and `ollama`" in steps
-    assert f"`docker compose exec ollama-{vendor} ollama pull <model>`" in steps
+    assert "`docker compose run --rm ollama-pull <model>`" in steps and "ollama pull" not in steps.replace("ollama-pull", "")
 
 
 def test_detection_runs_from_the_clone_and_is_checked_where_it_runs():

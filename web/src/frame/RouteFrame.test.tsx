@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
-import { createMemoryRouter, Link, Navigate, RouterProvider, useNavigate, useSearchParams, type RouteObject } from 'react-router-dom';
+import { createMemoryRouter, Link, Navigate, RouterProvider, useNavigate, useParams, useSearchParams, type RouteObject } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useFocusOnMount } from '../lib/focus';
 import { routes } from '../routes';
+import { useItemTitle } from './itemTitle';
 import { RouteFrame } from './RouteFrame';
 
 afterEach(() => { vi.restoreAllMocks(); });
@@ -166,5 +167,36 @@ describe('a page change says where you are (WEB-3)', () => {
     expect(await screen.findByRole('heading', { name: 'Good morning' })).toHaveFocus();
     expect(screen.getByTestId('live-said')).toHaveTextContent('Home');
     expect(router.state.historyAction).toBe('REPLACE');
+  });
+});
+
+describe("a page for one item is titled by the item's name (issue #29)", () => {
+  const NAMES: Record<string, string> = { 1: 'Joint checking', 2: 'Savings' };
+  /** An item page whose name arrives after the page has opened, as a query's would; another id loads again. */
+  function Item() {
+    const { id = '' } = useParams();
+    const [loaded, setLoaded] = useState<string[]>([]);
+    const name = loaded.includes(id) ? NAMES[id] : undefined;
+    useItemTitle(name);
+    return <main><h1>{name ?? 'Loading'}</h1><button type="button" onClick={() => setLoaded((l) => [...l, id])}>Load</button></main>;
+  }
+  const pages: RouteObject[] = [{ element: <RouteFrame />, children: [
+    { path: '/list', element: <main><h1>Items</h1></main>, handle: { title: 'Items' } },
+    { path: '/items/:id', element: <Item />, handle: { title: 'Item' } },
+  ] }];
+
+  it('keeps the fixed noun while it loads, takes the name once loaded, and lets go of it on the next page', async () => {
+    const router = createMemoryRouter(pages, { initialEntries: ['/items/1'] });
+    render(<RouterProvider router={router} />);
+    expect(document.title).toBe('Item · Steward');
+    act(() => { screen.getByRole('button', { name: 'Load' }).click(); });
+    expect(document.title).toBe('Joint checking · Steward');
+    // Another item on the same route: the screen stays mounted, and the title is the noun again until it loads.
+    await act(async () => { await router.navigate('/items/2'); });
+    expect(document.title).toBe('Item · Steward');
+    act(() => { screen.getByRole('button', { name: 'Load' }).click(); });
+    expect(document.title).toBe('Savings · Steward');
+    await act(async () => { await router.navigate('/list'); });
+    expect(document.title).toBe('Items · Steward');
   });
 });

@@ -9,8 +9,8 @@ import type { Account, AccountType, LinkResult, Owner, SyncResult } from '../../
 import { localYmd, relativeDays } from '../../lib/format';
 import { useRemoval } from '../../lib/useRemoval';
 import {
-  IMPORT_A_FILE, LAST_UPDATED, NEW_ACCOUNTS, NEW_ACCOUNTS_HINT, OWNER, S_BANKS_AND_ACCOUNTS, SAVE, SIMPLEFIN_90_DAYS, TYPE, UNLINK,
-  UNLINK_BODY, UNLINK_TITLE, UNLINKED, UPDATE_NOW, UPDATING,
+  IMPORT_A_FILE, LAST_UPDATED, NEW_ACCOUNTS, NEW_ACCOUNTS_HINT, OWNER, S_BANKS_AND_ACCOUNTS, SAVE, SIGN_IN_NEEDED, SIGN_IN_STEP,
+  SIGN_IN_STEP_UNLINKED, SIGN_IN_TAG, SIMPLEFIN_90_DAYS, TYPE, UNLINK, UNLINK_BODY, UNLINK_TITLE, UNLINKED, UPDATE_NOW, UPDATING,
 } from '../../lib/copy';
 import { Button } from '../../ui/Button';
 import { Card } from '../../ui/Card';
@@ -91,6 +91,14 @@ export function SimplefinCard() {
     <Card className="status">
       <h3 className="subhead" ref={removal.anchor} tabIndex={-1}>SimpleFIN</h3>
       <RemovalLine removal={removal} />
+      {(s.sign_in ?? []).length > 0 && (
+        <Notice tone="warn">
+          <div data-testid="sign-in-needed">
+            {s.sign_in!.map((bank) => <p key={bank}>{SIGN_IN_NEEDED.replace('{bank}', bank)}</p>)}
+            <p>{s.linked ? SIGN_IN_STEP : SIGN_IN_STEP_UNLINKED}</p>
+          </div>
+        </Notice>
+      )}
       {s.linked ? (
         <>
           <p className="status__line"><span className="dot" aria-hidden="true" />
@@ -166,6 +174,7 @@ export default function Banks() {
   const household = useIsHousehold();   // the server keeps manual accounts to household books
   const institutions = useInstitutions();
   const accounts = useAccounts();
+  const signIn = new Set(useSimplefin().data?.sign_in ?? []);   // the query SimplefinCard already holds
   const today = new Date();
   const unknown = (accounts.data?.accounts ?? []).filter((a) => a.type === 'unknown');
   return (
@@ -181,7 +190,10 @@ export default function Banks() {
               <li className="line" key={i.id}>
                 <div className="line__main">
                   <span>{i.name}</span>
-                  {i.last_error
+                  {/* A bank the SimpleFIN notice names gets a short tag: the notice already says the sentence. */}
+                  {signIn.has(i.name)
+                    ? <span className="small warn" data-testid="bank-needs-sign-in"><LazyOopsAcorn size={18} /> {SIGN_IN_TAG}</span>
+                    : i.last_error
                     ? <span className="small warn"><LazyOopsAcorn size={18} /> {i.last_error}</span>
                     : i.last_sync_at && <span className="small muted">{LAST_UPDATED.replace('{when}', relativeDays(localYmd(i.last_sync_at), today))}</span>}
                 </div>

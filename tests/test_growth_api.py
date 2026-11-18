@@ -21,9 +21,9 @@ def test_growth_is_the_stage_the_milestones_and_the_persons_own_seen(client, ddb
     _book(client, ddb, ours, db)
     login(client, "jr")
     g = client.get("/api/b/ours/growth").json()
-    assert set(g) == {"stage", "milestones", "seen"}                              # counts and keys only
+    assert set(g) == {"stage", "milestones", "seen"}                              # counts, keys and a month only
     assert g["stage"] == 2 and g["seen"] is False
-    assert g["milestones"] == [{"key": "first_month", "met": True}, {"key": "covered", "met": False},
+    assert g["milestones"] == [{"key": "first_month", "met": True, "month": "2025-06"}, {"key": "covered", "met": False},
                                {"key": "checklist", "met": False}, {"key": "year", "met": True},
                                {"key": "five_years", "met": False}]
     assert client.post("/api/b/ours/growth/seen", json={"stage": 2}).status_code == 204

@@ -21,7 +21,7 @@ NETWORK = frozenset({"httpx2", "httpx", "requests", "urllib.request", "urllib3",
 
 # Each module that imports a network library, and the outbound_hosts source it reaches.
 CONNECTORS = {
-    "src/steward/services/simplefin/client.py": "simplefin: settings.allowed_hosts",
+    "src/steward/services/simplefin/client.py": "simplefin: settings.simplefin_allowed_hosts",
     "src/steward/app.py": "simplefin and gateway: the shared app.state.http client (sync, the readiness probe, "
                           "pairing by code with settings.gateway_url)",
     "src/steward/cli.py": "simplefin (sync) and gateway (advisor pair: settings.gateway_url or the --gateway you type)",
@@ -192,11 +192,11 @@ def simplefin(settings, monkeypatch, request):
     from steward.services.simplefin.client import SimplefinError, claim, fetch_accounts
     access = "http://demo:demo@testserver/simplefin"
     claimed, fetched = Recorder(access), Recorder({"accounts": []})
-    assert claim(claimed.client(), "http://testserver/simplefin/claim/demo", settings.allowed_hosts) == access
-    fetch_accounts(fetched.client(), access, None, allowed_hosts=settings.allowed_hosts)
+    assert claim(claimed.client(), "http://testserver/simplefin/claim/demo", settings.simplefin_allowed_hosts) == access
+    fetch_accounts(fetched.client(), access, None, allowed_hosts=settings.simplefin_allowed_hosts)
     with pytest.raises(SimplefinError):         # a host outside allowed_hosts is refused before any request
         fetch_accounts(fetched.client(), "https://demo:demo@elsewhere.test/simplefin", None,
-                       allowed_hosts=settings.allowed_hosts)
+                       allowed_hosts=settings.simplefin_allowed_hosts)
     return settings, "testserver", claimed.hosts + fetched.hosts
 
 

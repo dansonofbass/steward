@@ -4,7 +4,9 @@ export type KeyState = { busy: boolean; menuOpen: boolean };
 type KeyLike = Pick<KeyboardEvent, 'key' | 'target' | 'ctrlKey' | 'metaKey' | 'altKey' | 'repeat' | 'defaultPrevented'>;
 
 const TYPING = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
-const OPEN = '[role="dialog"], dialog[open], [aria-modal="true"]';
+// A dialog that is a popover counts only while it is shown (issue #27): the You menu stays in the page, hidden, between
+// uses. :is() forgives a browser that doesn't know :popover-open, which would otherwise make the whole query throw.
+const OPEN = ':is([role="dialog"]:not([popover]), [role="dialog"]:popover-open), dialog[open], [aria-modal="true"]';
 const ACTS_ITSELF = 'button, a, [role^="menuitem"]';
 
 export function ignoreKey(e: KeyLike, s: KeyState): boolean {

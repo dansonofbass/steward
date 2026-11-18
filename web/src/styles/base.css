@@ -2,16 +2,25 @@
 /* `hidden` always hides, even on an element whose class sets display: a closed lever's body was display:flex, so it
    stayed on screen empty and left 28 px of padding under every lever. */
 [hidden] { display: none !important; }
-html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font: var(--fs-2)/var(--lh) var(--font); -webkit-font-smoothing: antialiased; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+/* The text size is set on body, never on html: the root's size is the browser's, and the phone's text size with it
+   (index.html's text-scale meta, issue #28). */
+body { font: var(--fs-2)/var(--lh) var(--font); }
 h1, h2, h3, p { margin: 0; }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; }
+/* With the phone's text made larger (issue #28), a word too long for its line breaks, hyphenated where the browser
+   can, instead of running off the side. */
+h1, h2, h3 { overflow-wrap: anywhere; hyphens: auto; }
 h1 { font-size: var(--fs-5); line-height: 1.2; }
 h2 { font-size: var(--fs-4); line-height: 1.25; }
 h3 { font-size: var(--fs-3); line-height: 1.3; }
 a { color: var(--accent-text); }
 .num, .money { font-variant-numeric: tabular-nums; }
+/* Read by a screen reader, not shown: a page's heading where the design has none, an amount said in words. Here, not in
+   a screen's own CSS, so it hides on any page whichever chunks have loaded. */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* Small uppercase, letter-spaced label for sections and groups ("Net worth", "Everyday"). */
-.eyebrow { font: 600 0.75rem/1.2 var(--font); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); }
+.eyebrow { font: 600 0.703125rem/1.2 var(--font); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 button, input, select { font: inherit; color: inherit; }
 /* Phase 17 (spec 2.2, ruling R1): Steward draws every tick and radio, in every phase, as it draws .pick-box: a muted ring,
@@ -65,7 +74,7 @@ select { appearance: none; padding-right: 36px; background-image: url("data:imag
 /* Layout primitives shared by every screen. */
 .stack { display: flex; flex-direction: column; gap: var(--s-4); }
 .stack--tight { gap: var(--s-2); }
-.section-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); }
 .section-head > .btn { white-space: nowrap; flex: none; }
 .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
 .plain { list-style: none; margin: 0; padding: 0; }

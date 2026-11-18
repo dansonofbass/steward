@@ -16,6 +16,10 @@ describe('UndoToast', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Removed Ava · Undo');
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(onUndo).toHaveBeenCalled();
+    // The dot before Undo is Undo's, so it wraps with it (#22).
+    const undo = screen.getByRole('button', { name: 'Undo' }).parentElement!;
+    expect(undo).toHaveClass('undo-toast__undo');
+    expect(undo.textContent).toBe(' · Undo');
     act(() => { vi.advanceTimersByTime(10_000); });
     expect(onClose).toHaveBeenCalled();
   });

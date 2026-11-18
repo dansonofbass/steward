@@ -130,12 +130,12 @@ def test_serve_names_the_ollama_service_beside_its_image(monkeypatch, gw_cfg, tm
     assert r.exit_code == 0
     if vendor:
         assert "isn't answering" not in r.output and f"Ollama ({service}) starts once this gateway is healthy" in r.output
-        assert f"  docker compose exec {service} ollama pull " in r.output
+        assert "  docker compose run --rm ollama-pull " in r.output
     else:
         assert "Ollama isn't answering at http://ollama:11434" in r.output
     up["tags"] = True                                               # a gateway-only restart: Ollama already answers
     r = CliRunner().invoke(cli.app, ["serve"], env=env)
-    assert r.exit_code == 0 and f"  docker compose exec {service} ollama pull " in r.output
+    assert r.exit_code == 0 and "  docker compose run --rm ollama-pull " in r.output
 
 
 def test_one_gateway_with_an_ipv4_and_an_ipv6_address_is_still_one():

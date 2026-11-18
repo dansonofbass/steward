@@ -28,10 +28,12 @@ export type Turn = {
 };
 export type Conversation = { id: number; title: string; ended: boolean; requests: number; long_line: string | null; labels: Record<string, string>; turns: Turn[] };
 export type ConversationRow = { id: number; title: string; group: 'today' | 'week' | 'earlier'; when: string; questions: number; store_names: boolean; requests: number };
-export type CardRow = { date: string; store: string; amount_cents: number; category: string; account: string };
+/** `store` is what goes; `full` is the recipient's name a tick sends instead (public issue #1), null when there is none. */
+export type CardRow = { date: string; store: string; amount_cents: number; category: string; account: string; full?: string | null };
+export type CardPayee = { payee: string; name: string; full?: string | null };
 export type Card = {
   call_id: string; reason: string; count: number; first: string | null; last: string | null; names: { name: string; count: number }[];
-  rows: CardRow[]; payees: { payee: string; name: string }[]; accounts: { alias: string; label: string }[]; until: string; more: boolean;
+  rows: CardRow[]; payees: CardPayee[]; accounts: { alias: string; label: string }[]; until: string; more: boolean;
   /** The card's hash (plan B Task 6.5); the approval must send it back or the server answers 404. */
   hash: string;
 };
@@ -65,8 +67,9 @@ export const aboutPreview = (about: AboutIn, signal?: AbortSignal) =>
   api<AboutReply>('/api/chat/about', { ...json({ about: cleanAbout(about) }), signal });
 export const prewarm = () => api<{ sent: boolean }>('/api/chat/prewarm', json({}));
 export const markSeen = () => api<{ seen: true }>('/api/chat/seen', json({}));
-export const answerCard = (turnId: string, callId: string, send: boolean, hash: string) =>
-  api<{ ok: true }>('/api/chat/approvals', json({ turn_id: turnId, call_id: callId, send, hash }));
+/** `ticked`: the rows ("r0") and payees ("p0") whose recipient's name goes too. */
+export const answerCard = (turnId: string, callId: string, send: boolean, hash: string, ticked: string[] = []) =>
+  api<{ ok: true }>('/api/chat/approvals', json({ turn_id: turnId, call_id: callId, send, hash, ticked }));
 export const stopTurn = (turnId: string) => api<{ ok: true }>(`/api/chat/turns/${encodeURIComponent(turnId)}/stop`, json({}));
 export const deleteConversation = (id: number) => api<{ deleted: true }>(`/api/chat/conversations/${id}`, del());
 

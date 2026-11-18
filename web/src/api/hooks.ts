@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, type QueryClient } from '@tanstack/react-query';
 import { api } from './client';
 import type {
   AccountList, EventList, Facts, FlagCount, History, InstitutionList, MemberList, Me, PasskeyList, ReviewQueue,
@@ -6,6 +6,14 @@ import type {
 } from './types';
 
 export const useMe = () => useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/auth/me'), retry: false, staleTime: 60_000 });
+
+/** /me asked after a change to who is in which book (a book made, joined or restored), before opening it: BookScope sends
+ *  an address it cannot find in /me to another book (F8). A /me already on its way was asked before the change, and
+ *  fetchQuery would join that request and answer with the old list, so it is dropped first. */
+export async function freshMe(qc: QueryClient): Promise<Me> {
+  await qc.cancelQueries({ queryKey: ['me'] });
+  return qc.fetchQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/auth/me'), staleTime: 0 });
+}
 export const useSummary = () => useQuery({ queryKey: ['summary'], queryFn: () => api<Summary>('/api/summary') });
 export const useHistory = (days: number) =>
   useQuery({ queryKey: ['history', days], queryFn: () => api<History>(`/api/summary/history?days=${days}`) });

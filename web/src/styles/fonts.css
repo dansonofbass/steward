@@ -1,0 +1,36 @@
+/* Issue #25: while a web font loads (or if it never does), text draws in a local font sized to it, so the swap doesn't
+   reflow Home's headline and figures. One face per local font, since each needs its own numbers: Georgia (Windows,
+   macOS, iOS) and Noto Serif (Android) stand in for Newsreader; Segoe UI (Windows), Roboto (Android) and Arial (macOS,
+   iOS) for Source Sans 3. tokens.css puts them right after the web font in each stack; a device without the local font
+   skips its face.
+
+   The numbers come from the font files: size-adjust is the web font's average advance over the fallback's (lowercase
+   letters by their English frequency, and the space), and each override is the web font's own metric divided by that
+   size-adjust, as the browser scales overrides with it. The web faces are Fontsource's Newsreader latin wght (default
+   instance 400) and Source Sans 3 latin 400. Bold text in a fallback is the regular face made bold, for the moment
+   before the web font lands. */
+@font-face {
+  font-family: 'Newsreader fallback Georgia';
+  src: local('Georgia');
+  size-adjust: 96.07%; ascent-override: 76.51%; descent-override: 27.58%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Newsreader fallback Noto Serif';
+  src: local('Noto Serif'), local('NotoSerif-Regular');
+  size-adjust: 88.07%; ascent-override: 83.46%; descent-override: 30.09%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Source Sans 3 fallback Segoe UI';
+  src: local('Segoe UI'), local('SegoeUI');
+  size-adjust: 94.41%; ascent-override: 108.46%; descent-override: 42.37%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Source Sans 3 fallback Roboto';
+  src: local('Roboto'), local('Roboto-Regular');
+  size-adjust: 94.22%; ascent-override: 108.68%; descent-override: 42.45%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Source Sans 3 fallback Arial';
+  src: local('Arial'), local('ArialMT');
+  size-adjust: 94.72%; ascent-override: 108.11%; descent-override: 42.23%; line-gap-override: 0%;
+}

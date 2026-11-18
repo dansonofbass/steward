@@ -33,6 +33,11 @@ Open Settings › Import and choose a file. Then choose the account it belongs t
 - PDF statements. Steward opens them in a sandbox, never unconfined. If the machine cannot confine the sandbox, the statement waits instead. [S6](../CLAIMS.md#s6)
 - A positions CSV, for the holdings in an investment account.
 
-Review lists possible duplicates, and you keep both or remove the imported one.
+An imported row waits in Review for one of these reasons, and the import's line says how many of each, for example "3 rows in. 1 to sort in Review."
+
+- To sort: neither a rule of yours, Steward's built-in rules, nor the gateway's local model (if you have one) gave the row a category. Payments through Zelle, Venmo, Cash App or PayPal wait here unless a rule of yours matches them, because they don't say what they were for. Choose the category in Review. This is the usual reason after a first import, before you have rules.
+- Possible duplicate: the row has the same amount and description as one in the same account within 2 days. Review shows the two together, and you keep both or remove the imported one.
+
+With a business set up, Review also asks "business or personal" about money out that the local model thinks is likely business.
 
 See [commands](../reference/commands.md#steward-sync) for `steward sync` and [configuration](../reference/configuration.md#stewards-settings) for `STEWARD_SYNC_HOURS`.

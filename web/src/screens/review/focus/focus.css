@@ -21,7 +21,7 @@
 .fcard__probably { margin: 0; font-size: var(--fs-3); }
 .fcard__reason { margin: 0; font-size: var(--fs-1); color: var(--ink-muted); }
 .fcard .chip--guess { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
-.fcard .chip kbd { margin-right: var(--s-1); font: 600 0.72rem/1 var(--font); opacity: .7; }
+.fcard .chip kbd { margin-right: var(--s-1); font: 600 0.675rem/1 var(--font); opacity: .7; }
 /* The buttons: sticky above the tab bar on a phone, under the card on a desktop (P23). Each at least 44 px. */
 .focus__bar { position: sticky; bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 3; display: flex;
   justify-content: space-between; gap: var(--s-3); width: 100%; max-width: 560px; margin: 0 auto; padding: var(--s-2) 0; background: var(--bg); }
@@ -35,15 +35,28 @@
 .fmenu { position: relative; }
 .fmenu__trigger { display: inline-grid; place-items: center; min-width: 44px; min-height: 44px; border: 0; border-radius: var(--r-pill); background: none; color: var(--ink-muted); cursor: pointer; }
 .fmenu__trigger:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.fmenu__list { position: absolute; right: 0; top: calc(100% + var(--s-1)); z-index: 5; display: grid; min-width: 200px; padding: var(--s-1);
+.fmenu__list { min-width: 200px; padding: var(--s-1); color: var(--ink);
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); box-shadow: var(--shadow-raised); }
+/* A display only while shown: on a closed popover it would beat the browser's display: none. :is() forgives a browser
+   that doesn't know :popover-open, which would otherwise drop the rule. */
+.fmenu__list:is(:not([popover]), :popover-open) { display: grid; }
+/* Without popovers it is a box under ⋯. */
+.fmenu__list:not([popover]) { position: absolute; right: 0; top: calc(100% + var(--s-1)); z-index: 5; }
+/* A popover in the top layer (issue #27), anchored under ⋯ by its end edge; it flips above when there's no room
+   below. Without anchor positioning, MoreMenu.tsx places it from ⋯'s box. */
+@supports (anchor-name: --a) {
+  .fmenu__list[popover] {
+    inset: auto; margin: var(--s-1) 0 0;
+    position-area: block-end span-inline-start; position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  }
+}
 .fmenu__item { min-height: 44px; padding: 0 var(--s-3); border: 0; border-radius: var(--r-s); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .fmenu__item:focus-visible, .fmenu__item:hover { background: var(--surface-2); outline: none; }
 .fmenu__item[aria-checked="true"]::after { content: ' ✓'; color: var(--accent-text); }
 .fcard__note textarea, .fcard__note input:not([type="checkbox"]) { width: 100%; }
 .fcard__notekeys { margin: var(--s-1) 0 0; font-size: var(--fs-1); }
 .focus__keys { width: 100%; max-width: 560px; margin: 0 auto; font-size: var(--fs-1); }
-.focus__keys kbd { padding: 0 var(--s-1); border: 1px solid var(--line); border-radius: var(--r-s); font: 600 0.72rem/1.4 var(--font); }
+.focus__keys kbd { padding: 0 var(--s-1); border: 1px solid var(--line); border-radius: var(--r-s); font: 600 0.675rem/1.4 var(--font); }
 
 /* Swipes (touch and pen): the page still scrolls from outside the card. The edge label always carries words, sits on the
    card's edge so it covers no text, and the

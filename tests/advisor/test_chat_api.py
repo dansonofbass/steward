@@ -160,6 +160,31 @@ def test_prewarm_is_recorded_before_it_is_sent(settings, books, members):
     assert len(gw.prewarms) == 1
 
 
+def test_every_member_reads_the_fixed_instructions_behind_the_logged_hash(settings, books, members):
+    """Public issue #3: the text a Getting ready row's prefix_sha256 stands for, from the gateway, checked against its
+    own hash on the NAS before it is shown. A viewer reads it, as they read the log."""
+    from steward_gateway.prompt import SYSTEM_PROMPT, prefix_sha256
+    from steward_boundary import tools as T
+    gw = StubGateway()
+    with make(settings, books, gw) as c:
+        login(c, "vee")
+        r = c.get(f"{CHAT}/instructions")
+        assert r.status_code == 200
+        x = r.json()["instructions"]
+        assert x["sha256"] == prefix_sha256() and x["system"] == SYSTEM_PROMPT
+        assert [t["name"] for t in x["tools"]] == [t["name"] for t in T.definitions()]
+        assert set(x["tools"][0]) == {"name", "description", "input_schema"}
+        # The exact text hashed, with what the shown parts leave out (each tool's "strict", the cache mark), so the
+        # reader can recompute the fingerprint (review round 1).
+        import hashlib
+        assert hashlib.sha256(x["hashed"].encode("utf-8")).hexdigest() == x["sha256"]
+        assert '"strict"' in x["hashed"] and '"cache_control"' in x["hashed"]
+        gw._instructions = {**gw.instructions(), "prefix_sha256": "0" * 64}       # text that isn't what the hash says
+        assert c.get(f"{CHAT}/instructions").json() == {"instructions": None}
+        gw._instructions, gw.away = None, True
+        assert c.get(f"{CHAT}/instructions").json() == {"instructions": None}
+
+
 def test_usage_shows_only_the_persons_books(settings, books, members, ours, ddb):
     other = create_book(books, ddb, name="Mom", kind="parent", owner_labels=["Margaret", "Joint"])
     usage = {"month": "2026-10", "cap_cents": 1000,
@@ -379,11 +404,13 @@ def test_an_approval_over_http_counts_only_for_the_asker_in_the_turns_book_with_
         assert c.post(f"{CHAT}/approvals", json={**body, "hash": "b" * 64}).status_code == 404  # an altered list
         assert c.post(f"{CHAT}/approvals", json={k: v for k, v in body.items() if k != "hash"}).status_code == 404
         assert c.post(f"{CHAT}/approvals", json={**body, "hash": 7}).status_code == 422
+        for ticked in ("r0", ["x1"], ["r0", 3], ["r1234"], [f"r{i}" for i in range(251)]):     # public issue #1
+            assert c.post(f"{CHAT}/approvals", json={**body, "ticked": ticked}).status_code == 422, ticked
         assert got == []
-        r = c.post(f"{CHAT}/approvals", json=body)
+        r = c.post(f"{CHAT}/approvals", json={**body, "ticked": ["r0", "p1"]})
         assert (r.status_code, r.json()) == (200, {"ok": True})
         waiter.join(5)
-        assert got == ["send"]
+        assert got == ["send"] and control.ticked(turn_id) == frozenset({"r0", "p1"})
         assert c.post(f"{CHAT}/approvals", json=body).status_code == 404                       # a replay
         control.end(turn_id)
 

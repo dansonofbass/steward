@@ -25,7 +25,8 @@ const when = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'sh
 export function ParentHome() {
   const ov = useOverview();
   const summary = useSummary();
-  const name = parentName(useBook());
+  const book = useBook();
+  const name = parentName(book);
   const joined = (useLocation().state as { joined?: string } | null)?.joined;
   const marked = useRef(false);
   useEffect(() => {
@@ -39,6 +40,9 @@ export function ParentHome() {
 
   return (
     <div className="screen home parent-home">
+      {/* The screen's one level 1 heading (issue #21): the book's name, for a screen reader. The design opens on the
+          figures, with no title. */}
+      <h1 className="sr-only">{book?.name ?? name}</h1>
       {joined && <Notice>{JOINED_BOOK.replace('{name}', joined)}</Notice>}
       <GatewayOffLine />
       <FlagsBlock />

@@ -9,6 +9,7 @@ import { Card } from '../../ui/Card';
 import { Notice } from '../../ui/Notice';
 import { failure } from '../settings/shared';
 import './export.css';
+import { thisYear } from '../../lib/today';
 
 // Import/export spec, Copy: Export (Show is plan-owned, Engineering choice 13).
 const C = {
@@ -101,7 +102,7 @@ export default function Export({ go = (url: string) => window.location.assign(ur
   const book = useBook();
   const slug = book?.slug ?? 'ours';
   const household = (book?.kind ?? 'household') === 'household';
-  const year = new Date().getFullYear();
+  const year = thisYear();
   const biz = useQuery({ queryKey: ['business', 'export'], queryFn: () => api<{ type: string }>('/api/business'), enabled: household });
   const [range, setRange] = useState<Range>('all');
   const [from, setFrom] = useState('');

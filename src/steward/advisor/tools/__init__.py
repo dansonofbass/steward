@@ -43,6 +43,15 @@ class ToolEnv:
     directory: Engine | None = None     # the directory, for the store-name cleaning's member names and emails
 
 
+@dataclass(frozen=True)
+class HomeOnly:
+    """A tool result plus text that stays on the NAS (public issue #1): merchant_detail's rows go as "Zelle to [name]",
+    and `home` holds the name each such row or payee could carry instead, keyed "r<i>" or "p<i>", for the card. Only a
+    manager's tick swaps one in (turn.py). run_call returns it as the result's "home" key, which is never sent."""
+    content: dict
+    home: dict[str, str]
+
+
 class ToolError(Exception):
     """The tool can't answer; the message is one of steward_boundary.tools.ERRORS."""
 
@@ -105,6 +114,7 @@ def run_call(call: dict, *, bind: Engine, book: BookInfo, user_id: int, people: 
             attach_people(rdb, lambda: people)
             draft = REGISTRY[name](inp, ToolEnv(rdb, book, user_id, people, today, plan_cache, directory))
             rdb.rollback()
+        draft, home = (draft.content, draft.home) if isinstance(draft, HomeOnly) else (draft, None)
     except ToolError as e:
         return _error(call, e.message)
     except PlanFailed as e:
@@ -133,7 +143,12 @@ def run_call(call: dict, *, bind: Engine, book: BookInfo, user_id: int, people: 
         if kind == "free_text" and not is_stored_safe(text):
             log.error("The %s tool's result held text the stored-text rule would change at %s", name, path)
             return _error(call, LOOKUP_FAILED)
-    return {"id": call["id"], "name": name, "content": content, "error": None}
+    if home is None:
+        return {"id": call["id"], "name": name, "content": content, "error": None}
+    if any(not isinstance(v, str) or len(v) > T.MERCHANT_STORE_CHARS or not is_stored_safe(v) for v in home.values()):
+        log.error("The %s tool kept text at home that couldn't be sent if ticked", name)
+        return _error(call, LOOKUP_FAILED)
+    return {"id": call["id"], "name": name, "content": content, "error": None, "home": dict(home)}
 
 
 def run_calls(calls: Sequence[dict], **kw) -> list[dict]:

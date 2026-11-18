@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { dollars } from '../../../lib/format';
 import { withCelebrate } from '../../../lib/celebrations';
-import { firstMaxed } from '../joy';
+import { useMe } from '../../../api/hooks';
+import { useBook } from '../../../book/BookContext';
+import { firstMaxed, joyScope } from '../joy';
 import type { Contributed, InvestmentPage, LimitLine } from './api';
 import { CONTRIBUTIONS_TITLE, EMPLOYER_MATCH, ESTIMATED, FROM_PAY, MAXED_CHEER, MISSING, NOT_COUNTED, ROLLOVERS_IN, YOUR_CONTRIBUTIONS } from './copy';
 import { limitAmount, limitSentence } from './format';
@@ -21,12 +23,13 @@ export function useMaxedCheer(line: LimitLine | null): { ref: RefObject<HTMLElem
   const ref = useRef<HTMLElement | null>(null);
   const [cheer, setCheer] = useState<string | null>(null);
   const key = line?.maxed && line.limit_cents !== null ? `${line.owner}:${line.kind}:${line.year}` : null;
+  const scope = joyScope(useMe().data?.user.id, useBook()?.slug);
   useEffect(() => {
-    if (!key || !line || !firstMaxed(key)) return;
+    if (!key || !line || !firstMaxed(scope, key)) return;
     setCheer(MAXED_CHEER.replace('{kind}', line.label).replace('{year}', String(line.year)));
     const el = ref.current;
     if (el) void withCelebrate((c) => { c.burst({ over: el }); });
-  }, [key, line]);
+  }, [key, line, scope]);
   return { ref, cheer };
 }
 

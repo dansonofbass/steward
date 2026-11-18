@@ -58,7 +58,7 @@ describe('The Care screen', () => {
     stubFetch({ '/api/care': NO_SPENDING });
     mount();
     const section = (await screen.findByRole('heading', { name: 'Scenarios' })).closest('section') as HTMLElement;
-    const warning = within(section).getByRole('status');
+    const warning = section.querySelector<HTMLElement>('.notice--warn')!;
     expect(warning).toHaveTextContent('No spending is counted yet, so every scenario lasts longer than it would. Add spending under Setup.');
     expect(warning.compareDocumentPosition(within(section).getAllByRole('listitem')[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(within(warning).getByRole('button', { name: 'Change setup' }));

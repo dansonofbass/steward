@@ -41,13 +41,13 @@ Each promise links to its proof in the [claims ledger](docs/CLAIMS.md).
 </picture>
 
 - Steward never connects to Claude itself; only your gateway does. [P14](docs/CLAIMS.md#p14)
-- Claude never receives the names Steward holds, except in store rows a manager approves. A model on your gateway looks for other names and can miss one. [P4](docs/CLAIMS.md#p4)
+- Claude never receives the names Steward holds, except in store rows a manager approves and in the gaps [Privacy](docs/explanations/privacy.md#what-the-checks-can-miss) lists. A model on your gateway looks for other names and can miss one. [P4](docs/CLAIMS.md#p4)
 - Claude never receives your notes. [P3](docs/CLAIMS.md#p3)
 - Claude never receives account numbers. [P5](docs/CLAIMS.md#p5)
 - You can see every part of your data that was sent. [P7](docs/CLAIMS.md#p7)
 - Steward connects only to the services you set up: SimpleFIN, your gateway, your categorizer, your mail server and your backup ping. [P1](docs/CLAIMS.md#p1)
 
-Claude does see the figures it needs: balances, income, spending totals, holdings, debts, ages, your state and tax facts, with dates, categories and aliases such as "Account 1". That is how it answers questions about money. Store and payee names reach Claude only in rows a manager approves, and a payee can be a person. [P6](docs/CLAIMS.md#p6) [Privacy](docs/explanations/privacy.md#what-the-checks-can-miss) lists what the checks can miss.
+Claude does see the figures it needs: balances, income, spending totals, holdings, debts, ages, your state and tax facts, with dates, categories and aliases such as "Account 1". That is how it answers questions about money. Store and payee names reach Claude only in rows a manager approves. In those rows, a row whose bank line Steward reads as Zelle, a wire, a transfer or a payment app goes as [name] unless the manager ticks that row. [P6](docs/CLAIMS.md#p6) [Privacy](docs/explanations/privacy.md#which-store-rows-hide-a-name) lists the words Steward reads and what the checks can miss.
 
 ### Thoughtful
 
@@ -63,7 +63,7 @@ For the rest, read the [threat model](docs/explanations/threat-model.md), [Priva
 
 ## Scope
 
-Steward 0.1.0 is early. It is for US households of one or two adults, on x86_64 Linux with Docker (Podman isn't supported yet). Transactions come from SimpleFIN or files. The gateway is optional.
+Steward 0.1.1 is early. It is for US households of one or two adults, on x86_64 Linux with Docker (Podman isn't supported yet). Transactions come from SimpleFIN or files. The gateway is optional.
 
 ## How Steward is made
 

@@ -1,32 +1,32 @@
 """The book's known identifiers (spec 4.3, 4.5): what the exact pass replaces in typed text, and what the turn's
 fingerprints are made from. Names come from the book's owners, its members (the directory) and the inventory;
-numbers, emails, phones and addresses from the inventory and the directory; dates of birth from the facts. Nothing
-here is sent anywhere: only salted hashes leave the NAS. Identifiers made only of generic words are left out
-(ruling 4)."""
+numbers, emails, phones and addresses from the inventory and the directory; dates of birth from the facts; and, since
+public issue #2, the other names the book stores (steward.services.held_names), institutions added by hand and every
+payee the book has seen. Nothing here is sent anywhere: only salted hashes leave the NAS. Identifiers made only of
+generic words are left out (ruling 4), except a person's name ("August"), which is kept as `everyday`."""
 from __future__ import annotations
 
 import json
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
+from functools import lru_cache
 
-from sqlalchemy import Engine, select
+from sqlalchemy import Engine, func, select
 from sqlalchemy.orm import Session
 
 from steward.advisor.aliases import Aliases
 from steward.books.people import Person
 from steward.books.registry import BookInfo
 from steward.db.directory_models import User
-from steward.db.models import Account, Child, Institution, InventoryItem, Source, Transaction
+from steward.db.models import Account, Child, Institution, InventoryItem, Transaction
+from steward.services.held_names import held_names
 from steward.services.plan_inputs import latest_facts
 from steward.watch.payees import payee
-from steward_boundary.fingerprint import tokens
+from steward_boundary.fingerprint import canon, tokens
 from steward_boundary.normal import plain
 from steward_boundary.vocab import generic
-
-PAYEE_DAYS = 400
-
 
 @dataclass(frozen=True)
 class Identifier:
@@ -34,31 +34,49 @@ class Identifier:
     kind: str            # name | account | institution | payee | email | phone | address | number | dob
     replacement: str
     name: bool = False   # its parts are fingerprinted and matched too
+    everyday: bool = False   # a person's name made only of everyday words, kept anyway (public issue #2)
 
 
 def dob_forms(d: date) -> list[str]:
-    return [f"{d.month:02d}/{d.day:02d}/{d.year}", f"{d.month}/{d.day}/{d.year % 100:02d}", f"{d:%B} {d.day}, {d.year}",
-            f"{d.day} {d:%B} {d.year}", d.isoformat(), f"{d:%b}. {d.day} {d.year}"]
+    """Each usual written form once; the last two, with and without leading zeros, came in review round 4."""
+    return list(dict.fromkeys([
+        f"{d.month:02d}/{d.day:02d}/{d.year}", f"{d.month}/{d.day}/{d.year % 100:02d}", f"{d:%B} {d.day}, {d.year}",
+        f"{d.day} {d:%B} {d.year}", d.isoformat(), f"{d:%b}. {d.day} {d.year}", f"{d.month}/{d.day}/{d.year}",
+        f"{d.month:02d}/{d.day:02d}/{d.year % 100:02d}"]))
 
 
+# Both are cached by text: every call reads each name the book's payees have had, thousands in a book some years old,
+# and merchant_detail's tool budget holds only with the work done once per name (the final review of public issue #1).
+@lru_cache(maxsize=65_536)
 def _generic(text: str) -> bool:
     toks = tokens(text)
     return not toks or generic(toks)
+
+
+@lru_cache(maxsize=65_536)
+def _form(text: str) -> str:
+    return canon(tokens(text))
 
 
 def load_identifiers(db: Session, book: BookInfo, people: Sequence[Person], directory: Engine | None, aliases: Aliases,
                      today: date) -> list[Identifier]:
     out: list[Identifier] = []
 
-    def add(text: str | None, kind: str, replacement: str, name: bool = False) -> None:
+    def add(text: str | None, kind: str, replacement: str, name: bool = False, everyday_ok: bool = False) -> None:
         text = plain(text or "").strip()
-        if len(text) < 2 or (kind in ("name", "account", "institution", "payee", "address") and _generic(text)):
+        everyday = False
+        if len(text) < 2:
             return
-        out.append(Identifier(text, kind, replacement, name))
+        if kind in ("name", "account", "institution", "payee", "address") and _generic(text):
+            if not (everyday_ok and tokens(text)):
+                return
+            everyday = True
+        out.append(Identifier(text, kind, replacement, name, everyday))
 
-    def add_name(full: str, replacement: str) -> None:
-        # name=True: each part of 3 or more letters is matched alone too (known.py), so no part is added separately
-        add(re.sub(r"\([^)]*\)", " ", full), "name", replacement, name=True)
+    def add_name(full: str, replacement: str, everyday_ok: bool = True) -> None:
+        # name=True: each part of 3 or more characters, or 2 letters, is matched alone too (known.py), so no part is
+        # added separately. A person's name made of everyday words is kept (public issue #2).
+        add(re.sub(r"\([^)]*\)", " ", full), "name", replacement, name=True, everyday_ok=everyday_ok)
 
     household = book.kind == "household"
     for o in book.owner_names:
@@ -66,7 +84,8 @@ def load_identifiers(db: Session, book: BookInfo, people: Sequence[Person], dire
             continue
         add_name(o.label, aliases.owner(o.key))
     first = book.owner_names[0].key if book.owner_names else None
-    add_name(book.name, aliases.owner(first) if not household and first else "[name]")   # "Margaret Ellis"
+    # "Margaret Ellis"; a household book's own name ("Ours") is a label, not a person's, so everyday words drop
+    add_name(book.name, aliases.owner(first) if not household and first else "[name]", everyday_ok=not household)
     emails: dict[int, str] = {}
     if directory is not None:
         with Session(directory) as ddb:
@@ -74,7 +93,7 @@ def load_identifiers(db: Session, book: BookInfo, people: Sequence[Person], dire
     for p in people:
         rep = aliases.user(p.id)
         add_name(p.display_name, rep)
-        add(p.username, "name", rep, name=True)
+        add(p.username, "name", rep, name=True, everyday_ok=True)      # "august" too (review round 4)
         add(emails.get(p.id), "email", "[email]")
     if household:
         # Every kid, removed ones too: a removed kid's name is scrubbed until the row is purged (profile spec P27).
@@ -90,7 +109,7 @@ def load_identifiers(db: Session, book: BookInfo, people: Sequence[Person], dire
                 add(form, "dob", "[date of birth]")
     for a in db.scalars(select(Account).order_by(Account.id)):
         add(a.name, "account", aliases.account(a.id))
-    for name in db.scalars(select(Institution.name).where(Institution.source != Source.manual)):
+    for name in db.scalars(select(Institution.name).order_by(Institution.id)):    # those added by hand too (#2)
         add(name, "institution", "[institution]")
     for item in db.scalars(select(InventoryItem).order_by(InventoryItem.id)):
         d = json.loads(item.details or "{}")
@@ -107,15 +126,27 @@ def load_identifiers(db: Session, book: BookInfo, people: Sequence[Person], dire
                 add(d[key], kind, rep)
         if isinstance(d.get("match_text"), str):
             add(d["match_text"], "payee", "[payee]")
-    seen: set[str] = set()
-    for raw, merchant in db.execute(select(Transaction.raw_description, Transaction.merchant)
-                                    .where(Transaction.posted_at >= today - timedelta(days=PAYEE_DAYS)).distinct()):
+    payee_texts: set[str] = set()
+    # Newest first, so if the fingerprints must stop short of the START frame's limit (redact.turn_hash_sets), the
+    # payees left out are the oldest. Each distinct name is loaded, not one per payee key: an older row of the same
+    # key can carry another name in its merchant field (review round 4).
+    newest = (select(Transaction.raw_description, Transaction.merchant)
+              .group_by(Transaction.raw_description, Transaction.merchant)
+              .order_by(func.max(Transaction.posted_at).desc(), Transaction.raw_description, Transaction.merchant))
+    for raw, merchant in db.execute(newest):
         p = payee(raw, merchant)
-        if not p.key or p.key in seen:
+        if not p.key:
             continue
-        seen.add(p.key)
-        rep = aliases.existing("payee", p.key) or "[payee]"
-        add(p.name, "payee", rep)
-        if merchant:
-            add(merchant, "payee", rep)
+        for text in (p.name, merchant) if merchant else (p.name,):
+            form = _form(text or "")
+            if form in payee_texts:
+                continue
+            add(text, "payee", aliases.existing("payee", p.key) or "[payee]")
+            payee_texts.add(form)
+    # After the payees, and never one that is a payee's name: a set-aside or a name given to a row or rule is often a
+    # store's ("Costco"), and that store keeps its payee alias in the question, its name in approved store rows, and
+    # its approvable hash.
+    for text, kind in held_names(db):
+        if _form(text or "") not in payee_texts:
+            add(text, kind, "[payee]" if kind == "payee" else "[name]")
     return out

@@ -52,22 +52,24 @@ The rules that decide what may leave are in a shared package. Steward applies th
 
 ## The PDF sandbox
 
-A PDF statement is opened by a child process that is confined before it reads the file, and it is never run unconfined. [S6](../CLAIMS.md#s6) Confined means two things: a system-call filter that allows only what the reader does to itself, and a Landlock wall that lets it read only its own runtime. Without both, Steward sends the statement to the gateway, or it waits. The reader hands back text and the parent checks all of it, so a hostile file can't reach the network, another program, or what your files hold.
+A PDF statement is opened by a child process that is confined before it reads the file, and it is never run unconfined. [S6](../CLAIMS.md#s6) Confined means two things: a system-call filter that allows only what the reader does to itself, and a Landlock wall that lets it read only fonts, the character maps of the PDF library and its own empty folder. It loads its libraries before the wall goes up, so the wall keeps out Python, the installed packages and Steward's own code. Without both, Steward sends the statement to the gateway, or it waits. The reader hands back text and the parent checks all of it, so a hostile file can't reach the network, another program, or what your files hold.
 
 ## Security checks
 
-- **Writes come only from Steward's own pages.** A write from another site is refused, so another app on the same domain cannot change your data. [S3](../CLAIMS.md#s3)
-- **The page runs only Steward's own code.** A Content-Security-Policy blocks inline styles and any script but Steward's own. [S4](../CLAIMS.md#s4)
+- **Writes come only from Steward's own pages.** A write from another site is refused, so another app on the same domain cannot change your data. Steward's API answers only at Steward's own names, so a site that points its own name at your machine can't reach it either. [S3](../CLAIMS.md#s3)
+- **The page runs only Steward's own code.** A Content-Security-Policy blocks inline styles and any script but Steward's own, and Trusted Types keep text from being run as the page's HTML. The browser reports what the policy blocks, and Steward's log notes only which rule blocked it and where it came from. [S4](../CLAIMS.md#s4)
 - **Guessing is slow.** Each device has limits on what it can try without a password. [S5](../CLAIMS.md#s5)
 
   | What | Limit |
   | --- | --- |
   | Forgot your password | 5 per 15 minutes |
   | Sign in with a passkey | 30 per 15 minutes |
+  | Sign in with a password | 5 wrong per account, then that device waits 15 minutes |
   | Accepting an invite | 10 per 15 minutes |
   | The first-run setup link | 10 per 15 minutes |
+  | Reports of what the page blocked | 20 per 15 minutes |
 
-  Steward counts these in memory, so a restart forgets them.
+  In a browser that offers passkeys in the username box, the sign-in page counts as one passkey sign-in when it opens, again every four minutes while it is in view, and again after a passkey or password try that doesn't sign in, at most once a minute. Steward counts these in memory, so a restart forgets them. A sign-in writes a signed note for the account into the device cookie, which marks the device as one that has signed in. A device without that note also counts against its address, and one address gets 30 wrong passwords in 15 minutes over all usernames. 50 wrong passwords in a row for one account from such devices pause its password sign-in for 15 minutes on every device that hasn't signed in to it.
 - **The first person comes from a one-time link.** There is no open sign-up. [S7](../CLAIMS.md#s7)
 - **Logs are quiet.** Steward logs a request as its method, its route's template and its status. Neither Steward nor its HTTPS proxy logs a query string. [P10](../CLAIMS.md#p10)
 

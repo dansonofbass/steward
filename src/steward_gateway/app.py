@@ -40,7 +40,7 @@ from steward_gateway.mac import load_or_create_key
 from steward_gateway.ollama import Ollama
 from steward_gateway.pairing import PairRefused, claim
 from steward_gateway.prices import cost_nd, estimate_nd, reserve_price, settle_price
-from steward_gateway.prompt import prewarm_body, prewarm_payload
+from steward_gateway.prompt import PREFIX_ID, prefix, prefix_sha256, prewarm_body, prewarm_payload
 from steward_gateway.redact import Guarded, load_real_detectors, redact
 from steward_gateway.secrets import api_key, read_private
 
@@ -426,6 +426,12 @@ def create_gateway_app(cfg: GatewayConfig, *, detectors=None, client=None, ledge
 
     def due() -> bool:
         return st.last_prewarm is None or (now() - st.last_prewarm).total_seconds() >= PREWARM_EVERY_S
+
+    @app.get("/v1/instructions", dependencies=[Depends(auth)])
+    async def instructions():
+        """The fixed instructions and tool definitions every request starts with, whole, with the hash a Getting ready
+        row records (public issue #3). The same for every install of this version: no book, person or date in it."""
+        return {"prefix": PREFIX_ID, "prefix_sha256": prefix_sha256(), "content": prefix()}
 
     @app.post("/v1/prewarm/plan", dependencies=[Depends(auth)])
     async def prewarm_plan(request: Request):

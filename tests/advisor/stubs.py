@@ -97,16 +97,30 @@ class StubGateway:
     def sent_since(self, since):
         return {"sent": []}
 
+    def instructions(self):
+        """What the real gateway answers at GET /v1/instructions (steward_gateway.prompt), unless set otherwise."""
+        if self.away:
+            raise GatewayUnavailable()
+        if getattr(self, "_instructions", None) is not None:
+            return self._instructions
+        from steward_gateway.prompt import PREFIX_ID, prefix, prefix_sha256
+        return {"prefix": PREFIX_ID, "prefix_sha256": prefix_sha256(), "content": prefix()}
+
     def close(self):
         pass
 
 
 class AutoControl(Control):
-    """Answers every store-names card at once with `answer` ("send", "decline", "stopped" or "timeout")."""
+    """Answers every store-names card at once with `answer` ("send", "decline", "stopped" or "timeout"), ticking the
+    rows in `ticked` with a send."""
 
-    def __init__(self, answer: str):
+    def __init__(self, answer: str, ticked=()):
         super().__init__()
         self.answer_with, self.asked, self.digests = answer, [], []
+        self.ticked_rows = frozenset(ticked)
+
+    def ticked(self, turn_id):
+        return self.ticked_rows if self.answer_with == "send" else frozenset()
 
     def wait_for_ok(self, turn_id, call_id, timeout, digest=None):
         self.asked.append(call_id)

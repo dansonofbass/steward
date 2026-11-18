@@ -31,7 +31,7 @@ describe('the store-names card', () => {
     const fetchMock = stubFetch({ 'POST /api/chat/approvals': { ok: true } });
     wrapBook(<ApprovalCard turnId="t_1" card={CARD} />);
     fireEvent.click(screen.getByRole('button', { name: 'Approve for this conversation' }));
-    await vi.waitFor(() => expect(callsTo(fetchMock, 'POST', '/api/chat/approvals')[0]?.body).toEqual({ turn_id: 't_1', call_id: 'toolu_m1', send: true, hash: 'h_card1' }));
+    await vi.waitFor(() => expect(callsTo(fetchMock, 'POST', '/api/chat/approvals')[0]?.body).toEqual({ turn_id: 't_1', call_id: 'toolu_m1', send: true, hash: 'h_card1', ticked: [] }));
     await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Approve for this conversation' })).toBeDisabled());
   });
 
@@ -40,7 +40,31 @@ describe('the store-names card', () => {
     wrapBook(<ApprovalCard turnId="t_1" card={CARD} />);
     fireEvent.click(screen.getByRole('button', { name: "Don't send" }));
     expect(await screen.findByText("That question isn't waiting for an OK.")).toBeInTheDocument();
-    expect(callsTo(fetchMock, 'POST', '/api/chat/approvals')[0]?.body).toEqual({ turn_id: 't_1', call_id: 'toolu_m1', send: false, hash: 'h_card1' });
+    expect(callsTo(fetchMock, 'POST', '/api/chat/approvals')[0]?.body).toEqual({ turn_id: 't_1', call_id: 'toolu_m1', send: false, hash: 'h_card1', ticked: [] });
+  });
+
+  it('a transfer to a person goes as [name]; ticking the row sends the name the card shows, and only that row (issue #1)', async () => {
+    const zelle: Card = {
+      ...CARD, count: 3, names: [{ name: 'Zelle to [name]', count: 2 }, { name: 'StreamBox', count: 1 }],
+      rows: [{ date: 'Oct 19', store: 'Zelle to [name]', amount_cents: -2500, category: 'gifts', account: 'Account 2', full: 'Zelle to Priya Nair' },
+             { date: 'Oct 18', store: 'StreamBox', amount_cents: -1599, category: 'subscriptions', account: 'Account 2', full: null }],
+      payees: [{ payee: 'Payee 4', name: 'Zelle to [name]', full: 'Zelle to Priya Nair' }],
+    };
+    const fetchMock = stubFetch({ 'POST /api/chat/approvals': { ok: true } });
+    wrapBook(<ApprovalCard turnId="t_1" card={zelle} />);
+    const card = screen.getByRole('group', { name: 'Claude asks for store names' });
+    const boxes = within(card).getAllByRole('checkbox', { name: /^Send this name too/ });
+    expect(boxes).toHaveLength(2);                                    // the Zelle row and the payee, not StreamBox
+    expect(boxes[0]).toHaveAccessibleName('Send this name too (Zelle to Priya Nair)');
+    expect(boxes[0]).not.toBeChecked();
+    const firstRow = within(card).getAllByRole('row')[1];
+    expect(within(firstRow).getByText('Zelle to [name]')).toBeInTheDocument();
+    fireEvent.click(boxes[0]);
+    expect(within(firstRow).getByText('Zelle to Priya Nair', { selector: '.strong' })).toBeInTheDocument();
+    expect([...card.querySelectorAll('.name')].map((n) => n.textContent)).toEqual(['Zelle to Priya Nair 1', 'StreamBox 1', 'Zelle to [name] 1']);
+    fireEvent.click(screen.getByRole('button', { name: 'Approve for this conversation' }));
+    await vi.waitFor(() => expect(callsTo(fetchMock, 'POST', '/api/chat/approvals')[0]?.body).toEqual(
+      { turn_id: 't_1', call_id: 'toolu_m1', send: true, hash: 'h_card1', ticked: ['r0'] }));
   });
 
   it("a viewer's card has no buttons and names the managers", () => {

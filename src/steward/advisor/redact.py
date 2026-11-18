@@ -18,7 +18,7 @@ from functools import lru_cache
 
 from steward.advisor.identifiers import Identifier
 from steward_boundary.aliases import is_issuable
-from steward_boundary.fingerprint import hashes_for
+from steward_boundary.fingerprint import hashes_for, tokens
 from steward_boundary.known import Known, find_known, forms_table, known_digits, survivors
 from steward_boundary.normal import view
 from steward_boundary.protocol import LINES
@@ -36,7 +36,7 @@ class Refused(Exception):
 
 @lru_cache(maxsize=16)
 def _compiled(identifiers: tuple[Identifier, ...]) -> tuple[dict[str, str], frozenset[str]]:
-    knowns = [Known(i.text, i.replacement, i.name) for i in identifiers]
+    knowns = [Known(i.text, i.replacement, i.name, i.everyday, i.kind == "address") for i in identifiers]
     return forms_table(knowns), known_digits(knowns)
 
 
@@ -71,16 +71,37 @@ def issued_now(chips: Sequence[dict]) -> list[str]:
     return sorted({c["label"] for c in chips if is_issuable(c["label"])})
 
 
+def _hashed(i: Identifier) -> tuple[str, bool, bool, bool]:
+    """How an identifier is fingerprinted. A known name made of everyday words goes only as a phrase of 2 or more
+    tokens ("virginia roth"): one word alone ("august") is in the gateway's own context and the tools' words every day,
+    so its fingerprint would stop turns that hold none of the household's data. The exact pass still replaces it in the
+    question (public issue #2; Privacy says so)."""
+    return i.text, i.name, i.everyday and len(tokens(i.text)) > 1, i.kind == "address"
+
+
 def turn_hashes(identifiers: Sequence[Identifier], salt: str) -> list[str]:
-    return sorted(hashes_for(((i.text, i.name) for i in identifiers), salt))
+    return sorted(hashes_for((_hashed(i) for i in identifiers), salt))
 
 
 APPROVABLE_KINDS = ("payee", "institution")
 
 
+APPROVABLE_BUDGET = 150_000     # well under the START frame's 200,000 per set (protocol.START)
+
+
 def turn_hash_sets(identifiers: Sequence[Identifier], salt: str) -> tuple[list[str], list[str]]:
     """The START frame's `hashes` and `approvable` (plan B ruling 3): payee and institution names apart from the rest.
-    A hash both kinds produce stays in the rest, so it is never let through."""
-    rest = hashes_for(((i.text, i.name) for i in identifiers if i.kind not in APPROVABLE_KINDS), salt)
-    approvable = hashes_for(((i.text, i.name) for i in identifiers if i.kind in APPROVABLE_KINDS), salt) - rest
+    A hash both kinds produce stays in the rest, so it is never let through. Every payee the book has seen is loaded,
+    newest first (identifiers.py), so a long history could pass the frame's limit and stop every turn; `approvable`
+    takes identifiers in that order and stops before APPROVABLE_BUDGET. The oldest payees then go without a
+    fingerprint, though the exact pass still replaces them in the question."""
+    rest = hashes_for((_hashed(i) for i in identifiers if i.kind not in APPROVABLE_KINDS), salt)
+    approvable: set[str] = set()
+    for i in identifiers:
+        if i.kind not in APPROVABLE_KINDS:
+            continue
+        new = hashes_for((_hashed(i),), salt) - rest - approvable
+        if len(approvable) + len(new) > APPROVABLE_BUDGET:
+            break
+        approvable |= new
     return sorted(rest), sorted(approvable)

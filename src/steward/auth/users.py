@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 from steward.auth.passwords import hash_password, verify_password
 from steward.db.directory_models import User
 
-LOCK_AFTER = 5
+LOCK_AFTER = 5             # wrong passwords from one device for one account, inside LOCK_MINUTES (auth/devices.py)
 LOCK_MINUTES = 15
+ACCOUNT_LOCK_AFTER = 50    # wrong passwords in a row for one account from devices it doesn't know: the backstop (#7)
 MIN_PASSWORD_LEN = 12
 _DUMMY_HASH = hash_password("dummy-password-not-used")
 
@@ -60,34 +61,43 @@ def set_password(db: Session, user: User, password: str) -> None:
     db.commit()
 
 
-def check_login(db: Session, username_or_email: str, password: str, now: datetime) -> User:
+def check_login(db: Session, username_or_email: str, password: str, now: datetime, backstop: bool = True) -> User:
+    """`backstop` False is a device the account knows (auth/devices.py): the account's lock neither holds it nor
+    counts its wrong passwords."""
     u = find_user(db, username_or_email)
     if u is None:
         verify_password(_DUMMY_HASH, password)  # keeps timing close to a known user
         raise BadCredentials()
-    _check_password(db, u, password, now)
+    _check_password(db, u, password, now, backstop)
     return u
 
 
-def check_password(db: Session, user: User, password: str, now: datetime) -> None:
+def check_password(db: Session, user: User, password: str, now: datetime, backstop: bool = True) -> None:
     """Re-check a signed-in user's password; counts failures and locks like a sign-in."""
-    _check_password(db, user, password, now)
+    _check_password(db, user, password, now, backstop)
 
 
-def _check_password(db: Session, u: User, password: str, now: datetime) -> None:
-    if u.locked_until and u.locked_until > now:
+def signed_in(u: User) -> None:
+    """Any sign-in, by password or passkey, starts the account's count again (the caller commits)."""
+    u.failed_logins = 0
+    u.locked_until = None
+
+
+def _check_password(db: Session, u: User, password: str, now: datetime, backstop: bool) -> None:
+    if backstop and u.locked_until and u.locked_until > now:
         raise Locked(u.locked_until)
     if not verify_password(u.password_hash, password):
+        if not backstop:
+            raise BadCredentials()
         db.execute(update(User).where(User.id == u.id)
                    .values(failed_logins=User.failed_logins + 1))
         db.refresh(u)
-        if u.failed_logins >= LOCK_AFTER:
+        if u.failed_logins >= ACCOUNT_LOCK_AFTER:
             # A lockout leaves Claude Code grants alone: anyone who knows a username can cause one, so revoking here
             # would let a stranger cut off a person's grants. A new password revokes them (sessions.revoke_all_for_user).
             u.locked_until = now + timedelta(minutes=LOCK_MINUTES)
             u.failed_logins = 0
         db.commit()
         raise BadCredentials()
-    u.failed_logins = 0
-    u.locked_until = None
+    signed_in(u)
     db.commit()

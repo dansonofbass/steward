@@ -13,6 +13,7 @@ from steward.db.models import (BalanceSnapshot, BusinessState, CategorySource, H
                                SameAccountAnswer, SetAside, SetAsideMatch, Transaction, TransactionNote)
 from steward.engine.version import ENGINE_VERSION
 from steward.events import log_event
+from steward.services.plan_cache import InputsCache, PlanCache
 from tests.factories import add_fact, login, make_account, make_person, make_txn
 from tests.spending_fixtures import household
 
@@ -66,7 +67,7 @@ def test_the_household_on_the_25th_has_a_late_bill_its_best_month_and_shopping_o
     h = home(signed_in)
     assert h["verdict"] == {"opener": "problem",
                             "problems": [{"kind": "late_bill", "category": "utilities", "usual_day": 12}],
-                            "clauses": [], "stale": False, "best_month": True}
+                            "clauses": [], "stale": None, "best_month": True}
     assert h["signs"]["bills"] == {"paid": 2, "of": 3, "late": [{"category": "utilities", "usual_day": 12}]}
     assert h["signs"]["flexible"]["rows"] == [{"category": "shopping", "spent_cents": 51_200, "target_cents": 40_000,
                                                "over_cents": 11_200, "over_level": "clear"}]
@@ -80,11 +81,23 @@ def test_overdrawn_checking_and_a_stale_bank_account_say_so(oct25, signed_in, db
     db.add(BalanceSnapshot(account_id=chk.id, as_of=date(2026, 10, 22), balance_cents=-12_000))
     db.commit()
     v = home(signed_in)["verdict"]
-    assert v["problems"] == [{"kind": "overdrawn", "account": "Checking", "cents": -12_000}] and v["stale"] is True
+    assert v["problems"] == [{"kind": "overdrawn", "account": "Checking", "cents": -12_000}]
+    assert v["stale"] == {"n": 1, "oldest_days": 3, "newest_days": 3, "account": "Checking"}
     db.add(BalanceSnapshot(account_id=chk.id, as_of=date(2026, 10, 23), balance_cents=-12_000))
     db.commit()
-    assert home(signed_in)["verdict"]["stale"] is False                          # 2 days old is fresh
+    assert home(signed_in)["verdict"]["stale"] is None                           # 2 days old is fresh
     assert home(signed_in)["signs"]["net_worth"] == {"total_cents": -12_000, "change_cents": None}
+
+
+def test_two_stale_bank_accounts_are_counted_with_their_ages(oct25, signed_in, db):
+    """#15: the server sends how many and how old, so the line no longer says "one" and "a few days" for any count."""
+    chk = make_account(db, "Checking", source="simplefin", institution_name="Big Bank")
+    card = make_account(db, "Card", type="credit", source="simplefin", institution_name="Big Bank")
+    make_txn(db, chk, date(2026, 10, 2), 100_000, "PAYROLL", merchant="Northwind payroll", category="income")
+    db.add_all([BalanceSnapshot(account_id=chk.id, as_of=date(2026, 9, 26), balance_cents=50_000),
+                BalanceSnapshot(account_id=card.id, as_of=date(2026, 10, 20), balance_cents=-3_000)])
+    db.commit()
+    assert home(signed_in)["verdict"]["stale"] == {"n": 2, "oldest_days": 29, "newest_days": 5, "account": None}
 
 
 def test_a_twice_yearly_bill_counts_only_when_paid_this_month_and_commitments_never(oct25, signed_in, db):
@@ -109,24 +122,44 @@ def test_an_empty_book_has_nothing_to_go_on(oct25, signed_in, db):
     assert h["verdict"]["opener"] == "empty" and h["for_you"] == [] and h["since"] is None
 
 
-def test_the_plan_sign_reads_the_saved_plan_and_when_it_still_says_so(oct25, signed_in, db, ddb):
-    def save(when: datetime, age: int | None) -> None:
+def test_the_plan_sign_reads_the_saved_plan_with_its_date_and_when_it_still_says_so(oct25, signed_in, db, ddb):
+    """#17: Home shows the saved plan, not today's solve (Home's budget), so the sign carries when it was saved and the
+    web says so; Plan shows today's solve."""
+    def save(when: datetime, age: int | None) -> str:
         db.add(Plan(saved_at=when, saved_by=1, levers=LEVERS, engine_version=ENGINE_VERSION, comfortable_age=age,
                     likely_age=None))
         db.commit()
+        return when.isoformat()
 
     assert home(signed_in)["signs"]["plan"] is None
-    save(OCT_25 - timedelta(days=10), 54)
-    assert home(signed_in)["signs"]["plan"] == {"age": 54, "still": False}       # no last look, no save before it
+    at = save(OCT_25 - timedelta(days=10), 54)
+    assert home(signed_in)["signs"]["plan"] == {"age": 54, "still": False, "saved_at": at}   # no last look, none before
     db.add(HomeVisit(user_id=_jr(ddb), seen_at=OCT_25 - timedelta(days=3)))
     db.commit()
-    assert home(signed_in)["signs"]["plan"] == {"age": 54, "still": True}        # saved before the last look
-    save(OCT_25 - timedelta(days=1), 55)
-    assert home(signed_in)["signs"]["plan"] == {"age": 55, "still": False}
-    save(OCT_25 - timedelta(hours=1), 55)
-    assert home(signed_in)["signs"]["plan"] == {"age": 55, "still": True}        # the same age as the save before
-    save(OCT_25 - timedelta(minutes=1), None)
-    assert home(signed_in)["signs"]["plan"] == {"age": None, "still": False}     # Not by 70
+    assert home(signed_in)["signs"]["plan"] == {"age": 54, "still": True, "saved_at": at}    # saved before the last look
+    at = save(OCT_25 - timedelta(days=1), 55)
+    assert home(signed_in)["signs"]["plan"] == {"age": 55, "still": False, "saved_at": at}
+    at = save(OCT_25 - timedelta(hours=1), 55)
+    assert home(signed_in)["signs"]["plan"] == {"age": 55, "still": True, "saved_at": at}    # the same age as before
+    at = save(OCT_25 - timedelta(minutes=1), None)
+    assert home(signed_in)["signs"]["plan"] == {"age": None, "still": False, "saved_at": at}  # Not by 70
+
+
+def test_home_never_works_out_the_plan(oct25, signed_in, db, monkeypatch):
+    """#17's ruling: today's solve would cost Home a build of the plan's inputs and, when cold, a solve (measured with
+    the perf fixture: 67 ms and 200 ms on the dev box, about 2.5 times that on the NAS, against Home's 600 ms ready
+    budget), so Home reads the saved plan and says when it was saved."""
+    household(db)
+    db.add(Plan(saved_at=OCT_25 - timedelta(days=3), saved_by=1, levers=LEVERS, engine_version=ENGINE_VERSION,
+                comfortable_age=61, likely_age=59))
+    db.commit()
+
+    def refuse(*_a, **_k):
+        raise AssertionError("Home worked out the plan")
+    monkeypatch.setattr(PlanCache, "once", refuse)
+    monkeypatch.setattr(InputsCache, "get_or_build", refuse)
+    monkeypatch.setattr("steward.services.plan_inputs.build_inputs", refuse)
+    assert home(signed_in)["signs"]["plan"]["age"] == 61
 
 
 def test_for_you_holds_each_kind_in_order_and_folds_the_new_account_event(oct25, signed_in, db):

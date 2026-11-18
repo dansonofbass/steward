@@ -24,7 +24,7 @@ from steward.deps import (
 )
 from steward.mail import mail_ready
 from steward.services import profile as profile_svc
-from steward.services.profile import marks_out
+from steward.services.profile import FINISHED, marks_out, section_states
 
 router = APIRouter(prefix="/api/books")
 invites_router = APIRouter(prefix="/api/invites")
@@ -46,6 +46,10 @@ def book_out(request: Request, info: BookInfo, role: str, user_id: int, *, welco
                 chat = chat_on(s)
                 if info.kind == "household" and role == "manager":
                     profile = marks_out(s, user_id, deps.now())
+                    # Issue #30: Home opens Profile only for an unseen profile that isn't finished; once seen,
+                    # nothing reads it, so it isn't worked out.
+                    profile["finished"] = (None if profile["seen"]
+                                           else all(x.status in FINISHED for x in section_states(s)))
         except BookUnavailable as e:
             reason = str(e)
     return {"slug": info.slug, "name": info.name, "kind": info.kind, "role": role, "available": reason is None,

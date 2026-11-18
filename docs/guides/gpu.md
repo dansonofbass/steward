@@ -81,7 +81,7 @@ The result is `steward-gateway-cuda:local` (or `steward-gateway-rocm:local`) on 
 3. Read the licenses above, then set `STEWARD_GPU_LICENSE_ACCEPTED=nvidia` in `.env`.
 4. Set `COMPOSE_PROFILES=tailscale,gateway-nvidia` (instead of `gateway` and `ollama`), then run `docker compose up -d`. The first time, that includes the build above. The key, the pairing and the models carry over: no re-pair.
 
-From now on, in the [gateway guide](gateway.md)'s `docker compose` commands, use `gateway-nvidia` and `ollama-nvidia` in place of `gateway` and `ollama`. To pull a model, run `docker compose exec ollama-nvidia ollama pull <model>`; the gateway's start line lists the models gateway.toml names.
+From now on, in the [gateway guide](gateway.md)'s `docker compose` commands, use `gateway-nvidia` and `ollama-nvidia` in place of `gateway` and `ollama`. To pull a model, run `docker compose run --rm ollama-pull <model>` as before; the gateway's start line lists the models gateway.toml names.
 
 ## AMD
 
@@ -92,7 +92,7 @@ This is not yet tested on real hardware. If it works for you, or doesn't, please
 3. Read the licenses above, then set `STEWARD_GPU_LICENSE_ACCEPTED=amd` in `.env`.
 4. Set `COMPOSE_PROFILES=tailscale,gateway-amd`, then run `docker compose up -d`, which builds the ROCm gateway the first time.
 
-From now on, in the [gateway guide](gateway.md)'s `docker compose` commands, use `gateway-amd` and `ollama-amd` in place of `gateway` and `ollama`. To pull a model, run `docker compose exec ollama-amd ollama pull <model>`; the gateway's start line lists the models gateway.toml names.
+From now on, in the [gateway guide](gateway.md)'s `docker compose` commands, use `gateway-amd` and `ollama-amd` in place of `gateway` and `ollama`. To pull a model, run `docker compose run --rm ollama-pull <model>` as before; the gateway's start line lists the models gateway.toml names.
 
 ## Check it worked
 

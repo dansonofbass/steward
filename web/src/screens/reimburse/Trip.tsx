@@ -7,6 +7,7 @@ import { usePayers, useTrip } from '../../api/hooks';
 import { invalidateReimburse, markTrip } from '../../api/reimburse';
 import type { TripRow, TxnPatchReply, UndoReply } from '../../api/types';
 import { useCanEdit } from '../../book/BookContext';
+import { useItemTitle } from '../../frame/itemTitle';
 import { withCelebrate } from '../../lib/celebrations';
 import { SAVED, TRY_AGAIN, UNDO, UNDONE } from '../../lib/copy';
 import { dateLabel, money } from '../../lib/format';
@@ -42,6 +43,7 @@ export function TripPage() {
   const rows = q.data?.rows;
   // The server's ticks: the trip's own rows stay ticked when the dates change (spec, Editing).
   useEffect(() => { if (rows) setTicked(new Set(rows.filter((r) => r.ticked).map((r) => r.id))); }, [rows]);
+  useItemTitle(q.data?.trip.name);
 
   const back = <BackLink to="/spending/reimbursements">{C.REIMBURSEMENTS}</BackLink>;
   if (q.isError) {

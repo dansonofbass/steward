@@ -33,6 +33,7 @@ from steward.services.importers.layouts import (Layout, Parsed, account_digits, 
                                                 sample)
 from steward.services.importers.sign import file_sign
 from steward.services.ingest import model_fill, rule_suggestions, teaching_examples
+from steward.services.review import duplicate_pairs
 from steward.services.setasides import match_all
 from steward.services.statements import stage as statement_stage
 from steward.services.statements.rules import OWED
@@ -654,11 +655,12 @@ def batch_commit(request: Request, body: dict = Depends(json_object), me: User =
         run_safely(db, lambda x: match_all(x, today(), by=me.id), IMPORT_MATCH_FAILED)
     else:
         _parent_hooks(db)
-    # Phase 17 spec 3.7: the receipt's "{m} wait in Review": this commit's rows Review will ask about.
+    # Phase 17 spec 3.7: the receipt's "{n} to sort in Review": this commit's rows Review will ask about.
     ids = [b.id for b in batches]
     waiting = db.scalar(select(func.count()).select_from(Transaction).where(
         Transaction.import_batch_id.in_(ids), Transaction.category == "uncategorized",
         Transaction.is_transfer.is_(False), Transaction.reviewed_at.is_(None))) if ids else 0
+    duplicates = len(duplicate_pairs(db, limit=None, batch_ids=ids)) if ids else 0   # issue #32: the other reason
     db.commit()
     if batch_id is not None:
         _staging(request).drop(batch_id)
@@ -668,7 +670,7 @@ def batch_commit(request: Request, body: dict = Depends(json_object), me: User =
             "account": next(iter(into.values())) if len(into) == 1 else None,
             "skipped": sum(len(f.already) + len(f.simplefin) + len(f.same) for f in again.files),
             "months": plan_svc.months(min(days), max(days)) if days else 0, "batch_ids": [b.id for b in batches],
-            "waiting": waiting, "statements": statements, "added_up": added_up, "kept_balances": kept_balances,
+            "waiting": waiting, "duplicates": duplicates, "statements": statements, "added_up": added_up, "kept_balances": kept_balances,
             "kept_holdings": kept_holdings}
 
 

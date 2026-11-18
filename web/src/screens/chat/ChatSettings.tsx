@@ -23,6 +23,7 @@ import { gw } from '../../lib/gatewayName';
 import { PairForm } from '../ready/PairForm';
 import { ClaudeCodeCard } from './ClaudeCode';
 import { SentLog } from './SentLog';
+import { thisMonth } from './states';
 import './chat.css';
 
 const requestsWord = (n: number) => (n === 1 ? '1 request' : `${n} requests`);
@@ -156,9 +157,8 @@ function Budget({ s }: { s: ChatStatus }) {
     return <section className="set-sec"><h3 className="chat__sub"><Gauge size={20} aria-hidden="true" />{C.BUDGET_TITLE}</h3><Card>{gw(C.NO_BUDGET)}</Card></section>;
   }
   const pct = Math.min(100, Math.round((b.spent_cents / b.cap_cents) * 100));
-  const now = new Date();
-  const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const pace = b.spent_cents > 0 ? Math.round((b.spent_cents / now.getDate()) * days) : 0;
+  const month = thisMonth();
+  const pace = b.spent_cents > 0 ? Math.round((b.spent_cents / month.day) * month.days) : 0;
   async function save() {
     const value = Number((cap ?? String(b!.cap_cents / 100)).trim());
     setSaved(false);
@@ -181,7 +181,7 @@ function Budget({ s }: { s: ChatStatus }) {
       <Card className="stack">
         <p>{b.line}</p>
         <div className={`meter${b.cap_line ? ' meter--full' : b.warn ? ' meter--warn' : ''}`} role="img" aria-label={fill(C.METER_LABEL, { pct })}><span style={{ width: `${pct}%` }} /></div>
-        {pace > 0 && <p className="small muted">{fill(C.PACE, { month: now.toLocaleDateString('en-US', { month: 'long' }), amount: money(pace), cap: dollars(b.cap_cents) })}</p>}
+        {pace > 0 && <p className="small muted">{fill(C.PACE, { month: month.name, amount: money(pace), cap: dollars(b.cap_cents) })}</p>}
         {b.warn && <Notice tone="warn">{b.warn}</Notice>}
         {b.cap_line && <Notice tone="warn">{b.cap_line}</Notice>}
         {s.can_budget && (

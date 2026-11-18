@@ -2,6 +2,7 @@
 with Landlock, and reports what holds, tried for real; the parent believes only that report's exact shape. One rule
 for every machine (the 0.1.0 gate's SEC-2): no child reads a PDF without the filter and the wall both up."""
 import ast
+import base64
 import ctypes
 import io
 import json
@@ -40,7 +41,8 @@ def test_the_canary_is_a_real_one_page_pdf():
 
 
 def _main(monkeypatch, argv, *, confined=True, mode=2, walled=True, stdin=None, order=None):
-    """The child's main() in this process, its rlimits, filter and wall stubbed (pytest itself is never confined).
+    """The child's main() in this process, its rlimits, preload, filter and wall stubbed (pytest itself is never
+    confined). The preload fails the test if stdin has been read.
     walled: True puts the wall up, False makes restrict raise, 0 makes it report no rule added. order, a list, gets
     the setup steps in the order main takes them."""
     out = io.StringIO()
@@ -56,6 +58,11 @@ def _main(monkeypatch, argv, *, confined=True, mode=2, walled=True, stdin=None, 
         if walled is False:
             raise landlock.Unrestricted("landlock")
         return 7 if walled is True else 0
+
+    def preload():
+        steps.append("preload")
+        if stdin is not None and stdin.buffer.seekable():               # an Untouched stdin fails on any read
+            assert stdin.buffer.tell() == 0, "stdin read before the preload"
     if stdin is not None:
         monkeypatch.setattr(sys, "stdin", stdin)
     monkeypatch.setattr(S, "_limit", lambda: None)
@@ -64,6 +71,7 @@ def _main(monkeypatch, argv, *, confined=True, mode=2, walled=True, stdin=None, 
     monkeypatch.setattr(confine, "install", install)
     monkeypatch.setattr(confine, "mode", lambda: mode)
     monkeypatch.setattr(landlock, "restrict", restrict)
+    monkeypatch.setattr(S, "preload", preload)
     monkeypatch.setattr(sys, "stdout", out)
     before = _own_state()
     assert S.main(argv) == 0
@@ -110,7 +118,17 @@ def test_the_wall_goes_up_before_the_filter(monkeypatch):
     wall goes up first and the filter last, so the filter refuses them both (tests/test_pdf_syscalls.py)."""
     order = []
     assert _main(monkeypatch, ["--confined"], order=order)["confined"] is True
-    assert order == ["no_new_privs", "restrict", "install"]
+    assert order == ["no_new_privs", "preload", "restrict", "install"]
+
+
+def test_the_pdf_libraries_load_before_the_wall_and_before_any_input(monkeypatch):
+    """#12: behind the wall the child can't read its own sys.path, so it imports the PDF libraries first, on every
+    path through main and before stdin is read."""
+    for argv in ([], ["--render", "1"], ["--confined"]):
+        order = []
+        stdin = io.TextIOWrapper(io.BytesIO(S.canary_pdf()))
+        _main(monkeypatch, argv, stdin=stdin, order=order)
+        assert order[:3] == ["no_new_privs", "preload", "restrict"], argv
 
 
 def test_confinement_believes_only_its_own_shape():
@@ -165,11 +183,160 @@ def test_without_landlock_restrict_refuses(monkeypatch):
         landlock.restrict(["/usr/lib"])
 
 
-def test_the_wall_lets_in_only_the_runtime():
+def _covers(granted: str, path: str) -> bool:
+    return path == granted or path.startswith(granted.rstrip("/") + "/")
+
+
+def test_the_wall_lets_in_only_fonts_character_maps_and_its_folder():
+    """#12: with the libraries imported first, the wall grants pdfium's font folders, pdfminer's character map folders
+    and the child's own empty folder. No prefix of the interpreter and no sys.path entry is granted."""
     paths = landlock.runtime_paths()
-    assert any(sys.base_prefix == p or sys.base_prefix.startswith(p + "/") for p in paths)
-    assert not set(paths) & {"/", "/etc", "/home", "/root", "/var", "/tmp", "/proc"}
+    cmaps = [p for p in paths if p.endswith("/pdfminer/cmap")]
+    assert len(cmaps) == 1
+    assert set(paths) <= {*landlock.FONTS, *landlock.CMAPS, *cmaps, os.getcwd()}
+    granted = [p for p in paths if p != os.getcwd()]                    # the child's is its own empty folder
+    for entry in {sys.prefix, sys.base_prefix, sys.exec_prefix, sys.base_exec_prefix, *filter(None, sys.path)}:
+        assert not any(_covers(p, entry) for p in granted), entry
+    assert not set(paths) & {"/", "/etc", "/home", "/root", "/var", "/tmp", "/proc", "/usr/lib", "/usr/local/lib"}
     assert landlock.handled(1) == (1 << 13) - 1 and landlock.handled(7) == (1 << 16) - 1
+
+
+def _one_file(folder: str) -> str | None:
+    try:
+        return next((e.path for e in sorted(os.scandir(folder), key=lambda e: e.name) if e.is_file()), None)
+    except OSError:
+        return None
+
+
+def test_a_read_under_sys_path_fails_inside_the_wall():
+    """#12: a taken-over reader can't read the interpreter's files, the installed packages or Steward's source: one
+    file from every sys.path folder, plus the sandbox's own source and pdfplumber's, tried for real behind the wall.
+    An editable install or a .pth file pointing at a folder with private files exposes nothing."""
+    from importlib.util import find_spec
+    files = {S.__file__, find_spec("pdfplumber").origin, find_spec("pypdfium2").origin, os.__file__}
+    files |= {f for f in map(_one_file, filter(os.path.isdir, sys.path)) if f}
+    for path in sorted(files):
+        out, code, _ = S._run(["--selfcheck", "outside", path], b"", S.subprocess.Popen, S.threading.Timer, S.WALL_S,
+                              S.OUT_CAP)
+        assert code == 0 and json.loads(out)["open"] == "EACCES", path
+
+
+LATE = r"""
+import base64, json, os, sys
+from steward_pdf import landlock, sandbox as S
+S.preload()
+preloaded, imported, opened = sorted(sys.modules), [], []
+def hook(event, args):
+    if event == "import":
+        imported.append(args[0])
+    elif event == "open" and isinstance(args[0], (str, bytes)):
+        opened.append(os.fsdecode(args[0]))
+sys.addaudithook(hook)
+for data in map(base64.b64decode, json.loads(sys.stdin.read())):
+    for job in (lambda: S.read_pdf(data), lambda: S.render_page(data, 1)):
+        try:
+            job()
+        except S.Refused:
+            pass
+print(json.dumps({"preloaded": preloaded, "imported": imported, "opened": opened, "paths": landlock.runtime_paths()}))
+"""
+
+
+def _first_use(kind: str) -> bytes:
+    """A file that takes the libraries down a path the synthetic statements never do."""
+    from tests.statement_files import aes_pdf, font_pdf
+    return aes_pdf() if kind == "aes" else font_pdf(kind)
+
+
+FIRST_USE = ("cid", "embedded", "aes")
+
+
+def _corpus() -> list[bytes]:
+    from steward_gateway.evals.statement_set import BANK_CARD, HSPECS
+    return [S.canary_pdf(), *map(_first_use, FIRST_USE), pdf("receipt")[0], *(pdf(s)[0] for s in BANK_CARD),
+            *(pdf("chase_checking", v)[0] for v in ("password", "permissions", "scan", "mixed")),
+            *(pdf(s)[0] for s in HSPECS)]
+
+
+@pytest.fixture(scope="module")
+def late(tmp_path_factory) -> dict:
+    """A throwaway child, never walled: the preload, then an audit hook, then a real read and render of every kind of
+    file the tests know. What it imports or opens after the preload is what a walled child would need."""
+    import subprocess
+    body = json.dumps([base64.b64encode(d).decode() for d in _corpus()])
+    done = subprocess.run([sys.executable, "-I", "-B", "-c", LATE], input=body.encode(), capture_output=True,
+                          env={}, cwd=tmp_path_factory.mktemp("late"), timeout=S.WALL_S, check=True)
+    return json.loads(done.stdout)
+
+
+def test_after_the_preload_a_real_read_imports_nothing_and_opens_only_what_the_wall_grants(late):
+    """#12, found by test: whatever the libraries load late shows up here as an import (which the wall would refuse)
+    or as an open outside the granted folders."""
+    assert late["imported"] == []
+    assert [p for p in late["opened"] if not any(_covers(g, p) for g in late["paths"])] == []
+    assert any("/pdfminer/cmap/" in p for p in late["opened"]), "the CID file no longer loads a character map"
+
+
+UNREACHABLE = {
+    "pygame": "pdfminer.ccitt's debugging viewer",
+    "unittest": "pdfminer.ccitt's own test entry point",
+    "numpy": "pypdfium2's to_numpy, which the child never calls",
+    "tabulate": "pypdfium2's command line",
+    "pdfplumber.display": "Page.to_image, which the child never calls",
+    "PIL.ImageChops": "pdfminer.image's ImageWriter, which pdfplumber never makes",
+    "PIL.ImageOps": "pdfminer.image's ImageWriter, which pdfplumber never makes",
+}
+
+
+def _submodule(name: str) -> bool:
+    from importlib.util import find_spec
+    try:
+        return find_spec(name) is not None
+    except (ImportError, ValueError):                                   # its package isn't installed
+        return False
+
+
+def _lazy_imports(package: str) -> set[tuple[str, str]]:
+    """Every import inside a function in package: (file, module), relative imports resolved. `from pkg import name`
+    counts as pkg, and as pkg.name too when name is a submodule (`from PIL import ImageChops` loads PIL.ImageChops)."""
+    from importlib.util import find_spec
+    root = Path(find_spec(package).origin).parent
+    found = set()
+    for path in root.rglob("*.py"):
+        here = path.relative_to(root.parent).parts[:-1]                # the package the file's in
+        for fn in ast.walk(ast.parse(path.read_text())):
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            for node in ast.walk(fn):
+                if isinstance(node, ast.Import):
+                    found |= {(path.name, a.name) for a in node.names}
+                elif isinstance(node, ast.ImportFrom):
+                    base = here[:len(here) - node.level + 1] if node.level else ()
+                    module = ".".join([*base, *([node.module] if node.module else [])])
+                    found.add((path.name, module))
+                    found |= {(path.name, f"{module}.{a.name}") for a in node.names
+                              if a.name != "*" and _submodule(f"{module}.{a.name}")}
+    return found
+
+
+def test_every_import_the_pdf_libraries_make_on_first_use_is_preloaded_or_never_reached(late):
+    """#12's class: a library that imports a module only when first needed (PIL for a render, pdfminer's AES-256
+    password rule) would fail behind the wall. Each such import in pdfminer, pdfplumber and pypdfium2 is preloaded or
+    named here with why the child never reaches it; a library update that adds one fails this test."""
+    missing = sorted({(f, m) for pkg in ("pdfminer", "pdfplumber", "pypdfium2") for f, m in _lazy_imports(pkg)
+                      if m not in late["preloaded"] and m.split(".")[0] not in UNREACHABLE and m not in UNREACHABLE})
+    assert missing == []
+
+
+@pytest.mark.parametrize("kind", FIRST_USE)
+def test_files_that_load_code_on_first_use_read_and_render_the_same_behind_the_wall(kind):
+    """A CID font's character maps, a ToUnicode map's UTF-16 codec, and AES, whose cryptography backend loads on first
+    use: each would come back unreadable if the wall kept out what it loads."""
+    data = _first_use(kind)
+    out = S.run_extract(data)
+    assert out.error is None and out.pages == S.read_pdf(data)["pages"]
+    got = S.run_render(data, 1)
+    assert got.error is None and got.png == base64.b64decode(S.render_page(data, 1)["png"])
 
 
 class Untouched(io.RawIOBase):

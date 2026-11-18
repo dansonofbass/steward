@@ -35,7 +35,8 @@ def signed_in(settings, books, db):
 
 def test_link_sync_status_unlink(signed_in, db):
     c, _, _, _ = signed_in
-    assert c.get("/api/b/ours/simplefin").json() == {"linked": False, "last_sync_at": None, "last_error": None}
+    assert c.get("/api/b/ours/simplefin").json() == {"linked": False, "last_sync_at": None, "last_error": None,
+                                                     "sign_in": []}
     r = c.post("/api/b/ours/sync")
     assert r.status_code == 409 and r.json() == {"error": "SimpleFIN isn't linked yet."}
     r = c.post("/api/b/ours/simplefin/link", json={"setup_token": TOKEN})
@@ -225,3 +226,20 @@ def test_cli_sync_exits_1_when_every_bank_fails(settings, books, db, monkeypatch
         monkeypatch.setattr("httpx2.Client", lambda **k: fake_http)
         r = CliRunner().invoke(cli.app, ["sync"])
     assert r.exit_code == 1 and "ours: 0 ok, 1 failed" in r.output
+
+
+def test_status_names_the_banks_whose_open_warning_says_to_sign_in_again(signed_in, db):
+    """Issue #16: Home's Fix opens Banks, which names each bank that needs a sign-in, from the same open warnings Home's
+    For you list shows. A dismissed (resolved) warning and other sync warnings don't count."""
+    from steward.events import log_event, resolve_event
+    from steward.services.simplefin.sync import SIGN_IN_AGAIN
+    c, _, _, _ = signed_in
+    log_event(db, "warn", "sync", SIGN_IN_AGAIN.format(name="Big Bank"), actionable=True)
+    gone = log_event(db, "warn", "sync", SIGN_IN_AGAIN.format(name="Old Bank"), actionable=True)
+    log_event(db, "warn", "sync", "Savings Bank couldn't be synced. Steward will try again at the next sync.",
+              actionable=True)
+    db.commit()
+    resolve_event(db, gone.id, E_NOW)
+    db.commit()
+    assert SIGN_IN_AGAIN.format(name="Big Bank") == "Big Bank needs you to sign in again at SimpleFIN"
+    assert c.get("/api/b/ours/simplefin").json()["sign_in"] == ["Big Bank"]

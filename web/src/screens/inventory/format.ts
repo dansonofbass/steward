@@ -1,6 +1,7 @@
 import { money } from '../../lib/format';
 import type { ItemKind, ItemRow } from './api';
 import { A_MONTH, TODAY } from './copy';
+import { dayOf, today as householdToday } from '../../lib/today';
 
 export const KIND_ORDER: ItemKind[] = ['account', 'income', 'insurance', 'document', 'contact'];
 const PER_SUFFIX: Record<string, string> = { mo: ' /mo', '3 mo': ' /3 mo', '6 mo': ' /6 mo', yr: ' /yr' };
@@ -30,17 +31,17 @@ export function amountText(row: ItemRow): string | null {
 }
 
 const local = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
-const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export function updatedLabel(iso: string, today: Date): string {
-  if (iso === ymd(today)) return TODAY;
+  const home = dayOf(today);   // the household's day (issue #26)
+  if (iso === home) return TODAY;
   const d = local(iso);
-  return d.toLocaleDateString('en-US', d.getFullYear() === today.getFullYear() ? { month: 'short', day: 'numeric' } : { month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-US', iso.slice(0, 4) === home.slice(0, 4) ? { month: 'short', day: 'numeric' } : { month: 'short', year: 'numeric' });
 }
 
 export const longDate = (iso: string) => local(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 export const shortDate = (iso: string) => local(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-export const todayIso = () => ymd(new Date());
+export const todayIso = (): string => householdToday();
 
 /** "Fidelity Traditional IRA ••3390", leaving the institution out when the name says it (as present.long_label); a contact is "Linda Park, Park & Reyes Law". */
 export function longLabel(name: string, institution: string | null, last4: string | null, kind?: string): string {

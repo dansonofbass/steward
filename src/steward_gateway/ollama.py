@@ -117,18 +117,22 @@ class Ollama:
         return out if out and not re.search(r"\d{5,}", out.replace(" ", "")) else None
 
 
+COMPOSE_PULL = "docker compose run --rm ollama-pull"   # deploy/compose.yml: the Ollama on gateway-egress, run once
+
+
 def local_model_line(cfg: GatewayConfig, *, http: httpx2.Client | None = None,
                      environ: Mapping[str, str] | None = None) -> str:
     """The line `serve` prints at start-up: whether Ollama answers and which of the configured models still need
     pulling. One /api/tags request, at most two seconds. Names no model's content, only the settings' model names.
     A GPU image in compose (STEWARD_GATEWAY_GPU in `environ`, default os.environ) has its own Ollama service, which
-    compose starts only once this gateway is healthy, so silence from it at start-up is expected, not a problem."""
+    compose starts only once this gateway is healthy, so silence from it at start-up is expected, not a problem. In
+    compose every model is pulled by the one-shot ollama-pull service, the only Ollama with a way out (issue #4)."""
     models = list(dict.fromkeys((cfg.title_model, cfg.categorizer_model, cfg.statement_layout_model,
                                  cfg.statement_vision_model)))
     service = gpu.ollama_service(os.environ if environ is None else environ, cfg.network)
     if service:
         away = (f"Local model: Ollama ({service}) starts once this gateway is healthy. To pull a model gateway.toml "
-                "names:\n" + "\n".join(f"  docker compose exec {service} ollama pull {m}" for m in models))
+                "names:\n" + "\n".join(f"  {COMPOSE_PULL} {m}" for m in models))
     else:
         away = (f"Local model: none yet. Ollama isn't answering at {cfg.ollama_url}, so categorizing, chat titles, "
                 "scanned pages and new statement layouts wait. Ask doesn't need it.")
@@ -146,6 +150,6 @@ def local_model_line(cfg: GatewayConfig, *, http: httpx2.Client | None = None,
     missing = [m for m in models if m not in names and f"{m}:latest" not in names]
     if not missing:
         return f"Local model: Ollama answers at {cfg.ollama_url}, with every model gateway.toml names."
-    pull = f"docker compose exec {service or 'ollama'} ollama pull" if cfg.network == "compose" else "ollama pull"
+    pull = COMPOSE_PULL if cfg.network == "compose" else "ollama pull"
     return (f"Local model: Ollama answers at {cfg.ollama_url}. Not pulled yet:\n"
             + "\n".join(f"  {pull} {m}" for m in missing))

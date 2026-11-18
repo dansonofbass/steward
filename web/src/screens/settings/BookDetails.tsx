@@ -3,6 +3,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useMe, useMembers } from '../../api/hooks';
 import type { InvitedRow, Member } from '../../api/types';
 import { bookHref, useBook } from '../../book/BookContext';
+import { useItemTitle } from '../../frame/itemTitle';
 import { Link, Navigate } from '../../book/links';
 import { HOUSEHOLD_KIND, KIND, MANAGERS, NONE, OPEN_BOOK, PARENT_KIND, S_BOOKS, VIEWERS } from '../../lib/copy';
 import { Card } from '../../ui/Card';
@@ -28,6 +29,7 @@ export default function BookDetails({ slug }: { slug: string }) {
   const current = useBook();
   const book = me.data?.books.find((b) => b.slug === slug);
   const members = useMembers(slug);
+  useItemTitle(book?.name);
   if (me.data && !book) return <Navigate to="/settings/books" replace />;
   const people = members.data?.members.filter(joined) ?? [];
   const named = (role: Member['role']) => people.filter((m) => m.role === role).map((m) => m.display_name);

@@ -43,6 +43,8 @@ export function FlagPage() {
 
 function FlagBody({ flagId }: { flagId: number }) {
   const q = useFlag(flagId);
+  // The tab keeps the fixed noun: a flag's title describes a money worry, and a page title goes into the browser's
+  // history (issue #29, privacy ruling; routeTitles.test.tsx).
   const qc = useQueryClient();
   const canEdit = useCanEdit();
   const [mode, setMode] = useState<Mode | null>(null);

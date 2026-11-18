@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FlowMonth } from '../../api/types';
-import { drillHref, monthLong, monthRange, monthReadout, monthShort, monthTitle, stripBars } from './months';
+import { drillHref, fromFirstData, monthLong, monthRange, monthReadout, monthShort, monthTitle, stripBars } from './months';
 
 const m = (month: string, net: number): FlowMonth => ({ month, in_cents: Math.max(net, 0), out_cents: Math.max(-net, 0), net_cents: net });
 
@@ -37,5 +37,22 @@ describe('the hover readout (sorting redesign, Home)', () => {
       .toBe('September: Income $8,200 · Spending $6,900 · +$1,300');
     expect(monthReadout({ month: '2026-10', in_cents: 300000, out_cents: 410000, net_cents: -110000 }, '2026-10-14'))
       .toBe('October so far: Income $3,000 · Spending $4,100 · −$1,100');
+  });
+
+  it('names the year for a month outside the current one, so last December never reads as next month (#34)', () => {
+    expect(monthReadout({ month: '2025-12', in_cents: 0, out_cents: 0, net_cents: 0 }, '2026-11-16'))
+      .toBe('December 2025: Income $0 · Spending $0 · $0');
+    expect(monthReadout({ month: '2026-01', in_cents: 100, out_cents: 0, net_cents: 100 }, '2026-11-16')).toMatch(/^January: /);
+  });
+});
+
+describe('the months the strip shows (#34)', () => {
+  it('leaves out the empty months before the first money in or out, and keeps the quiet ones after it', () => {
+    const months = [m('2025-12', 0), m('2026-01', 0), m('2026-02', 500), m('2026-03', 0), m('2026-04', -200)];
+    expect(fromFirstData(months).map((x) => x.month)).toEqual(['2026-02', '2026-03', '2026-04']);
+  });
+  it('keeps the current month when nothing came in or went out yet', () => {
+    expect(fromFirstData([m('2026-10', 0), m('2026-11', 0)]).map((x) => x.month)).toEqual(['2026-11']);
+    expect(fromFirstData([])).toEqual([]);
   });
 });

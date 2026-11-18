@@ -4,9 +4,23 @@ NAME = "Enter a name of up to 80 characters."
 
 
 def test_me_carries_the_profile_marks(signed_in):
-    assert signed_in.get("/api/auth/me").json()["books"][0]["profile"] == {"seen": False, "confirmed": False, "later_until": None}
+    assert signed_in.get("/api/auth/me").json()["books"][0]["profile"] == {"seen": False, "confirmed": False, "later_until": None, "finished": False}
     signed_in.post("/api/b/ours/profile/seen", json={})
     assert signed_in.get("/api/auth/me").json()["books"][0]["profile"]["seen"] is True
+
+
+def test_me_says_whether_an_unseen_profile_is_finished(signed_in, db, monkeypatch):
+    """Issue #30: Home opens Profile only for a profile that isn't finished. Once seen, nothing reads it, so it isn't
+    worked out (None)."""
+    from steward.services import profile
+    from steward.services.profile import SectionState
+    marks = lambda: signed_in.get("/api/auth/me").json()["books"][0]["profile"]
+    assert marks()["finished"] is False
+    done = [SectionState(k, "done", None, None, None, None, None) for k in profile.PROFILE_SECTIONS]
+    monkeypatch.setattr("steward.api.books.section_states", lambda db: done)
+    assert marks()["finished"] is True
+    signed_in.post("/api/b/ours/profile/seen", json={})
+    assert marks()["finished"] is None
 
 
 def test_each_person_changes_their_own_name(signed_in):
@@ -69,3 +83,8 @@ def test_a_switch_takes_only_true_or_false(signed_in, body):
 def test_a_name_and_a_switch_can_change_together(signed_in):
     r = signed_in.patch("/api/auth/me", json={"display_name": "Jordan", "celebrations": True})
     assert r.json()["user"]["display_name"] == "Jordan" and r.json()["user"]["prefs"]["celebrations"] is True
+
+
+def test_me_says_the_households_time_zone(signed_in):
+    """Issue #26: the web works out the household's today from this zone, not the device's (web/src/lib/today.ts)."""
+    assert signed_in.get("/api/auth/me").json()["timezone"] == "America/Los_Angeles"

@@ -136,6 +136,52 @@ def test_setup_makes_the_key_the_database_and_a_link(settings):
     assert settings.key_path.read_text().strip() not in r.output
 
 
+def test_setup_says_the_zone_is_not_set_yet_when_nothing_chose_one(settings, monkeypatch):
+    """Issue #35: with no STEWARD_TIMEZONE, no saved zone and no TZ, the welcome screen picks the zone, so setup
+    doesn't print the UTC fallback as if the install had chosen it."""
+    monkeypatch.delenv("STEWARD_TIMEZONE")
+    monkeypatch.delenv("TZ", raising=False)
+    r = runner.invoke(cli_app, ["setup"])
+    assert r.exit_code == 0, r.output
+    assert SL.ZONE_NOT_SET in r.output.splitlines() and "Time zone: UTC" not in r.output
+    assert SL.ZONE_NOT_SET == "Time zone: not set yet. You'll choose it on the welcome screen."
+
+
+def test_setup_names_a_zone_that_was_set(settings):
+    r = runner.invoke(cli_app, ["setup"])
+    assert "Time zone: America/Los_Angeles" in r.output.splitlines() and SL.ZONE_NOT_SET not in r.output
+
+
+def _web_const(name: str) -> str:
+    from pathlib import Path
+    text = (Path(__file__).resolve().parents[1] / "web/src/screens/setup/copy.ts").read_text()
+    m = _re.search(rf"^export const {name} = '((?:[^'\\]|\\.)*)';$", text, _re.M)
+    assert m, name
+    return m[1].replace("\\'", "'")
+
+
+def test_the_setup_command_is_given_as_the_install_guide_writes_it():
+    """Issue #20: the documented install has no `steward` on the host. The command the expired link and the no-link
+    page give is the install guide's, and the server's and the web app's words are the same."""
+    from pathlib import Path
+    guide = (Path(__file__).resolve().parents[1] / "docs/quickstart/install.md").read_text()
+    assert SL.SETUP_COMMAND == "docker compose run --rm steward steward setup"
+    assert f"   {SL.SETUP_COMMAND}\n" in guide
+    assert SL.SETUP_COMMAND in SL.LINK_GONE
+    assert _web_const("SETUP_COMMAND") == SL.SETUP_COMMAND
+    assert _web_const("LINK_GONE") == SL.LINK_GONE
+    assert SL.SETUP_COMMAND in _web_const("NO_LINK")
+    from steward.api.first_run import NEEDS_SETUP
+    for words in (SL.LINK_GONE, _web_const("NO_LINK"), NEEDS_SETUP):
+        assert SL.SETUP_COMMAND in words, words
+        assert "steward setup" not in words.replace(SL.SETUP_COMMAND, ""), words
+
+
+def test_setup_says_to_run_the_same_command_again(settings):
+    r = runner.invoke(cli_app, ["setup"])
+    assert "Run the same command again for a new link." in r.output and "Run steward setup" not in r.output
+
+
 def test_setup_again_closes_the_first_link(settings):
     first = LINK.search(runner.invoke(cli_app, ["setup"]).output)[1]
     second = LINK.search(runner.invoke(cli_app, ["setup"]).output)[1]

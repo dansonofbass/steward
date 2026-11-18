@@ -97,10 +97,10 @@ def _check_loan(db: Session, type_: AccountType, loan_id: int | None, account_id
 
 
 @router.get("/accounts")
-def list_accounts(db: Session = Depends(book_db)):
+def list_accounts(db: Session = Depends(book_db), ctx: BookContext = Depends(open_book)):
     rows = db.scalars(select(Account).order_by(Account.type, Account.name))
-    t = today()
-    return {"accounts": [svc.account_out(db, a, t) for a in rows]}
+    t, labels = today(), ctx.owner_labels()
+    return {"accounts": [svc.account_out(db, a, t, labels) for a in rows]}
 
 
 @router.post("/accounts", status_code=201, dependencies=[Depends(household_accounts)])
@@ -119,7 +119,7 @@ def create_account(body: AccountIn, db: Session = Depends(book_db), ctx: BookCon
         db.flush()
         svc.record_balance(db, a.id, body.as_of or t, body.balance_cents)
     db.commit()
-    return {**svc.account_out(db, a, t), "undo": cap.token}
+    return {**svc.account_out(db, a, t, ctx.owner_labels()), "undo": cap.token}
 
 
 @router.patch("/accounts/{aid}", dependencies=[Depends(household_accounts)])
@@ -170,7 +170,7 @@ def patch_account(aid: int, body: AccountPatch, db: Session = Depends(book_db),
         if was_unknown and a.type != AccountType.unknown:
             resolve_events_matching(db, "system", f"New account '{old_name}' from ", now())
     db.commit()
-    return {**svc.account_out(db, a, today()), "undo": cap.token}
+    return {**svc.account_out(db, a, today(), ctx.owner_labels()), "undo": cap.token}
 
 
 @router.post("/accounts/{aid}/balance", dependencies=[Depends(household_accounts)])
@@ -188,7 +188,7 @@ def set_balance(aid: int, body: BalanceIn, db: Session = Depends(book_db), ctx: 
         svc.record_balance(db, aid, as_of, body.balance_cents)
         home_value.balance_saved(db, aid, body.balance_cents, as_of)   # the Home account's balance is Profile's home value
     db.commit()
-    return {**svc.account_out(db, a, today()), "undo": cap.token}
+    return {**svc.account_out(db, a, today(), ctx.owner_labels()), "undo": cap.token}
 
 
 @router.get("/institutions")

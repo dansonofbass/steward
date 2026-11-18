@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useFacts, useMe } from '../../../api/hooks';
 import { renameMe, type ProfileState, type Role } from '../../../api/profile';
-import { dateLabel, dollars, localYmd } from '../../../lib/format';
+import { dateLabel, dollars } from '../../../lib/format';
 import { Notice } from '../../../ui/Notice';
 import { Skeleton } from '../../../ui/Skeleton';
 import { dollarsText, fromHundredths, toHundredths } from '../../settings/money';
@@ -14,10 +14,11 @@ import {
 } from '../copy';
 import { ProfileField } from '../field';
 import { confirmOnly, type BodyProps, type SectionDef } from '../sections';
+import { today } from '../../../lib/today';
 
 const self = (p: ProfileState): Role => p.me.role ?? 'jr';
 const partner = (p: ProfileState): Role => (self(p) === 'jr' ? 'spouse' : 'jr');
-const todayYmd = () => localYmd(new Date().toISOString());
+const todayYmd = () => today();   // the household's (issue #26)
 
 function birthday(t: string): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return BIRTHDAY_NEEDED;

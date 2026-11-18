@@ -440,3 +440,71 @@ def test_a_second_store_names_call_in_the_same_turn_asks_again(books, ours, hous
     assert len(set(control.digests)) == 2                   # each card has its own hash
     assert events[-1]["stop"] == "end_turn"
     assert [r.seq for r in store_rows(books, ours)] == [2, 3]
+
+
+# --- Public issue #1: a payment-app or transfer recipient goes as [name] unless the manager ticks that row ------------
+
+GIFTS = {**CALL, "input": {**CALL["input"], "category": "gifts", "start": "2026-10-19", "end": "2026-10-19"}}
+
+
+def zelle_turn(books, ours, jr, control):
+    with Session(books.engine_for(ours)) as db:
+        acct = db.scalar(select(Account.id).where(Account.type == AccountType.checking).order_by(Account.id))
+        db.add(Transaction(account_id=acct, posted_at=date(2026, 10, 19), amount_cents=-2500,
+                           raw_description="ZELLE PAYMENT TO PRIYA NAIR 0412", category="gifts",
+                           category_source=CategorySource.none))
+        db.commit()
+    gw = StubGateway(frames(answered_echo(), call=GIFTS))
+    env = env_for(books, ours, jr, gw, control)
+    prep = start_turn(env, Q)
+    events = list(run_turn(env, prep))
+    card = next(e for e in events if e["type"] == "approval" and e["state"] == "ask")["card"]
+    sent = next(f for f in gw.ws.sent if f["type"] == "tool_results")["results"][0]
+    return card, sent, events, gw
+
+
+def test_a_transfer_row_to_a_person_the_book_doesnt_know_goes_as_name_unless_ticked(books, ours, household):
+    jr, _ = household
+    card, sent, events, gw = zelle_turn(books, ours, jr, AutoControl("send"))
+    zelle = next(i for i, r in enumerate(card["rows"]) if r["store"].startswith("Zelle"))
+    assert card["rows"][zelle]["store"] == "Zelle to [name]" and card["rows"][zelle]["full"] == "Zelle to Priya Nair"
+    assert sent["content"]["rows"][zelle]["merchant"] == "Zelle to [name]" and "home" not in sent
+    assert "Priya" not in json.dumps(gw.ws.sent)
+    assert events[-1]["stop"] == "end_turn"
+    recorded = json.loads(store_rows(books, ours)[0].payload)["content"]
+    assert recorded == sent["content"]
+
+
+def test_a_ticked_transfer_row_sends_the_name_the_card_showed_and_the_log_records_it(books, ours, household):
+    jr, _ = household
+    control = AutoControl("send", ticked={"r0", "r99", "p0"})            # keys not on the card are ignored
+    card, sent, events, _ = zelle_turn(books, ours, jr, control)
+    assert card["rows"][0]["full"] == "Zelle to Priya Nair"
+    assert sent["content"]["rows"][0]["merchant"] == "Zelle to Priya Nair"
+    assert all(r["merchant"] == c["store"] for r, c in zip(sent["content"]["rows"][1:], card["rows"][1:]))
+    assert events[-1]["stop"] == "end_turn"
+    assert json.loads(store_rows(books, ours)[0].payload)["content"] == sent["content"]
+
+
+def test_the_cards_hash_covers_the_names_a_tick_could_send():
+    from steward.advisor.turn import card_digest
+    content = {"rows": [], "payees": [], "more": False}
+    assert card_digest("t", "c", content, {"r0": "Zelle to Priya Nair"}) != card_digest("t", "c", content, {})
+    assert card_digest("t", "c", content, {"r0": "Zelle to A"}) != card_digest("t", "c", content, {"r0": "Zelle to B"})
+
+
+def test_a_tick_is_taken_only_with_the_ok_and_forgotten_by_the_next_card(books, ours, household):
+    control = Control()
+    control.begin("t_1", 1, ours.id)
+    got = []
+    helper = when_waiting(control, "t_1", lambda: got.append(
+        control.answer("t_1", "c1", 1, ours.id, True, "h" * 64, ticked=["r0", "p2"])), call_id="c1")
+    assert control.wait_for_ok("t_1", "c1", CEILING, digest="h" * 64) == "send"
+    helper.done()
+    assert got == [True] and control.ticked("t_1") == frozenset({"r0", "p2"})
+    helper = when_waiting(control, "t_1", lambda: control.answer("t_1", "c2", 1, ours.id, False, "g" * 64,
+                                                                  ticked=["r0"]), call_id="c2")
+    assert control.wait_for_ok("t_1", "c2", CEILING, digest="g" * 64) == "decline"
+    helper.done()
+    assert control.ticked("t_1") == frozenset()                         # a decline sends nothing, ticked or not
+    control.end("t_1")

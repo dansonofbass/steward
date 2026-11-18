@@ -11,10 +11,20 @@
 }
 .you__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .you--rail .you__btn { width: 100%; border-radius: var(--r-m); padding: var(--s-1) var(--s-2); }
-/* The rail's menu opens above the button, at the foot of the rail. */
+/* The rail's menu opens above the button, at the foot of the rail, as wide as it. */
 .you__menu {
-  position: absolute; bottom: calc(100% + var(--s-1)); left: 0; right: 0; z-index: 50; padding: var(--s-2) var(--s-1) var(--s-1);
+  padding: var(--s-2) var(--s-1) var(--s-1); color: var(--ink);
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); box-shadow: var(--shadow-raised);
+}
+/* Without popovers it is a box in the rail. */
+.you__menu:not([popover]) { position: absolute; bottom: calc(100% + var(--s-1)); left: 0; right: 0; z-index: 50; }
+/* A popover in the top layer (issue #27), anchored to the button; it flips below when there's no room above. Without
+   anchor positioning, YouMenu.tsx places it from the button's box. */
+@supports (anchor-name: --a) {
+  .you__menu[popover] {
+    inset: auto; margin: 0 0 var(--s-1); width: anchor-size(width);
+    position-area: block-start span-inline-end; position-try-fallbacks: flip-block;
+  }
 }
 .you__email { padding: 0 var(--s-3) var(--s-2); font-size: var(--fs-1); overflow-wrap: anywhere; }
 .you__list { list-style: none; margin: 0; padding: 0; }

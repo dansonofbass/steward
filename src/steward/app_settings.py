@@ -244,6 +244,12 @@ _CHECKS = {"host": _host, "port": _port, "user": _user, "from": _from, "at": _ti
            "timezone": _zone, "gateway_name": _gateway}
 
 
+def zone_needed(store: "AppSettings") -> bool:
+    """No household time zone has been chosen: none in .env or the app, and no TZ. The time in force is then the UTC
+    fallback, so the first run asks (welcome) and `steward setup` says it isn't set yet (issue #35)."""
+    return store.effective()["general.timezone"].source == "default" and not os.environ.get("TZ")
+
+
 def apply_effective(store: "AppSettings") -> None:
     """Put the effective time zone and gateway name in force (spec 4.3): .env, then the app, then the default. A saved
     value that no longer holds falls back to what .env or the default gives, with one plain line in the log."""

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LeverState } from './api';
+import { setHouseholdZone } from '../../lib/today';
 import { ASSUMED, TRY, impactsFixture, planFixture } from './fixtures';
 import {
   EMPTY_DRAFT, afterSave, amountText, atSuggestion, bodyKey, changedLevers, collegeTryText, deltaBody, effectClass, extrasFor, fromHistory, isPinned, rankedKeys,
@@ -148,5 +149,12 @@ describe('words', () => {
     const at = new Date(2026, 9, 14, 21, 14).toISOString();
     expect(savedWhen(at, new Date(2026, 9, 14, 22, 0))).toBe('today at 9:14 pm');
     expect(savedWhen(new Date(2026, 9, 12, 9, 0).toISOString(), new Date(2026, 9, 14, 22, 0))).toBe('on Oct 12');
+  });
+  it("says today or the day, and the time, on the household's clock (#26)", () => {
+    setHouseholdZone('Pacific/Kiritimati');                        // UTC+14: noon UTC on Nov 16 is 2 AM on Nov 17
+    const now = new Date('2026-11-16T12:00:00Z');
+    expect(savedWhen('2026-11-16T11:00:00Z', now)).toBe('today at 1:00 am');
+    // 11 PM on Nov 16 at home, though the same calendar day as now on most devices.
+    expect(savedWhen('2026-11-16T09:00:00Z', now)).toBe('on Nov 16');
   });
 });

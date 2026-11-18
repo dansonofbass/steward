@@ -57,6 +57,20 @@ describe('Profile page', () => {
     expect(callsTo(fetchMock, 'POST', '/api/profile/seen')).toHaveLength(1);
   });
 
+  it('says why it opened in place of Home, with a way there, only when Home sent it (issue 30)', async () => {
+    stubFetch({ '/api/profile': profileState({}, { seen: false }), '/api/auth/me': ME, '/api/facts': FACTS });
+    const sent = atProfile({ pathname: '/b/ours/profile', state: { fromHome: true } });
+    const why = await screen.findByTestId('opened-from-home');
+    expect(why).toHaveTextContent("Steward opened your profile in place of Home because it isn't finished.");
+    expect(within(why).getByRole('link', { name: 'Go to Home' })).toHaveAttribute('href', '/b/ours');
+    await waitFor(() => expect(sent.location.current.state).toBeNull());        // a reload doesn't say it again
+    expect(screen.getByTestId('opened-from-home')).toBeInTheDocument();
+    sent.unmount();
+    atProfile('/profile');
+    await screen.findByText('Everything you enter stays on your home server.');
+    expect(screen.queryByTestId('opened-from-home')).toBeNull();
+  });
+
   it('Start shows the failure in words when the server errors, and stays put', async () => {
     stubFetch({
       '/api/profile': profileState({}, { seen: false }), '/api/auth/me': ME, '/api/facts': FACTS,

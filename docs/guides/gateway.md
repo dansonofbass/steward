@@ -41,11 +41,12 @@ Steward sorts new rows with your rules and Review, keeps the question's first si
 2. Give the gateway the key (see The Claude API key).
 3. Run `docker compose up -d`. The first start downloads the redaction model from Hugging Face, pinned to one commit. `docker compose ps` shows the gateway as healthy when it's ready. Its log then has a few warnings from the libraries it uses. One says the tokenizer has "an incorrect regex pattern" and to set `fix_mistral_regex=True`. That one is expected: the check is meant for a different family of models, and the tokenizer loads unchanged, as the redaction tests measured it. Don't set the flag; it would change how names are read.
 4. Pair it (see Pairing).
-5. For a local model, run `docker compose logs gateway` to see what to pull, then for example `docker compose exec ollama ollama pull qwen3.5:9b-q4_K_M`. Steward notices within a minute.
+5. For a local model, run `docker compose logs gateway` to see what to pull, then for example `docker compose run --rm ollama-pull qwen3.5:9b-q4_K_M`. Steward notices within a minute.
 
 ### How it stays private
 
-- The gateway publishes no port. Steward reaches it at `http://gateway:8430` on `gateway-private`, a network with no way out, and only the gateway and Ollama join `gateway-egress`, the way out to Claude and Hugging Face. [S12](../CLAIMS.md#s12)
+- The gateway publishes no port. Steward reaches it at `http://gateway:8430` on `gateway-private`, a network with no way out, and only the gateway joins `gateway-egress`, the way out to Claude and Hugging Face. [S12](../CLAIMS.md#s12)
+- Ollama, which reads your transaction descriptions and statement pages, is on `gateway-private` only, so it can't reach the internet. A model is pulled by `ollama-pull`, which runs once on `gateway-egress` and never joins `gateway-private`. Ollama's cloud models are turned off with `OLLAMA_NO_CLOUD=1`.
 - The names `gateway` and `ollama` are answered only inside Compose, never by your network's DNS, so with no `ollama` service nothing is sent anywhere. [S12](../CLAIMS.md#s12)
 - Its `gateway.toml` says `network = "compose"`, which works only inside a container. On a machine of its own, the gateway listens only on Tailscale or 127.0.0.1. [S12](../CLAIMS.md#s12)
 - The key, the pairing token and the history key live in the `gateway-config` volume, readable only by the gateway's own user.

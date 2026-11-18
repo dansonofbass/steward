@@ -6,10 +6,11 @@ import { seeGrowth, useGrowth, type Growth } from '../../api/growth';
 import { useIsHousehold } from '../../book/BookContext';
 import { soundOn } from '../../lib/celebrations';
 import { gw } from '../../lib/gatewayName';
-import { fill, GROWTH_ALL, GROWTH_NEXT, MILESTONE_NAME, MILESTONE_NOT_YET, MILESTONE_REACHED, NEW_GROWTH, NEW_GROWTH_PLAIN, nextLine, TREE_LABEL } from '../../lib/lines';
+import { fill, GROWTH_ALL, GROWTH_NEXT, MILESTONE_NAME, MILESTONE_NOT_YET, MILESTONE_REACHED, MONTH_SORTED, NEW_GROWTH, NEW_GROWTH_PLAIN, nextLine, TREE_LABEL } from '../../lib/lines';
 import { momentAllowed } from '../../lib/momentAllowed';
 import { setQueryDataIfStillIn } from '../../queryClient';
 import { Acorn } from '../../ui/Acorn';
+import { monthLong, monthName } from '../cashflow/months';
 import { OakTree } from '../../ui/OakTree';
 import { useAcornMotion, useWinMoment } from '../../ui/useMoment';
 import './moments.css';
@@ -26,10 +27,15 @@ export function progressLine(g: Growth): string {
 }
 
 /** The line for a new stage: the last milestone in order that is met (the stage counts them; which one came last isn't
- *  kept), or a plain one when the tree holds a stage its data no longer shows. */
-export function newGrowthLine(g: Growth): string {
+ *  kept), or a plain one when the tree holds a stage its data no longer shows. The first month says which month it
+ *  was, with its year when that isn't the year of the server's day, as_of (#33), never the browser's clock (P41). */
+export function newGrowthLine(g: Growth, asOf: string): string {
   const met = [...g.milestones].reverse().find((m) => m.met);
-  return met ? fill(NEW_GROWTH, { milestone: MILESTONE_NAME[met.key] }) : NEW_GROWTH_PLAIN;
+  if (!met) return NEW_GROWTH_PLAIN;
+  const month = met.key === 'first_month' && met.month ? met.month : null;
+  const name = month === null ? MILESTONE_NAME[met.key]
+    : fill(MONTH_SORTED, { month: month.slice(0, 4) === asOf.slice(0, 4) ? monthName(month) : monthLong(month) });
+  return fill(NEW_GROWTH, { milestone: name });
 }
 
 /** Spec 3.7: the usual pay landed since the last look. One coin moment on that visit; the line for the rest of the day. */
@@ -42,8 +48,8 @@ export function PaydayMoment({ fresh }: { fresh: boolean }) {
 }
 
 /** Spec 3.4: the tree in its corner of Home, below everything else. A stage this person hasn't seen hops once, with a
- *  line naming the milestone, then is marked seen. */
-export function HomeTree() {
+ *  line naming the milestone, then is marked seen. `asOf` is Home's day from the server. */
+export function HomeTree({ asOf }: { asOf: string }) {
   const allowed = momentAllowed('tree', { parent: !useIsHousehold() });
   const q = useGrowth(allowed.face);
   const qc = useQueryClient();
@@ -53,7 +59,7 @@ export function HomeTree() {
   const [said, setSaid] = useState<string | null>(null);
   useEffect(() => {
     if (!fresh || !g) return;
-    setSaid(newGrowthLine(g));
+    setSaid(newGrowthLine(g, asOf));
     const book = currentBook();
     void seeGrowth(g.stage).then(
       () => { setQueryDataIfStillIn<Growth>(qc, book, ['growth'], (old) => (old ? { ...old, seen: true } : old)); },

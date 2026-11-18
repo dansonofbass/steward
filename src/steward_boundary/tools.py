@@ -19,6 +19,7 @@ ERRORS = ("Not in this book.", "That input wasn't understood.", "This couldn't b
           DECLINED, NEEDS_MANAGER)
 MERCHANT = "merchant_detail"
 MERCHANT_DAYS, MERCHANT_ROWS = 92, 200      # spec 4.2: at most 92 days and 200 rows
+MERCHANT_STORE_CHARS = 60                   # a store name as a row shows and sends it (plan B ruling 2)
 ERROR_RESULT = obj({"error": enum(ERRORS)})
 NO_INPUT = obj({})
 EVERY, HOUSEHOLD, PARENT = ("household", "parent"), ("household",), ("parent",)
@@ -151,7 +152,7 @@ TOOLS: tuple[ToolSpec, ...] = tuple(sorted([
              obj({"reason": {"type": "string"}, "start": IN_DATE, "end": IN_DATE,
                   "category": nullable(enum(V.CATEGORIES)), "payees": nullable(arr({"type": "string"}))}),
              obj({"rows": arr(obj({"date": DATE, "amount_cents": INT, "category": enum(V.CATEGORIES),
-                                   "merchant": free_text(60), "account": ALIAS}), MERCHANT_ROWS),
+                                   "merchant": free_text(MERCHANT_STORE_CHARS), "account": ALIAS}), MERCHANT_ROWS),
                   "payees": arr(obj({"payee": ALIAS, "name": free_text(80)}), 50), "more": BOOL}),
              EVERY, "Asking for store names"),
     ToolSpec("debts",

@@ -140,7 +140,7 @@ test.describe('a manager', () => {
     const id = (await r.json()).id as number;
     try {
       await page.goto('/spending');
-      await expect(page.getByText('Accounts without a type')).toBeVisible();
+      await expect(page.getByRole('main').getByText('Accounts without a type')).toBeVisible();
       await expect(page.getByRole('link', { name: /^Set the type of \d+ new accounts?$/ })).toHaveAttribute('href', '/b/ours/settings/banks');
     } finally {
       // Typed and closed, so no later spec sees an extra new account.

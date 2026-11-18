@@ -37,6 +37,7 @@ export type Me = {
   books: BookSummary[];
   session: { id: number; device_label: string; created_at: string };
   gateway_name?: string;   // spec 2026-11-05, section 7; absent in fixtures: "the gateway"
+  timezone?: string;       // the household's zone (issue #26, lib/today.ts); absent in fixtures: the device's
 };
 export type Session = { id: number; device_label: string; created_at: string; last_seen_at: string };
 export type SessionList = { sessions: Session[] };
@@ -50,6 +51,8 @@ export type Account = {
   name: string;
   type: AccountType;
   owner: Owner;
+  /** The owner in words, a member's name or a role (issue #31). */
+  owner_label?: string;
   source: Source;
   institution: string;
   is_active: boolean;
@@ -198,7 +201,8 @@ export type Event = {
 };
 export type EventList = { events: Event[] };
 
-export type SimplefinStatus = { linked: boolean; last_sync_at: string | null; last_error: string | null };
+/** sign_in: the banks whose open warning on Home says to sign in again at SimpleFIN (issue #16). */
+export type SimplefinStatus = { linked: boolean; last_sync_at: string | null; last_error: string | null; sign_in?: string[] };
 export type SyncResult = {
   institutions_ok: number;
   institutions_failed: number;

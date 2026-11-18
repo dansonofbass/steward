@@ -4,7 +4,7 @@
 @media (min-width: 900px) { .groups { display: block; column-count: 2; column-gap: var(--s-5); } .groups > .group { break-inside: avoid; margin-bottom: var(--s-5); } }
 .group { padding: 0; overflow: hidden; box-shadow: 0 0 0 1px var(--line), var(--shadow-raised); }
 .group__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); padding: var(--s-4) var(--s-4) var(--s-3); border-bottom: 1px solid var(--line); }
-.group__head h3 { margin: 0; font-family: var(--font); font-size: 0.75rem; line-height: 1.2; }
+.group__head h3 { margin: 0; font-family: var(--font); font-size: 0.703125rem; line-height: 1.2; }
 .group__head .money { font-weight: 600; }
 .acct { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--s-3); padding: var(--s-3) var(--s-4); color: inherit; text-decoration: none; }
 .acct + .acct { border-top: 1px solid var(--line); }
@@ -23,7 +23,7 @@
 .verdict__flow:hover { background: var(--surface-2); }
 .verdict__flow:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .verdict__figure { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-2); font-variant-numeric: tabular-nums; }
-.verdict__amount { font-size: 30px; font-weight: 700; line-height: 1.1; }
+.verdict__amount { font-size: 1.875rem; font-weight: 700; line-height: 1.1; }
 .verdict__figure.is-black { color: var(--ink); }
 .verdict__figure.is-red { color: var(--warn); }
 .verdict__figure.is-nothing { color: var(--ink-muted); }
@@ -46,6 +46,8 @@
 .sign.is-wide { grid-column: 1 / -1; }
 .sign dt { margin: 0; font-size: var(--fs-1); font-weight: 600; color: var(--ink-muted); }
 .sign dd { margin: 0; font-size: var(--fs-3); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* The Business tile's skeleton is one line of its figure tall, so the figure lands without moving the page (issue #24). */
+.sign dd .skeleton { height: 1lh; justify-content: center; }
 .sign dd.is-muted, .sign .is-muted { color: var(--ink-muted); }
 .sign dd.is-amber { color: var(--warn); }
 .sign .is-in { color: var(--money-in); }
@@ -53,6 +55,26 @@
 .sign__link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .sign__link:focus-visible { outline: none; }
 .sign:has(.sign__link:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---------- The strip's and Since's boxes (issue #24) ----------
+   Both are lazy chunks; their rooms (home/rooms.tsx) hold the same boxes until a chunk lands, so these rules load
+   with Home, and the colours stay in the chunks' own CSS. */
+.mstrip { display: grid; gap: var(--s-1); padding: var(--s-2) 0; color: inherit; text-decoration: none; border-radius: var(--r-s); }
+.mstrip .strip { display: block; width: 100%; height: 36px; overflow: visible; }
+.mstrip__foot { display: flex; justify-content: space-between; gap: var(--s-2); font-size: var(--fs-1); color: var(--ink-muted); }
+
+/* Since you last looked (Home spec, section 3). The room's heading is a paragraph set like the card's h2. */
+.since { display: flex; flex-direction: column; gap: var(--s-2); }
+.since h2 { margin: 0; }
+.since__when { font: inherit; font-weight: 400; }
+.since__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.since__row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); min-height: 36px; padding: var(--s-1) 0; }
+.since__row + .since__row { border-top: 1px solid var(--line); }
+.since__row > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.since__row .money { flex: none; font-variant-numeric: tabular-nums; }
+.since__row .money--in { color: var(--money-in); }
+.since__more { margin: 0; color: var(--ink-muted); }
+.since__head { font: 400 var(--fs-4)/1.25 var(--font-display); text-wrap: balance; overflow-wrap: anywhere; hyphens: auto; }
 
 /* ---------- For you (Home spec, section 2) ---------- */
 .foryou { display: flex; flex-direction: column; gap: var(--s-2); }
@@ -71,3 +93,5 @@
 .foryou__acts { flex: none; display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--s-1); }
 .foryou__acts .btn { min-height: 44px; padding: 0 var(--s-3); }
 .foryou__foot { margin: 0; font-size: var(--fs-1); }
+/* Room for the 20 px acorn the background line shows while the gateway is away, which arrives in its own chunk (issue #24). */
+.foryou__foot.bg-line { min-height: 20px; }

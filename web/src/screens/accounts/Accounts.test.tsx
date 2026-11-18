@@ -7,6 +7,7 @@ import { HouseholdOnly } from '../../book/BookScope';
 import { LIMITS_UNAVAILABLE, NET_WORTH_SPLIT_UNAVAILABLE } from '../../lib/copy';
 import { BOOK, callsTo, renderAt, stubFetch, wrapBook } from '../../test-utils';
 import Settings from '../Settings';
+import { forgetHouseholdZone, setHouseholdZone } from '../../lib/today';
 import Accounts, { freshLine, loadLimits, loadNetWorth, loadSplit } from './Accounts';
 import { ACCTS, acct } from './fixtures';
 import { LINE } from './invest/fixtures';
@@ -36,6 +37,15 @@ describe('freshLine', () => {
   it('says 12:05 AM just after midnight and 12:05 PM just after noon', () => {
     expect(freshLine(ACCTS, at(25, 0, 5).toISOString(), now)).toBe('4 accounts · updated today, 12:05 AM');
     expect(freshLine(ACCTS, at(25, 12, 5).toISOString(), now)).toBe('4 accounts · updated today, 12:05 PM');
+  });
+  it("reads the day and the time on the household's clock, wherever this device is (issue #26)", () => {
+    setHouseholdZone('Pacific/Kiritimati');   // UTC+14: Nov 16, 11:30 UTC is Nov 17, 1:30 AM at home
+    try {
+      expect(freshLine(ACCTS, '2026-11-16T11:30:00Z', new Date('2026-11-16T12:00:00Z'))).toBe('4 accounts · updated today, 1:30 AM');
+      expect(freshLine(ACCTS, '2026-11-16T09:00:00Z', new Date('2026-11-16T12:00:00Z'))).toBe('4 accounts · updated yesterday, 11:00 PM');
+    } finally {
+      forgetHouseholdZone();
+    }
   });
   it('gives the year for a sync in an earlier year', () => {
     expect(freshLine(ACCTS, new Date(2025, 11, 30, 6, 10).toISOString(), now)).toBe('4 accounts · updated Dec 30, 2025');

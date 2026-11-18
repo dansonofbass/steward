@@ -12,15 +12,21 @@ import { GatewayOffLine } from './home/GatewayOffLine';
 import { ForYou } from './home/ForYou';
 import { Signs } from './home/Signs';
 import { useHomeVisit } from './home/useHomeVisit';
+import { SinceRoom, StripRoom } from './home/rooms';
 import { Verdict } from './home/Verdict';
 import './home.css';
 
-// Secondary parts load in their own chunks once Home is ready (Home spec, Performance).
+// Secondary parts are their own chunks (Home spec, Performance). Issue #24: they start loading as the address is
+// reached, beside /api/home (routes.tsx, HOME_WARM), and an empty room of their shape holds each place until its chunk
+// lands, so nothing below them moves.
 const MonthStrip = lazyScreen(() => import('./home/MonthStrip'));
 const HomeSince = lazyScreen(() => import('./home/HomeSince'));
+export const preloadHomeParts = () => Promise.all([MonthStrip.preload(), HomeSince.preload()]);
 
 /** Home (phase 11 spec): How are we doing?, then For you, then Since you last looked, then the day-to-day accounts.
- *  The ready mark covers /api/home and /api/accounts only (P38); everything after it is secondary and never blocks it. */
+ *  The ready mark covers /api/home and /api/accounts only (P38); everything after it is secondary and never blocks it.
+ *  Nothing shows under the verdict until /api/home answers: a placeholder there would be pushed down the screen when
+ *  the signs and For you land (issue #24). */
 export function Home() {
   const joined = (useLocation().state as { joined?: string } | null)?.joined;
   const home = useHome();
@@ -56,11 +62,11 @@ export function Home() {
       <GatewayOffLine />
       <Verdict data={data} ready={ready} />
       {live && <Signs signs={data.signs} month={data.month} business={business.data} businessFailed={business.isError} />}
-      {live && ready && <Suspense fallback={null}><MonthStrip months={data.flow.months} asOf={data.as_of} /></Suspense>}
+      {live && data.flow.months.length > 0 && <Suspense fallback={<StripRoom />}><MonthStrip months={data.flow.months} asOf={data.as_of} /></Suspense>}
       {data && <ForYou data={data} ready={ready} />}
-      {ready && data?.since && <Suspense fallback={null}><HomeSince since={data.since} asOf={data.as_of} /></Suspense>}
-      <AccountGroups accounts={accounts.data?.accounts} />
-      {ready && <Suspense fallback={null}><HomeTree /></Suspense>}
+      {data?.since && <Suspense fallback={<SinceRoom since={data.since} asOf={data.as_of} />}><HomeSince since={data.since} asOf={data.as_of} /></Suspense>}
+      {data && <AccountGroups accounts={accounts.data?.accounts} />}
+      {ready && data && <Suspense fallback={null}><HomeTree asOf={data.as_of} /></Suspense>}
     </div>
   );
 }

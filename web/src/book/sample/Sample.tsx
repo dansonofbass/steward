@@ -4,8 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../../api/client';
-import { useMe } from '../../api/hooks';
-import type { BookSummary, Me } from '../../api/types';
+import { freshMe, useMe } from '../../api/hooks';
+import type { BookSummary } from '../../api/types';
 import { Button } from '../../ui/Button';
 import { UndoToast } from '../../ui/UndoToast';
 import { bookHref } from '../BookContext';
@@ -14,11 +14,6 @@ import './sample.css';
 
 const AGAIN = "That didn't finish. Try again.";
 const words = (e: unknown) => (e instanceof ApiError ? e.message : AGAIN);
-
-/** /me says who is in which book; BookScope sends an address it cannot find there to another book (F8), so the list is
- *  fetched fresh before any navigation into or out of a Sample. */
-const freshMe = (qc: ReturnType<typeof useQueryClient>) =>
-  qc.fetchQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/auth/me'), staleTime: 0 });
 
 /** The household: the install's book, else the first household-kind book that is not a Sample, else the first that is not. */
 function householdOf(books: BookSummary[]): BookSummary | null {

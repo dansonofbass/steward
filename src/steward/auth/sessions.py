@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session as OrmSession
 from steward.db.directory_models import Session, User
 from steward.db.engine import begin_write
 
-COOKIE = "steward_session"
 # Phase 18: last_seen_at was written on every signed-in request, so every request took the directory's write lock.
 TOUCH_EVERY = timedelta(minutes=5)
 

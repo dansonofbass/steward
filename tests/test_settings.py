@@ -82,3 +82,25 @@ def test_the_time_zone_setting_refuses_a_name_that_is_no_zone(settings, monkeypa
     monkeypatch.setenv("STEWARD_TIMEZONE", "Pacific")
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+@pytest.mark.parametrize("value", ["production", "PROD", "Prod", "dev", ""])
+def test_an_unknown_steward_env_stops_with_the_allowed_values(tmp_path, monkeypatch, value):
+    """Gate finding SEC-7 (issue #9): STEWARD_ENV=production or PROD skipped the demo guards, which compare it to prod
+    exactly. Only the values the code uses are taken; anything else stops with them named."""
+    from pydantic import ValidationError
+    from steward.settings import ENV_RULE
+    monkeypatch.setenv("STEWARD_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("STEWARD_BASE_URL", "https://nas.tail1234.ts.net")
+    monkeypatch.setenv("STEWARD_ENV", value)
+    with pytest.raises(ValidationError) as e:
+        Settings(_env_file=None)
+    assert ENV_RULE in str(e.value) and "prod, test or demo" in ENV_RULE
+
+
+@pytest.mark.parametrize("value", ["prod", "test", "demo"])
+def test_the_three_steward_envs_are_taken(tmp_path, monkeypatch, value):
+    monkeypatch.setenv("STEWARD_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("STEWARD_BASE_URL", "https://nas.tail1234.ts.net")
+    monkeypatch.setenv("STEWARD_ENV", value)
+    assert Settings(_env_file=None).env == value

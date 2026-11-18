@@ -321,3 +321,21 @@ def test_the_commit_says_how_many_of_its_new_rows_wait_in_review(client, db, ddb
         Transaction.import_batch_id.in_(body["batch_ids"]), Transaction.category == "uncategorized",
         Transaction.is_transfer.is_(False), Transaction.reviewed_at.is_(None)))
     assert body["waiting"] == waiting and 0 <= waiting <= body["imported"]
+
+
+def test_the_commit_counts_its_possible_duplicates_apart_from_rows_to_sort(client, db, ddb, ours):
+    """Issue #32: the receipt says why rows wait. A row imported anyway beside one Steward has (same amount and
+    description, a day apart) is a possible duplicate in Review; rows already in the book don't count."""
+    _jr(client, ddb, ours)
+    card = make_account(db, "Amex", type="credit")
+    make_txn(db, card, date(2024, 10, 3), -650, "BLUE BOTTLE COFFEE")
+    make_txn(db, card, date(2024, 1, 3), -900, "OLD SHOP")
+    make_txn(db, card, date(2024, 1, 4), -900, "OLD SHOP")          # a pair from before, not this commit's
+    body = import_file(client, "amex-basic.csv", card.id, negate=True, include_same=True).json()
+    assert body["imported"] == 10 and body["duplicates"] == 1
+
+
+def test_a_commit_with_no_near_rows_has_no_duplicates(client, db, ddb, ours):
+    _jr(client, ddb, ours)
+    card = make_account(db, "Amex", type="credit")
+    assert import_file(client, "amex-basic.csv", card.id, negate=True).json()["duplicates"] == 0

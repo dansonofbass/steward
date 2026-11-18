@@ -16,14 +16,18 @@ OFF_LINE = "Chat is off for this book. A manager can turn it on in Settings → 
 # What the tools send Claude. docs/explanations/privacy.md and the README list the same (tests/test_privacy_docs.py).
 SENT_TO_CLAUDE = ("balances", "income", "spending totals", "holdings", "debts", "ages", "your state", "tax facts")
 # Says what the checks do, not more (0.1.0 gate, PRIV-2, PRIV-3, PRIV-9, TRI-2): the exact pass replaces what Steward
-# holds, the gateway's model looks for the rest and can miss one, an approved payee can be a person, and approved rows
-# stay in the conversation. tests/test_doc_words.py keeps the phrases the gate found false out of it.
+# holds, the gateway's model looks for the rest and can miss one, a row Steward reads as a transfer goes as [name]
+# unless the manager ticks that row (public issue #1; privacy.md lists the words, and tests/test_privacy_docs.py holds
+# this line to the docs' wording), and approved rows stay in the conversation. tests/test_doc_words.py keeps the phrases
+# the gate found false out of it.
 DISCLOSURE = ("Steward sends Claude, an AI made by Anthropic, the numbers it needs to answer you: "
               f"{', '.join(SENT_TO_CLAUDE[:-1])} and {SENT_TO_CLAUDE[-1]}. It replaces the names, account numbers, "
-              "addresses, emails and birth dates it holds, and your gateway looks for others but can miss one. Store "
-              "and payee names, which can be a person's, are sent only in rows a manager approves, and those rows stay "
-              "in that conversation. Every part of your data that is sent is kept in this book's log, which every "
-              "member can read. Your conversations are listed only for you.")
+              "addresses, emails and birth dates it holds, apart from the gaps Privacy lists, and your gateway looks "
+              "for others but can miss one. Store and payee names are sent only in rows a manager approves, and those "
+              "rows stay in that conversation. In a row Steward reads as Zelle, a wire, a transfer or a payment app "
+              "(Privacy lists the words), the name is sent as [name] unless the manager ticks that row. "
+              "Every part of your data that is sent is kept in this book's log, which every member can read. Your "
+              "conversations are listed only for you.")
 GATEWAY_LINES = {"ok": "{gateway} is answering.", "away": LINES["away"], "not_set_up": LINES["not_set_up"],
                  "paused": LINES["privacy_not_ready"], "stopped": LINES["stopped_by_gateway"]}
 

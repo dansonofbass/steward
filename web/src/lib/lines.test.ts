@@ -65,12 +65,16 @@ describe('the line pools (phase 17 spec 3.2)', () => {
     expect(payerCheer('Acme')).not.toContain('{');
   });
 
-  it('an import says how many wait, or that nothing does, in the singular for one (R3)', () => {
-    expect(importDoneLine(143, 12)).toBe('143 rows in. 12 wait in Review.');
-    expect(importDoneLine(1, 1)).toBe('1 row in. 1 waits in Review.');
-    expect(importDoneLine(5, 1)).toBe('5 rows in. 1 waits in Review.');
+  it('an import says how many wait and why, or that nothing does, in the singular for one (R3, issue 32)', () => {
+    expect(importDoneLine(143, 12)).toBe('143 rows in. 12 to sort in Review.');
+    expect(importDoneLine(1, 1)).toBe('1 row in. 1 to sort in Review.');
+    expect(importDoneLine(5, 1, 0)).toBe('5 rows in. 1 to sort in Review.');
+    expect(importDoneLine(5, 0, 1)).toBe('5 rows in. 1 possible duplicate in Review.');
+    expect(importDoneLine(5, 0, 2)).toBe('5 rows in. 2 possible duplicates in Review.');
+    expect(importDoneLine(3, 1, 1)).toBe('3 rows in. 1 to sort and 1 possible duplicate in Review.');
+    expect(importDoneLine(1_204, 1_100, 0)).toBe('1,204 rows in. 1,100 to sort in Review.');
     expect(importDoneLine(1_204, 0)).toBe('1,204 rows in, and nothing to sort.');
-    expect(importDoneLine(1, 0)).toBe('1 row in, and nothing to sort.');
+    expect(importDoneLine(1, 0, 0)).toBe('1 row in, and nothing to sort.');
   });
 
   it('says the time to spare in weeks, a week or days', () => {

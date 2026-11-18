@@ -36,6 +36,7 @@ export const BILLS_NONE = 'None due';
 export const PLAN_AT = 'Comfortably at {age}';
 export const PLAN_NOT_BY_70 = 'Not by 70';
 export const PLAN_NONE = 'No plan yet';
+export const PLAN_SAVED = 'saved {date}';   // #17: Home's figure is the saved plan's; Plan shows today's
 export const NW_THIS_MONTH = '{amount} this month';
 export const NW_NO_CHANGE = 'No change yet';
 export const BUSINESS_PROFIT = '{amount} profit this year';

@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { BookSummary } from '../api/types';
 import { celebrationsChosen, forgetPersonPrefs, setPersonPrefs, soundOn } from '../lib/celebrations';
+import { crossedMilestone, firstMaxed, joyScope, MAXED_KEY, MILESTONE_KEY } from '../screens/accounts/joy';
 import { EMPTY_DRAFT, withAssumed } from '../screens/plan/levers';
 import { getSavedNote, setSavedNote } from '../screens/plan/savedNote';
 import { clearKeptDraft, draftKey, keepDraft, keptDraft } from '../screens/plan/usePlanDraft';
@@ -68,6 +69,21 @@ describe('the You menu (decision 4)', () => {
     } finally {
       forgetPersonPrefs();
     }
+  });
+  it("signing out removes the net worth milestone and maxed cheers this device kept, and leaves the device's settings (issue #6)", async () => {
+    stubFetch({ '/api/auth/me': ME, 'POST /api/auth/logout': () => new Response(null, { status: 204 }) });
+    crossedMilestone(joyScope(1, 'ours'), 95_000_000);
+    firstMaxed(joyScope(1, 'ours'), 'jr:k401:2026');
+    localStorage.setItem(MILESTONE_KEY, '90000000');                  // what 0.1.0 kept, unscoped
+    localStorage.setItem('steward-swipe', 'off');
+    wrapBook(<Routes><Route path="/login" element={<p>Sign in</p>} /><Route path="*" element={<YouMenu variant="bar" />} /></Routes>, ME.books[0], '/b/ours');
+    fireEvent.click(await screen.findByRole('button', { name: 'You: JR Hale' }));
+    expect(Object.keys(localStorage).filter((k) => k.startsWith(MILESTONE_KEY) || k.startsWith(MAXED_KEY))).toHaveLength(3);
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Sign out of this device?' })).getByRole('button', { name: 'Sign out' }));
+    expect(await screen.findByText('Sign in')).toBeInTheDocument();
+    expect(Object.keys(localStorage).filter((k) => k.startsWith(MILESTONE_KEY) || k.startsWith(MAXED_KEY))).toEqual([]);
+    expect(localStorage.getItem('steward-swipe')).toBe('off');
   });
   it('a household viewer has no Settings row', async () => {
     const viewer = { ...ME, books: [{ ...ME.books[0], role: 'viewer' as const }] };

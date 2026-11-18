@@ -110,6 +110,7 @@ Measured against the seeded demo household: the perf fixture seeds three 5-year 
 | CSV import, 24 months (about 2,500 rows) | < 5 s |
 | Import preview, same file | < 2 s |
 | Home interactive, phone, CPU 4× slower, 30 ms RTT (cold cache, browser median of 5) | < 1.5 s |
+| Home layout shift, same phone, until the strip, Since and the fonts have landed (CLS, worst of 5) | < 0.1 |
 | Review action, browser round trip (p95 of 10) | < 150 ms |
 | Three Review sorts in a row with every celebration on (`e2e/perf/celebrate.spec.ts`, 4× CPU) | no long task over 100 ms; the canvas removed afterwards |
 | Celebrate code, loaded on the first celebration (`web/scripts/bundle-size.mjs`) | ≤ 12 KB gzip |

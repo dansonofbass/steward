@@ -2,6 +2,7 @@ import type { ItemStatus, PayerBalance, TripReason, TripRow, TripSummary } from 
 import { CATEGORY_GROUPS, label } from '../../lib/categories';
 import { dateLabel, dollars, money } from '../../lib/format';
 import * as C from './copy';
+import { addDays } from '../../lib/today';
 
 /** Fills {placeholders}; one that isn't given stays as it is. */
 export const fill = (s: string, vars: Record<string, string | number>) =>
@@ -14,9 +15,7 @@ export function dayOf(iso: string): Date {
 }
 
 export function daysBefore(iso: string, n: number): string {
-  const d = dayOf(iso);
-  d.setDate(d.getDate() - n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return addDays(iso, -n);
 }
 
 export const statusWord = (s: ItemStatus | null): string =>

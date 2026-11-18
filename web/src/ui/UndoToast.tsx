@@ -52,7 +52,8 @@ export function UndoToast({ text, onUndo, onClose, ms = TOAST_MS, tag = null, li
       {tag && <><span className="stamp">{tag}</span><Sep /></>}
       <span className="undo-toast__text">{text}</span>
       {link && <>{' '}{link}</>}
-      {onUndo && <><Sep /><button type="button" className="link" onClick={onUndo}>{UNDO}</button></>}
+      {/* The dot goes with Undo: when Undo wraps under a long receipt, the dot is not left at the end of the line above (#22). */}
+      {onUndo && <span className="undo-toast__undo"><Sep /><button type="button" className="link" onClick={onUndo}>{UNDO}</button></span>}
       {cheer && fits && <span className="undo-toast__cheer" data-testid="toast-cheer" ref={cheerEl}>{cheer}</span>}
     </div>
   );

@@ -33,6 +33,18 @@ def test_money_row_states():
     assert r.money_row(**base | {"money_in": False, "linked": False}).detail == "Nothing is in yet."
 
 
+def test_money_row_needs_you_when_a_bank_needs_a_sign_in():
+    """Issue #16: the same need Home's For you shows, not "Done"."""
+    base = dict(money_in=True, linked=True, last_sync=NOW, sync_failed=False, accounts=4, last_import=None,
+                waiting=0, today=TODAY)
+    one = r.money_row(**base, sign_in=["Big Bank"])
+    assert (one.status, one.detail, one.go) == ("needs", "Big Bank needs you to sign in again at SimpleFIN.", "Fix")
+    assert one.extra["sign_in"] == ["Big Bank"]
+    two = r.money_row(**base, sign_in=["Big Bank", "Savings Bank"])
+    assert (two.status, two.detail) == ("needs", "2 banks need you to sign in again at SimpleFIN.")
+    assert r.money_row(**base).status == "done" and r.money_row(**base).extra["sign_in"] == []
+
+
 @pytest.mark.parametrize("kw,status,detail,go", [
     (dict(url=None, paired=False, reachable=None, state=None, chat_on=False), "optional", "Not set up.", None),
     (dict(url="http://gw:8430", paired=False, reachable=True, state=None, chat_on=False), "optional", "Not paired with the gateway.", "Pair"),
@@ -159,8 +171,23 @@ def test_the_route_answers_eight_rows_for_a_manager_and_404_for_others(client, d
     assert body["rows"][6]["status"] == "done"          # the address, from the running base URL and HTTPS
 
 
+def test_the_route_counts_a_bank_that_needs_a_sign_in(client, ddb, db, ours):
+    from steward.events import log_event
+    from steward.services.simplefin.sync import SIGN_IN_AGAIN
+    from tests.factories import make_account, make_txn
+    make_person(ddb, "pat", [(ours.id, "manager")])
+    login(client, "pat")
+    make_txn(db, make_account(db, "Checking"), TODAY, -500, "COFFEE")
+    log_event(db, "warn", "sync", SIGN_IN_AGAIN.format(name="Big Bank"), actionable=True)
+    db.commit()
+    body = client.get("/api/b/ours/ready").json()
+    money = body["rows"][1]
+    assert (money["status"], money["detail"]) == ("needs", "Big Bank needs you to sign in again at SimpleFIN.")
+    assert body["need"] == sum(row["status"] == "needs" for row in body["rows"])
+
+
 def test_check_again_answers_from_the_running_process(app, books, ddb, ours, client):
-    from steward.auth.sessions import COOKIE
+    from steward.auth.cookies import HOST_SESSION as COOKIE
     make_person(ddb, "pat", [(ours.id, "manager")])
     login(client, "pat")                                       # the session cookie is Secure: only an https client sends it
     token = client.cookies.get(COOKIE)

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def outbound_hosts(settings: Settings, store: "AppSettings | None" = None) -> frozenset[str]:
-    hosts = set(settings.allowed_hosts)
+    hosts = set(settings.simplefin_allowed_hosts)
     for url in (settings.gateway_url, settings.categorizer_url, backup_schedule(settings, store).ping_url):
         if url and (host := urlsplit(url).hostname):
             hosts.add(host)

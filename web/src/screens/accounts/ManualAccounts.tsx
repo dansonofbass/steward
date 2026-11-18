@@ -7,7 +7,7 @@ import { api, json, patch } from '../../api/client';
 import { useAccounts } from '../../api/hooks';
 import { useBook } from '../../book/BookContext';
 import type { Account, AccountType, Owner } from '../../api/types';
-import { localYmd, relativeDays } from '../../lib/format';
+import { relativeDays } from '../../lib/format';
 import {
   ADD_ACCOUNT, AS_OF, BALANCE, LAST_UPDATED, LOAN_AGAINST_IT, NAME, NO_BALANCE_YET, NO_MANUAL_ACCOUNTS, NONE, OWNER, SAVE, SAVED, TYPE, UPDATE_BALANCE, UPDATED_MANUALLY,
 } from '../../lib/copy';
@@ -21,8 +21,9 @@ import { Sheet } from '../../ui/Sheet';
 import { Skeleton } from '../../ui/Skeleton';
 import { dollarsText, toHundredths } from '../settings/money';
 import { defaultOwner, failure, ownerOptions, TYPE_OPTIONS, typeLabel } from '../settings/shared';
+import { today } from '../../lib/today';
 
-const todayYmd = () => localYmd(new Date().toISOString());
+const todayYmd = () => today();   // the household's (issue #26)
 
 function useRefreshMoney() {
   const qc = useQueryClient();

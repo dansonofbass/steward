@@ -12,6 +12,7 @@ import {
 } from '../../lib/copy';
 import { dateLabel, localYmd, money } from '../../lib/format';
 import { freshness } from '../../lib/freshness';
+import { addDays, clockTime, today } from '../../lib/today';
 import { Button } from '../../ui/Button';
 import { Card } from '../../ui/Card';
 import { Notice } from '../../ui/Notice';
@@ -22,24 +23,17 @@ import { TaxTreatment } from './TaxTreatment';
 import '../../ui/Money.css';
 import './accounts.css';
 
-// "6:10 AM", with a plain space (the browser's own format puts a narrow one before AM).
-function clock(d: Date): string {
-  const h = d.getHours();
-  return `${h % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
-}
-const ymd = (d: Date) => localYmd(d.toISOString());
-
 /** The line under the title (decision 6): how many accounts, and when SimpleFIN last brought them up to date —
  *  "today, 6:10 AM", "yesterday, 6:10 AM" or "Oct 23". Without a sync it only counts. */
 export function freshLine(accounts: Account[], lastSync: string | null, now: Date): string {
   const n = accounts.length;
   if (!lastSync) return n === 1 ? ONE_ACCOUNT : ACCOUNTS_COUNT.replace('{n}', String(n));
-  const at = new Date(lastSync);
+  // The household's day and clock (issue #26), wherever this device is.
   const day = localYmd(lastSync);
-  const yesterday = ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
-  const when = day >= ymd(now) ? TODAY_AT.replace('{time}', clock(at))
-    : day === yesterday ? YESTERDAY_AT.replace('{time}', clock(at))
-      : dateLabel(day, now);
+  const home = today(now);
+  const when = day >= home ? TODAY_AT.replace('{time}', clockTime(lastSync))
+    : day === addDays(home, -1) ? YESTERDAY_AT.replace('{time}', clockTime(lastSync))
+      : dateLabel(day, home);
   return n === 1 ? ONE_ACCOUNT_FRESH.replace('{when}', when) : ACCOUNTS_FRESH.replace('{n}', String(n)).replace('{when}', when);
 }
 

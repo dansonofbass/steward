@@ -94,7 +94,7 @@ def test_the_start_line_names_each_model_to_pull(tmp_path):
     compose = GatewayConfig(tmp_path, tmp_path, network="compose", host="0.0.0.0", ollama_url="http://ollama:11434")
     assert local_model_line(compose, http=sync(tags("qwen3.5:9b-q4_K_M"))) == (
         "Local model: Ollama answers at http://ollama:11434. Not pulled yet:\n"
-        "  docker compose exec ollama ollama pull gemma4:12b-it-qat")
+        "  docker compose run --rm ollama-pull gemma4:12b-it-qat")
     assert local_model_line(GatewayConfig(tmp_path, tmp_path), http=sync(tags())) == (
         "Local model: Ollama answers at http://127.0.0.1:11434. Not pulled yet:\n"
         "  ollama pull qwen3.5:9b-q4_K_M\n"
@@ -131,8 +131,8 @@ def test_ollama_says_whether_its_loaded_models_are_on_a_gpu(reply, want):
 
 
 GPU_START = ("Local model: Ollama ({service}) starts once this gateway is healthy. To pull a model gateway.toml names:\n"
-             "  docker compose exec {service} ollama pull qwen3.5:9b-q4_K_M\n"
-             "  docker compose exec {service} ollama pull gemma4:12b-it-qat")
+             "  docker compose run --rm ollama-pull qwen3.5:9b-q4_K_M\n"
+             "  docker compose run --rm ollama-pull gemma4:12b-it-qat")
 
 
 @pytest.mark.parametrize("vendor, service", [("nvidia", "ollama-nvidia"), ("amd", "ollama-amd")])
@@ -145,14 +145,14 @@ def test_a_gpu_compose_gateway_says_its_ollama_starts_after_it_and_names_that_se
     assert line == GPU_START.format(service=service) and "isn't answering" not in line
     assert local_model_line(compose, http=sync(tags("qwen3.5:9b-q4_K_M")), environ=env) == (   # a gateway-only restart
         "Local model: Ollama answers at http://ollama:11434. Not pulled yet:\n"
-        f"  docker compose exec {service} ollama pull gemma4:12b-it-qat")
+        "  docker compose run --rm ollama-pull gemma4:12b-it-qat")
 
 
 def test_the_cpu_compose_gateway_and_the_systemd_gateway_keep_their_lines(tmp_path):
     compose = GatewayConfig(tmp_path, tmp_path, network="compose", host="0.0.0.0", ollama_url="http://ollama:11434")
     assert local_model_line(compose, http=sync(tags("qwen3.5:9b-q4_K_M")), environ={}) == (
         "Local model: Ollama answers at http://ollama:11434. Not pulled yet:\n"
-        "  docker compose exec ollama ollama pull gemma4:12b-it-qat")
+        "  docker compose run --rm ollama-pull gemma4:12b-it-qat")
     assert local_model_line(compose, http=sync(_raise(httpx2.ConnectError("refused"))), environ={}) == \
         AWAY.format(url="http://ollama:11434")
     systemd = GatewayConfig(tmp_path, tmp_path)                     # outside compose a GPU variable changes nothing

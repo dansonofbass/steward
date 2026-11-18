@@ -52,7 +52,7 @@ export function TxnList({ rows, loading, hasMore, loadingMore, onMore, selectedI
     <div {...press}>
       {groupByDay(rows).map(([day, items]) => (
         <section className="day" key={day} data-date={day}>
-          <h3 className="day__head eyebrow">{dateLabel(day, today)}</h3>
+          <h2 className="day__head eyebrow">{dateLabel(day, today)}</h2>
           {items.map((t) => {
             const transfer = t.is_transfer || t.category === 'transfer';
             const raw = !t.merchant && !transfer;

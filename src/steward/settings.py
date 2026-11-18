@@ -20,6 +20,13 @@ TEST_EXPORT_KDF = (1, 8192, 1)
 # Caddy connect from. uvicorn believes their forwarded-for and forwarded-proto headers only from these. (Not spelled
 # with its X- prefix here: tests/test_proxy_trust.py flags any file outside its ALLOWED that names that header.)
 TRUSTED_PROXIES = "127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+# Issue #9: the values the code compares STEWARD_ENV to. Anything else (production, PROD) stops at start-up, because
+# the demo guards in steward serve and steward seed-demo run only for prod.
+ENVS = ("prod", "test", "demo")
+ENV_RULE = "STEWARD_ENV must be prod, test or demo. A real install uses prod."
+# Issue #8: STEWARD_ALLOWED_HOSTS, more names the API answers at besides STEWARD_BASE_URL's host and loopback.
+ALLOWED_HOSTS_RULE = ("STEWARD_ALLOWED_HOSTS must be host names or addresses separated by commas, such as "
+                      "steward.lan,100.101.102.103: no https://, no port and no path.")
 # Release spec 2026-11-05, section 7: the built-in backup's settings and what a refusal says (never the value itself).
 BACKUP_AT_RULE = "STEWARD_BACKUP_AT must be a time like 03:00, or empty to turn the built-in backup off."
 PING_URL_RULE = ("STEWARD_BACKUP_PING_URL must be an https:// or http:// address of up to 500 characters, with no "
@@ -62,7 +69,15 @@ class Settings(BaseSettings):
     base_url: str
     host: str = "127.0.0.1"
     port: int = 8420
-    env: str = "prod"
+    env: Literal["prod", "test", "demo"] = "prod"
+
+    @field_validator("env", mode="before")
+    @classmethod
+    def _check_env(cls, v):
+        if v not in ENVS:
+            raise ValueError(ENV_RULE)
+        return v
+
     session_days: int = 30
     categorizer_url: str | None = None
     statement_reader: bool = False   # PDF statements: start the reader thread under STEWARD_ENV=test (the e2e server)
@@ -76,6 +91,24 @@ class Settings(BaseSettings):
     simplefin_hosts: str = "bridge.simplefin.org,beta-bridge.simplefin.org"
     export_tmp_dir: Path | None = None    # plan Engineering choice 6: None is the system temp folder (the spec's)
     trusted_proxies: str = TRUSTED_PROXIES
+    allowed_hosts: str = ""     # issue #8: more names /api/ answers at (steward.api.hosts)
+
+    @field_validator("allowed_hosts")
+    @classmethod
+    def _check_allowed_hosts(cls, v: str) -> str:
+        from steward.api.hosts import plain_name
+        names = [plain_name(h) for h in v.split(",") if h.strip()]
+        if "" in names:
+            raise ValueError(ALLOWED_HOSTS_RULE)
+        return ",".join(names)
+
+    @property
+    def api_hosts(self) -> frozenset[str]:
+        """The names /api/ answers at: STEWARD_BASE_URL's host, the loopback names and STEWARD_ALLOWED_HOSTS."""
+        from steward.api.hosts import LOOPBACK, plain_name
+        base = plain_name(urlsplit(self.base_url.strip()).hostname or "")
+        return frozenset({base, *self.allowed_hosts.split(",")} - {""}) | LOOPBACK
+
     gateway_name: str = DEFAULT_GATEWAY_NAME   # spec 2026-11-05, section 7: what the screens call the gateway machine
 
     @field_validator("gateway_name")
@@ -139,7 +172,7 @@ class Settings(BaseSettings):
     mail_from: str = ""
 
     @property
-    def allowed_hosts(self) -> tuple[str, ...]:
+    def simplefin_allowed_hosts(self) -> tuple[str, ...]:
         return tuple(h.strip() for h in self.simplefin_hosts.split(",") if h.strip())
 
     @property

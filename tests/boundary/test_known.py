@@ -122,3 +122,34 @@ def test_find_known_and_scan_agree_on_random_text():
         assert normal(s) == normal(plain(s))
         hits += a
     assert hits > 300
+
+
+# Public issue #2: a 2-letter name part, a name made of everyday words kept on purpose, an address typed short.
+WIDER = [Known("Li Wei", "Person 3", name=True), Known("June Roth", "Child 1", name=True, everyday=True),
+         Known("1234 North Elm Street Apt 5 Springfield IL 62704", "[address]", address=True)]
+
+
+@pytest.mark.parametrize("text, want", [
+    ("Did Li pay?", "Did Person 3 pay?"),
+    ("li and LI", "Person 3 and Person 3"),
+    ("Did June Roth's fund grow?", "Did Child 1's fund grow?"),
+    ("Is the Roth IRA up in June?", "Is the Roth IRA up in June?"),
+    ("We live at 1234 North Elm, and 1234 north elm street", "We live at [address], and [address]"),
+    ("We moved 1234 boxes north", "We moved 1234 boxes north"),
+    ("Is 1234 Elm St worth more?", "Is [address] St worth more?"),       # typed without its direction
+    ("Go 1234 north today", "Go 1234 north today"),                      # a number and a direction alone
+    ("Is it ok to go?", "Is it ok to go?"),
+])
+def test_the_wider_forms_replace_what_they_should_and_nothing_more(text, want):
+    v = view(text)
+    assert apply(v.plain, find_known(v, WIDER))[0] == want
+
+
+def test_the_wider_forms_reach_the_same_verdict_in_the_exact_pass_and_the_fingerprints():
+    hashes = hashes_for(((k.text, k.name, k.everyday, k.address) for k in WIDER), SALT)
+    for s in ("li wei", "june roth", "1234 North Elm", "1234 north elm street apt", "1234 Elm", "1234 north", "Roth",
+              "June",
+              "1234", "north elm", "Al"):
+        assert bool(find_known(view(s), WIDER)) == (scan([("$", s)], SALT, hashes) is not None), s
+    # A 2-letter part is replaced in the question but never fingerprinted: a tool's ticker symbol can spell it.
+    assert find_known(view("Li"), WIDER) and scan([("$", "Li")], SALT, hashes) is None

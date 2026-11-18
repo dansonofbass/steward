@@ -16,10 +16,12 @@ def waiting_filter(at: datetime) -> ColumnElement[bool]:
                 or_(Transaction.snoozed_until.is_(None), Transaction.snoozed_until <= at))
 
 
-def duplicate_pairs(db: Session, limit: int = 50) -> list[tuple[Transaction, Transaction]]:
+def duplicate_pairs(db: Session, limit: int | None = 50,
+                    batch_ids: list[int] | None = None) -> list[tuple[Transaction, Transaction]]:
     """Likely double entries: same account and amount, within 2 days, same normalized description,
     and at least one side without a bank id (two bank ids are two real purchases). Pairs the household
-    kept are skipped. Ordered oldest first; a.id < b.id."""
+    kept are skipped. Ordered oldest first; a.id < b.id. `batch_ids` keeps only pairs with a side from those imports
+    (an import's receipt, issue #32)."""
     a, b = aliased(Transaction), aliased(Transaction)
     kept = select(DuplicateKeep.a_id, DuplicateKeep.b_id).where(DuplicateKeep.a_id == a.id, DuplicateKeep.b_id == b.id)
     stmt = (
@@ -29,11 +31,13 @@ def duplicate_pairs(db: Session, limit: int = 50) -> list[tuple[Transaction, Tra
         .where(or_(a.external_id.is_(None), b.external_id.is_(None)), ~kept.exists())
         .order_by(a.posted_at, a.id, b.id)
     )
+    if batch_ids is not None:
+        stmt = stmt.where(or_(a.import_batch_id.in_(batch_ids), b.import_batch_id.in_(batch_ids)))
     out = []
     for x, y in db.execute(stmt):
         if tidy(x.raw_description) == tidy(y.raw_description):
             out.append((x, y))
-            if len(out) >= limit:
+            if limit is not None and len(out) >= limit:
                 break
     return out
 

@@ -23,9 +23,17 @@ describe('the change line on the Overview (plan subpages decision 7)', () => {
   it('a year earlier: the line, a cheer from the year bag, and a small burst from the line', async () => {
     render(<ChangeLine data={moved(12)} />);
     const line = screen.getByTestId('change-line');
-    expect(line).toHaveTextContent(/^▲ Up 1 year since Oct 1[23](, 2026)?\.$/);
+    expect(line).toHaveTextContent(/^▼ 1 year earlier than on Oct 1[23](, 2026)?\.$/);
     expect(CLOSER_CHEERS.year).toContain(screen.getByTestId('change-cheer').textContent);
     await vi.waitFor(() => expect(fx.closer).toHaveBeenCalledWith({ over: line }));
+  });
+
+  it('the arrow follows the age, as the words do: down for earlier, up for later', () => {
+    const later = render(<ChangeLine data={moved(-12)} />);
+    expect(screen.getByTestId('change-line')).toHaveTextContent(/^▲ 1 year later than on Oct 1[23](, 2026)?\.$/);
+    later.unmount();
+    render(<ChangeLine data={moved(3)} />);
+    expect(screen.getByTestId('change-line')).toHaveTextContent(/^▼ 3 months earlier than on /);
   });
 
   it('half a year and two years draw from their own bags', async () => {
@@ -55,7 +63,7 @@ describe('the change line on the Overview (plan subpages decision 7)', () => {
     await vi.waitFor(() => expect(fx.closer).toHaveBeenCalledTimes(1));
     first.unmount();
     const again = render(<ChangeLine data={data} />);
-    expect(screen.getByTestId('change-line')).toHaveTextContent(/Up 1 year/);
+    expect(screen.getByTestId('change-line')).toHaveTextContent(/1 year earlier/);
     expect(screen.queryByTestId('change-cheer')).toBeNull();
     await settle();
     expect(fx.closer).toHaveBeenCalledTimes(1);

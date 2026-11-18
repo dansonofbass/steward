@@ -12,11 +12,13 @@ import * as C from './copy';
 import { fill } from './format';
 import { CHANGE_ICONS } from './marks';
 import './inventory.css';
+import { clockTime, dayOf } from '../../lib/today';
 
-const day = (iso: string) => new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-/** The calendar day in the viewer's zone, for grouping and keys (two years can share the same "Fri, Oct 17"). */
-const dayKey = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
-const time = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+// The household's day and clock (issue #26): a group, its heading and each row's time all agree near midnight,
+// wherever the device is. The heading is read from the day itself (a YYYY-MM-DD, formatted as that date in UTC). A
+// row whose time can't be read has no day (''), and gets a blank heading rather than a RangeError from Intl.
+const DAY = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+const dayLabel = (ymd: string) => (ymd ? DAY.format(Date.parse(ymd)) : '');
 
 /** Settings → Change record (spec 5; decision 8). Read-only for everyone. */
 export function ChangeRecord() {
@@ -32,9 +34,9 @@ export function ChangeRecord() {
   const people = known.current;
   const groups: { key: string; label: string; rows: ChangeRow[] }[] = [];
   for (const r of rows) {
-    const key = dayKey(r.at);
+    const key = dayOf(r.at);
     if (groups.length && groups[groups.length - 1].key === key) groups[groups.length - 1].rows.push(r);
-    else groups.push({ key, label: day(r.at), rows: [r] });
+    else groups.push({ key, label: dayLabel(key), rows: [r] });
   }
   return (
     <section className="stack" aria-label={C.CHANGE_RECORD}>
@@ -74,7 +76,7 @@ export function ChangeRecord() {
                   <div key={r.id} className="chg__row">
                     <Icon size={20} aria-hidden="true" />
                     <div className="chg__what">
-                      <div className="chg__line"><ChangeText row={r} /><span className="chg__time">{time(r.at)}</span></div>
+                      <div className="chg__line"><ChangeText row={r} /><span className="chg__time">{clockTime(r.at)}</span></div>
                       <ChangeDetails row={r} />
                     </div>
                   </div>

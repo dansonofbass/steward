@@ -52,8 +52,8 @@
 .inv-cost .link { position: relative; }
 .inv-cost .link::after { content: ""; position: absolute; inset: -14px -6px; } /* a 44px tap target without lifting the cell */
 .inv-costform, .inv-feeform { display: flex; flex-wrap: wrap; align-items: end; gap: var(--s-2); text-align: left; white-space: normal; }
-.inv-costform .field, .inv-feeform .field { flex: 1 1 10rem; min-width: 0; }
-@media (max-width: 600px) { .inv-costform { max-width: 9.5rem; } .inv-costform input { width: 100%; min-width: 0; box-sizing: border-box; } .inv-costform .field { flex-basis: 100%; } }
+.inv-costform .field, .inv-feeform .field { flex: 1 1 9.375rem; min-width: 0; }
+@media (max-width: 600px) { .inv-costform { max-width: 8.90625rem; } .inv-costform input { width: 100%; min-width: 0; box-sizing: border-box; } .inv-costform .field { flex-basis: 100%; } }
 .inv-fee, .inv-allin { margin: 0; }
 
 /* Contributions and limits */

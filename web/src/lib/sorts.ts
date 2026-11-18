@@ -1,4 +1,5 @@
 import { TEN_IN_A_ROW } from './copy';
+import { dayOf } from './today';
 
 /** Review focus P18: "Ten in a row" counts sorted cards this visit (not their matching rows), with no time window. An
  *  Undo, a Snooze or an Ignore breaks the run; it shows once per run. It replaces the sorting redesign's combos. The
@@ -17,7 +18,6 @@ export function runAfter(run: Run, event: 'sort' | 'break'): { run: Run; label: 
 }
 
 export type Tally = { total: number; day: string; today: number };
-const dayOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const count = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : 0);
 
 export function readTally(now: Date = new Date()): Tally {

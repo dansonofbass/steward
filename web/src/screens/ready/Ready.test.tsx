@@ -27,6 +27,28 @@ describe('Get Steward ready', () => {
     expect(callsTo(f, 'GET', '/api/ready')[0].url).toContain(`origin=${encodeURIComponent(window.location.origin)}`);
   });
 
+  it('Money coming in shows a bank that needs a sign-in, and its panel gives the step and opens Banks (issue 16)', async () => {
+    const money = { ...row('money', 'needs', 'Big Bank needs you to sign in again at SimpleFIN.', { linked: true, sign_in: ['Big Bank'] }), go: 'Fix' };
+    const ready = READY(row('address', 'done'));
+    stubFetch({ '/api/ready': { ...ready, need: 1, rows: ready.rows.map((r) => (r.key === 'money' ? money : r)) }, '/api/install/settings': {} });
+    wrapBook(<Ready />, {}, '/b/ours/settings/ready');
+    expect(await screen.findByText('1 needs you')).toBeInTheDocument();
+    expect(screen.queryByText('Nothing needs you.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Money coming in/ }));
+    expect(screen.getByText('Sign in again at SimpleFIN Bridge, then choose Update now.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Banks and accounts' })).toHaveAttribute('href', '/b/ours/settings/banks');
+  });
+
+  it('with SimpleFIN unlinked and a sign-in still open, the step says to link it again, as Banks does (issue 16)', async () => {
+    const money = { ...row('money', 'needs', 'Big Bank needs you to sign in again at SimpleFIN.', { linked: false, sign_in: ['Big Bank'] }), go: 'Fix' };
+    const ready = READY(row('address', 'done'));
+    stubFetch({ '/api/ready': { ...ready, need: 1, rows: ready.rows.map((r) => (r.key === 'money' ? money : r)) }, '/api/install/settings': {} });
+    wrapBook(<Ready />, {}, '/b/ours/settings/ready');
+    fireEvent.click(await screen.findByRole('button', { name: /Money coming in/ }));
+    expect(screen.getByText('Sign in again at SimpleFIN Bridge, then link SimpleFIN with a new setup token.')).toBeInTheDocument();
+    expect(screen.queryByText(/choose Update now/)).toBeNull();
+  });
+
   it('a boot-level row shows its line, copies only the line, and Check again says what is still running', async () => {
     const write = vi.fn(async () => {});
     Object.defineProperty(navigator, 'clipboard', { value: { writeText: write }, configurable: true });

@@ -143,7 +143,7 @@ test('Reset undoes a change; Update the plan saves it, the Overview compares wit
   const pages = page.getByRole('navigation', { name: 'Plan pages' });
   await pages.getByRole('link', { name: 'Overview', exact: true }).click();
   const line = page.getByTestId('change-line');
-  await expect(line).toHaveText(/^(▲ |▼ )?(Up .+ since|.+ later than on|No change since|Comfortably at \d+ now, from|Not by 70 now, from) [A-Z][a-z]{2} \d{1,2}/);
+  await expect(line).toHaveText(/^(▲ |▼ )?(.+ earlier than on|.+ later than on|No change since|Comfortably at \d+ now, from|Not by 70 now, from) [A-Z][a-z]{2} \d{1,2}/);
   const today = await page.evaluate(() => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date()));
   expect(await line.textContent()).not.toContain(today);
   await page.getByRole('button', { name: 'Earlier versions' }).click();

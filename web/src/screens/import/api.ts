@@ -43,7 +43,7 @@ export type PreviewReply = {
   };
 };
 export type CommitReply = {
-  set_id: number; imported: number; waiting?: number; accounts: number; account: string | null; skipped: number; months: number;
+  set_id: number; imported: number; waiting?: number; duplicates?: number; accounts: number; account: string | null; skipped: number; months: number;
   batch_ids: number[]; statements: number; added_up: number; kept_balances: string[]; kept_holdings?: string[];
 };
 export type BatchFile = {

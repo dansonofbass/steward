@@ -158,7 +158,10 @@ def test_only_dns_cloudflare_needs_the_token(tmp_path):
 # and /api/books/, and other segments hold a category's name or a link's token. So the filter deletes request>uri
 # whole rather than rewriting the routes it knows about. Caddy 2.11's filter encoder (modules/logging/filterencoder.go)
 # filters nested fields by their "parent>child" key, applies a field's filters in the order written, and leaves a
-# deleted field out of the line. Every Caddyfile the image can run carries the same global block.
+# deleted field out of the line. Every Caddyfile the image can run carries the same global block. request>host and
+# request>tls>server_name are the install's own address, which can be a family's name (issue #5); Steward's own log drops
+# an origin for the same reason (outside_text in src/steward/logs.py). Certificate lines still name the domain, and
+# docs/explanations/privacy.md says so.
 LOG_FILTER = """\
 \tlog {
 \t\tformat filter {
@@ -168,6 +171,8 @@ LOG_FILTER = """\
 \t\t\trequest>remote_ip delete
 \t\t\trequest>remote_port delete
 \t\t\trequest>client_ip delete
+\t\t\trequest>host delete
+\t\t\trequest>tls>server_name delete
 \t\t}
 \t}
 """

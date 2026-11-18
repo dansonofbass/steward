@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { api, del, json } from '../../api/client';
 import { useMe, usePasskeys, useSessions } from '../../api/hooks';
 import type { Passkey, Session } from '../../api/types';
-import { registerThisDevice } from '../../auth/passkeys';
+import { registerThisDevice, tellDeviceAccepted, type Accepted } from '../../auth/passkeys';
 import { dateLabelFromIso, localYmd, relativeDays } from '../../lib/format';
 import { deviceName } from '../../lib/device';
 import { useRemoval } from '../../lib/useRemoval';
@@ -22,7 +22,7 @@ import { Notice } from '../../ui/Notice';
 import { RemovalLine } from '../../ui/RemovalLine';
 import { Sheet } from '../../ui/Sheet';
 import { Skeleton } from '../../ui/Skeleton';
-import { forgetPersonPrefs } from '../../lib/celebrations';
+import { forgetSignedOut } from '../../lib/signedOut';
 import { failure } from '../settings/shared';
 import './SignInDevices.css';
 
@@ -78,7 +78,8 @@ function Passkeys() {
     removal.clear();
     setRemoving(p.id);
     try {
-      await api(`/api/auth/passkeys/${p.id}`, del());
+      const r = await api<{ accepted?: Accepted } | undefined>(`/api/auth/passkeys/${p.id}`, del());
+      void tellDeviceAccepted(r?.accepted); // so this device's passkey list stops offering the removed one (issue #13)
       await queryClient.invalidateQueries({ queryKey: ['passkeys'] });
       removal.removed(PASSKEY_REMOVED.replace('{label}', p.label)); // the row is gone; focus goes to the heading
     } catch (e) {
@@ -92,7 +93,7 @@ function Passkeys() {
   return (
     <>
       <div className="section-head">
-        <h3 className="subhead" ref={removal.anchor} tabIndex={-1}>{PASSKEYS}</h3>
+        <h2 className="subhead" ref={removal.anchor} tabIndex={-1}>{PASSKEYS}</h2>
         <Button variant="quiet" icon={Plus} onClick={() => { removal.clear(); setAdding(true); }}>{ADD_THIS_DEVICE}</Button>
       </div>
       <RemovalLine removal={removal} />
@@ -142,7 +143,7 @@ function Devices() {
       if (id === currentId) {
         await api('/api/auth/logout', { method: 'POST' });
         queryClient.clear();
-        forgetPersonPrefs(); // as the You menu's Sign out
+        forgetSignedOut(); // as the You menu's Sign out
         navigate('/login', { replace: true });
       } else {
         await api(`/api/auth/sessions/${id}`, del());
@@ -162,7 +163,7 @@ function Devices() {
   const today = new Date();
   return (
     <>
-      <h3 className="subhead" ref={removal.anchor} tabIndex={-1}>{SIGNED_IN_DEVICES}</h3>
+      <h2 className="subhead" ref={removal.anchor} tabIndex={-1}>{SIGNED_IN_DEVICES}</h2>
       <RemovalLine removal={removal} />
       {error && <Notice tone="error">{error}</Notice>}
       <Card className="lines">
@@ -220,7 +221,7 @@ function ChangeMine() {
 
   return (
     <form className="card device-form" onSubmit={save}>
-      <h3 className="subhead">{CHANGE_MY_PASSWORD}</h3>
+      <h2 className="subhead">{CHANGE_MY_PASSWORD}</h2>
       <Field label={CURRENT_PASSWORD}><input type="password" value={current} autoComplete="current-password" onChange={(e) => setCurrent(e.target.value)} /></Field>
       <Field label={NEW_PASSWORD} error={error}><input type="password" value={next} autoComplete="new-password" onChange={(e) => setNext(e.target.value)} /></Field>
       <div className="row-actions"><Button type="submit" busy={busy} disabled={!current || !next}>{CHANGE_MY_PASSWORD}</Button></div>

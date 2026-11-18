@@ -70,6 +70,8 @@ Passkeys are tied to the hostname in `STEWARD_BASE_URL`. Choose the address befo
 
 `STEWARD_BASE_URL` must match the browser's address exactly, including the port if there is one. If every passkey attempt says "That passkey couldn't be checked", compare the two.
 
+Give each Steward its own hostname. Browsers tie passkeys to the hostname and ignore the port, so two Stewards at one name, such as the demo and an install both at `localhost`, look like one site to the device. Each offers the other's passkeys, picking the other's passkey makes the device forget it, and removing a passkey in one can make the device drop the other's.
+
 Steward counts the tries a device makes by the address it sees. Behind a proxy that address is the proxy's unless Steward believes the proxy's forwarded headers, which `STEWARD_TRUSTED_PROXIES` decides. The default covers Tailscale and the bundled proxy. If a proxy hands Steward one address for every connection, the limits count for the whole household. If Steward's port is reachable from a LAN, narrow `STEWARD_TRUSTED_PROXIES` to the proxy's address, or anyone on that LAN can claim any address.
 
 See [configuration](../reference/configuration.md#stewards-settings) for every setting, and [ports and volumes](../reference/ports-and-volumes.md) for what each way in opens.

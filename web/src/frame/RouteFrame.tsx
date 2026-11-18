@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Outlet, ScrollRestoration, useLocation, useMatches } from 'react-router-dom';
 import { watchSubmits } from '../lib/formErrors';
 import { titleFor, titled, type RouteTitle } from '../lib/routeTitles';
 import { LiveRegions, useLive } from '../ui/Live';
+import { ItemNameCtx, itemNameStore, type ItemNames } from './itemTitle';
 
 /** The deepest matched route's name, from its handle (routes.tsx). */
 export function usePageName(): string {
@@ -32,10 +33,12 @@ const spoken = (el: Element) => (el.textContent ?? '').replace(/\s+/g, ' ').trim
  *  welcome) move the address without a person asking, and the browser announces the title itself. The launch ends at
  *  the person's first input (a press, a key or a click, caught on the way down, once), so a page change they cause is
  *  one even when it replaces the address: signing in, accepting an invitation, the welcome's Go home (re-review R-3). */
-function PageChange() {
+function PageChange({ items }: { items: ItemNames }) {
   const name = usePageName();
   const { pathname } = useLocation();
   const live = useLive();
+  const item = useSyncExternalStore(items.subscribe, items.get);
+  const own = item && item.path === pathname ? item.name : '';
   const launching = useRef(true);
   const seen = useRef(false);
   useEffect(watchSubmits, []);   // WEB-4: a failed submit focuses its first invalid field, on every page
@@ -46,7 +49,7 @@ function PageChange() {
     for (const k of kinds) document.addEventListener(k, end, true);
     return stop;
   }, []);
-  useEffect(() => { document.title = titled(name); }, [name]);
+  useEffect(() => { document.title = titled(own || name); }, [own, name]);
   useEffect(() => {
     const initial = !seen.current;
     seen.current = true;
@@ -82,13 +85,16 @@ function PageChange() {
  *  - Scroll (WEB-2): a new page opens at its top, and Back or Forward returns to where that page was. The router keeps
  *    the positions. A change of filters on the same page passes preventScrollReset, so the list stays put.
  *  - Live regions (WEB-7): the page's toast region and polite region are here from the first paint.
- *  - Title and focus (WEB-3): see PageChange. */
+ *  - Title and focus (WEB-3): see PageChange. A page for one item names the tab after it (useItemTitle). */
 export function RouteFrame() {
+  const [items] = useState(itemNameStore);
   return (
     <LiveRegions>
-      <ScrollRestoration />
-      <PageChange />
-      <Outlet />
+      <ItemNameCtx.Provider value={items}>
+        <ScrollRestoration />
+        <PageChange items={items} />
+        <Outlet />
+      </ItemNameCtx.Provider>
     </LiveRegions>
   );
 }

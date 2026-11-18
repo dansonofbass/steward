@@ -20,6 +20,7 @@ import { addSorts, NO_RUN, runAfter } from '../lib/sorts';
 import { Acorn } from '../ui/Acorn';
 import { BackToSetup } from '../ui/BackToSetup';
 import { Button } from '../ui/Button';
+import { useSayShown } from '../ui/Live';
 import { Notice } from '../ui/Notice';
 import { Rich } from '../ui/Rich';
 import { Skeleton } from '../ui/Skeleton';
@@ -338,8 +339,11 @@ function CaughtUp({ empty, cheer, today, onShown, parent }: { empty: boolean; ch
   const [line] = useState(() => (empty || !allowed.line ? null : nextLine(golden ? 'goldenSort' : 'caughtUp')));
   useAcornMotion(svg, !empty && allowed.motion ? (golden ? 'golden' : 'doze') : null, cheer && allowed.sound && soundOn());
   useEffect(() => { if (cheer && !empty && el.current) onShown(el.current); }, [cheer, empty, onShown]);
+  // Said through the page's polite region, not a live region of its own: one that appears with its words in it is
+  // often not read (issue #23).
+  useSayShown(el);
   return (
-    <div ref={el} className="review__done" role="status" tabIndex={-1}>
+    <div ref={el} className="review__done" tabIndex={-1}>
       {empty ? <p className="review__done-title">{REVIEW_EMPTY_BOOK}</p> : (
         <>
           {allowed.face && <span className="review__horizon" aria-hidden="true"><Acorn ref={svg} face={golden ? 'golden' : 'resting'} size={56} /></span>}

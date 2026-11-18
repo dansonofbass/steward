@@ -1,7 +1,7 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setCurrentBook } from '../../api/book';
-import { stubFetch, wrapBook } from '../../test-utils';
+import { callsTo, stubFetch, wrapBook } from '../../test-utils';
 import { SentLog } from './SentLog';
 
 afterEach(() => { vi.unstubAllGlobals(); setCurrentBook('ours'); });
@@ -74,5 +74,73 @@ describe('Everything sent so far', () => {
     expect(within(detail).getByText('Asked by')).toBeInTheDocument();
     expect(within(detail).getByText('The gateway\'s privacy check found no names')).toBeInTheDocument();
     expect(within(detail).queryByText(/ is /)).toBeNull();
+  });
+
+  describe("a Getting ready row's fingerprint (issue #3)", () => {
+    const HASH = 'c3'.repeat(32);
+    const ready = { ...PAGE, requests: [{ ...PAGE.requests[1], key: 'p_1.1', what: "Steward's instructions to Claude, no household data", kind: 'prewarm', channel: 'Getting ready', conversation: null }] };
+    const readyDetail = { ...DETAIL, key: 'p_1.1', approved_by: null, aliases: [], conversation: null,
+      parts: [{ id: 3, part: 'system', label: 'Instructions', sha256: 'ee'.repeat(32), bytes: 120, payload: { prefix: 'steward-advisor-6', prefix_sha256: HASH, message: 'warmup' } }] };
+    const INSTR = { instructions: { prefix: 'steward-advisor-6', sha256: HASH, system: 'You answer questions about one family’s money.',
+      tools: [{ name: 'accounts', description: 'Each account with its alias.', input_schema: { type: 'object' } }],
+      hashed: '{"system":[{"cache_control":{"type":"ephemeral"}}],"tools":[{"strict":true}]}' } };
+
+    it('opens to the fixed instructions and tools behind it, with their fingerprint beside them', async () => {
+      const fetchMock = stubFetch({ '/api/chat/instructions': INSTR, '/api/chat/sent/': readyDetail, '/api/chat/sent': ready, '/api/chat': STATUS });
+      wrapBook(<SentLog />, {}, '/b/ours/settings/chat/sent');
+      fireEvent.click(await screen.findByRole('button', { name: /Steward's instructions to Claude/ }));
+      const detail = await screen.findByRole('region', { name: "Steward's instructions to Claude, no household data" });
+      expect(callsTo(fetchMock, 'GET', '/api/chat/instructions')).toHaveLength(0);       // only once asked
+      fireEvent.click(within(detail).getByText("Steward's fixed instructions"));
+      expect(await within(detail).findByText('You answer questions about one family’s money.')).toBeInTheDocument();
+      expect(within(detail).getByText(`Fingerprint ${HASH}, the same as this row's.`)).toBeInTheDocument();
+      expect(within(detail).getByText('accounts')).toBeInTheDocument();
+      expect(within(detail).getByText('Each account with its alias.')).toBeInTheDocument();
+      // The exact text hashed, so a reader can recompute the fingerprint (review round 1).
+      fireEvent.click(within(detail).getByText('The exact text hashed'));
+      expect(within(detail).getByText(INSTR.instructions.hashed)).toBeInTheDocument();
+    });
+
+    it('says so when the gateway now sends other instructions than this row did, or is away', async () => {
+      stubFetch({ '/api/chat/instructions': { instructions: { ...INSTR.instructions, sha256: 'd4'.repeat(32) } }, '/api/chat/sent/': readyDetail, '/api/chat/sent': ready, '/api/chat': STATUS });
+      wrapBook(<SentLog />, {}, '/b/ours/settings/chat/sent');
+      fireEvent.click(await screen.findByRole('button', { name: /Steward's instructions to Claude/ }));
+      const detail = await screen.findByRole('region', { name: "Steward's instructions to Claude, no household data" });
+      fireEvent.click(within(detail).getByText("Steward's fixed instructions"));
+      expect(await within(detail).findByText(/^Fingerprint d4d4.*This row was sent with the instructions of another version\.$/)).toBeInTheDocument();
+    });
+
+    it("says when the gateway isn't answering", async () => {
+      stubFetch({ '/api/chat/instructions': { instructions: null }, '/api/chat/sent/': readyDetail, '/api/chat/sent': ready, '/api/chat': STATUS });
+      wrapBook(<SentLog />, {}, '/b/ours/settings/chat/sent');
+      fireEvent.click(await screen.findByRole('button', { name: /Steward's instructions to Claude/ }));
+      const detail = await screen.findByRole('region', { name: "Steward's instructions to Claude, no household data" });
+      fireEvent.click(within(detail).getByText("Steward's fixed instructions"));
+      expect(await within(detail).findByText(/isn't answering, so the text can't be shown now\.$/)).toBeInTheDocument();
+    });
+
+    it("asks again on the next opening after the gateway wasn't answering", async () => {
+      const fetchMock = stubFetch({ '/api/chat/instructions': { instructions: null }, '/api/chat/sent/': readyDetail, '/api/chat/sent': ready, '/api/chat': STATUS });
+      wrapBook(<SentLog />, {}, '/b/ours/settings/chat/sent');
+      fireEvent.click(await screen.findByRole('button', { name: /Steward's instructions to Claude/ }));
+      const detail = await screen.findByRole('region', { name: "Steward's instructions to Claude, no household data" });
+      const summary = within(detail).getByText("Steward's fixed instructions");
+      fireEvent.click(summary);
+      await within(detail).findByText(/isn't answering/);
+      const box = summary.closest('details') as HTMLDetailsElement;
+      box.open = false;
+      fireEvent(box, new Event('toggle'));       // closed, then opened again
+      box.open = true;
+      fireEvent(box, new Event('toggle'));
+      await waitFor(() => expect(callsTo(fetchMock, 'GET', '/api/chat/instructions')).toHaveLength(2));
+    });
+
+    it('a row with no fingerprint has no instructions to open', async () => {
+      stubFetch({ '/api/chat/sent/': DETAIL, '/api/chat/sent': PAGE, '/api/chat': STATUS });
+      wrapBook(<SentLog />, {}, '/b/ours/settings/chat/sent');
+      fireEvent.click(await screen.findByRole('button', { name: /9 store rows, approved by JR/ }));
+      const detail = await screen.findByRole('region', { name: '9 store rows, approved by JR' });
+      expect(within(detail).queryByText("Steward's fixed instructions")).toBeNull();
+    });
   });
 });

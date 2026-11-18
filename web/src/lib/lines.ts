@@ -67,8 +67,8 @@ export const POOLS: Record<Pool, readonly string[]> = {
     'Nice. That one is yours again.',
   ],
   caughtUp: ['Nothing to sort. The books are tidy.', 'All caught up. Go do something fun.', "Every one sorted. Steward's got the rest.", 'Clean slate.'],
-  // R3: {rows} is "1 row" or "143 rows", {waiting} is "1 waits" or "12 wait"; chosen by whether any wait
-  // (importDoneLine), not drawn.
+  // R3: {rows} is "1 row" or "143 rows", {waiting} says why they wait ("12 to sort", "1 possible duplicate", or
+  // both joined by "and"); chosen by whether any wait (importDoneLine), not drawn.
   importDone: ['{rows} in. {waiting} in Review.', '{rows} in, and nothing to sort.'],
   payday: ['Payday came.', 'Payday came. Nicely done.'],
   setAsideCovered: ['{name} is covered, with {weeks} to spare.'],
@@ -144,12 +144,16 @@ export function nextLine(pool: Pool, vars: Record<string, string | number> = {},
 export const payerCheer = (payer: string, rnd: () => number = Math.random): string => nextLine('reimbursement', { payer }, rnd);
 
 const n0 = (n: number) => n.toLocaleString('en-US');
-/** Spec 3.7, ruling R3: every commit's receipt line, singular for one ("1 row in. 1 waits in Review."). */
-export const importDoneLine = (n: number, m: number): string =>
-  fill(POOLS.importDone[m > 0 ? 0 : 1], {
-    rows: n === 1 ? '1 row' : `${n0(n)} rows`,
-    waiting: m === 1 ? '1 waits' : `${n0(m)} wait`,
-  });
+/** Spec 3.7, ruling R3: every commit's receipt line, singular for one. It says why rows wait (issue #32): `sort` rows
+ *  Steward couldn't categorize, `dupes` possible duplicates ("3 rows in. 1 to sort and 1 possible duplicate in
+ *  Review."). */
+export const importDoneLine = (n: number, sort: number, dupes = 0): string => {
+  const why = [
+    ...(sort > 0 ? [`${n0(sort)} to sort`] : []),
+    ...(dupes > 0 ? [dupes === 1 ? '1 possible duplicate' : `${n0(dupes)} possible duplicates`] : []),
+  ];
+  return fill(POOLS.importDone[why.length ? 0 : 1], { rows: n === 1 ? '1 row' : `${n0(n)} rows`, waiting: why.join(' and ') });
+};
 
 /** A set-aside's time to spare: whole weeks from two weeks, a week from seven days, else days. */
 export function spareWeeks(days: number): string {
@@ -196,4 +200,5 @@ export const GROWTH_NEXT = '{n} of 5: {next} comes next';
 export const GROWTH_ALL = '5 of 5. A full-grown oak.';
 export const NEW_GROWTH = 'New growth: {milestone}.';
 export const NEW_GROWTH_PLAIN = 'New growth.';
+export const MONTH_SORTED = '{month} fully sorted';   // the first month, once met, by its name (#33)
 export const TREE_LABEL = "Steward's oak, {n} of 5 grown";

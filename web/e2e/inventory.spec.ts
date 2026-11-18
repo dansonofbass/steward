@@ -133,7 +133,7 @@ test.describe.serial('inventory', () => {
     await page.getByRole('article', { name: /Harbor Savings Bank/ }).getByRole('button', { name: "Not Margaret's" }).click();
     await expect(page.getByText("Not Margaret's: Harbor Savings Bank")).toBeVisible();
     await page.getByRole('article', { name: /Globe Mutual/ }).getByRole('link', { name: 'Add as insurance' }).click();
-    await expect(page.getByText('Filled in from 4 Globe Mutual payments')).toBeVisible();
+    await expect(page.getByRole('main').getByText('Filled in from 4 Globe Mutual payments')).toBeVisible();
     await shot(page, info.project.name, 'item-form');
     await page.getByRole('button', { name: 'Add item' }).click();
     await expect(page).toHaveURL(/\/inventory\/\d+$/);
@@ -161,7 +161,7 @@ test.describe.serial('inventory', () => {
     await expect(page.getByText(/Needs checking:/)).toBeVisible();
     await expect(page.getByText(/Is this one of/)).toHaveCount(0);
     await page.goto(`/b/${slug}/inventory`);
-    await expect(page.getByText('You can see this book but not change it.')).toBeVisible();
+    await expect(page.getByRole('main').getByText('You can see this book but not change it.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Add an item' })).toHaveCount(0);
     await shot(page, info.project.name, 'viewer-list');
     await page.getByTestId('item-row').filter({ hasText: 'Joint checking' }).click();

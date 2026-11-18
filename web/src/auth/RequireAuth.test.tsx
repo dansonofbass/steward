@@ -40,4 +40,11 @@ describe('RequireAuth', () => {
     wrap(<Routes><Route element={<RequireAuth />}><Route path="/b/ours" element={<Probe />} /></Route></Routes>, '/b/ours');
     expect(await screen.findByText('Zebra-Box is answering')).toBeInTheDocument();
   });
+  it("takes the household's time zone from /me before any screen renders, so today is the household's (issue #26)", async () => {
+    const { today } = await import('../lib/today');
+    const Probe = () => <p>{`Today is ${today(new Date('2026-11-16T12:00:00Z'))}`}</p>;
+    stubFetch({ '/api/auth/me': { ...ME, timezone: 'Pacific/Kiritimati' } });
+    wrap(<Routes><Route element={<RequireAuth />}><Route path="/b/ours" element={<Probe />} /></Route></Routes>, '/b/ours');
+    expect(await screen.findByText('Today is 2026-11-17')).toBeInTheDocument();
+  });
 });

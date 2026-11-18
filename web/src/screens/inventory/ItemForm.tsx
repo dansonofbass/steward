@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import type { OwnerOption } from '../../api/types';
 import { useBook, useCanEdit } from '../../book/BookContext';
+import { useItemTitle } from '../../frame/itemTitle';
 import { Link, Navigate, useNavigate } from '../../book/links';
 import { TRY_AGAIN } from '../../lib/copy';
 import { radioKeys, radioTab } from '../../lib/radioKeys';
@@ -138,6 +139,7 @@ export function ItemForm() {
   const [sp] = useSearchParams();
   const sid = sp.get('suggestion');
   const item = useItem(Number(id), editing);
+  useItemTitle(editing && item.data ? fill(C.EDIT_TITLE, { name: item.data.name }) : null);
   const inv = useInventory();
   const sugs = useSuggestions(!editing && sid !== null);
   const book = useBook();

@@ -36,6 +36,26 @@ function play(el: Element, frames: Keyframe[], opts: KeyframeAnimationOptions): 
 
 const removeAfter = (el: Element, ms: number) => { window.setTimeout(() => { el.remove(); }, ms); };
 
+// Issue #14: the page's CSP requires Trusted Types, so markup reaches innerHTML only through this one named policy
+// (TRUSTED_TYPES_POLICY in steward/api/headers.py), and the policy lets through only the moments' own fixed SVG.
+type HtmlPolicy = { createHTML: (markup: string) => unknown };
+type TrustedTypes = { createPolicy: (name: string, rules: { createHTML: (markup: string) => string }) => HtmlPolicy };
+const FIXED = new Set(Object.values(MOMENTS).map((m) => m.svg));
+const onlyFixed = (markup: string) => {
+  if (!FIXED.has(markup)) throw new TypeError('Not a celebration moment.');
+  return markup;
+};
+let policy: HtmlPolicy | null | undefined;
+
+function fixedMarkup(markup: string): string {
+  if (policy === undefined) {
+    const tt = (window as unknown as { trustedTypes?: TrustedTypes }).trustedTypes;
+    policy = tt ? tt.createPolicy('celebrate', { createHTML: onlyFixed }) : null;   // once a page: the name is unique
+  }
+  // A TrustedHTML where the browser has Trusted Types; innerHTML takes it as it takes a string.
+  return (policy ? policy.createHTML(markup) : onlyFixed(markup)) as string;
+}
+
 /** The rubber stamp thunks onto the receipt with a two-frame shake, about 450 ms from STAMP_DELAY_MS, and stays there.
  *  `host` is the receipt's place for it beside the cheer (the card itself only as a fallback). */
 function stamp(host: HTMLElement, text: string): HTMLElement {
@@ -61,7 +81,7 @@ function moment(card: HTMLElement, m: Moment): HTMLElement {
   const host = document.createElement('span');
   host.className = 'cel-moment';
   host.setAttribute('aria-hidden', 'true');
-  host.innerHTML = m.svg;                      // fixed markup from moments.ts, never data
+  host.innerHTML = fixedMarkup(m.svg);         // fixed markup from moments.ts, never data
   card.appendChild(host);
   for (const mv of m.moves) {
     const part = host.querySelector<SVGGElement>(`.${mv.part}`);

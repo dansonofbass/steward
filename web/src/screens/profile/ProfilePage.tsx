@@ -12,7 +12,10 @@ import { SECTION_NAME, SECTION_STEPS, isFinished, sectionPath, type SectionKey }
 import { Button } from '../../ui/Button';
 import { Notice } from '../../ui/Notice';
 import { failure } from '../settings/shared';
-import { CHEER_ALL, CHEER_HOME, CHEER_KIDS, CONTINUE, DISMISS, FIRST_VISIT, METER, MINUTES, SKIPPED, START, STILL_NEEDED, TITLE, WHY } from './copy';
+import {
+  CHEER_ALL, CHEER_HOME, CHEER_KIDS, CONTINUE, DISMISS, FIRST_VISIT, GO_HOME, METER, MINUTES, OPENED_FROM_HOME, SKIPPED, START, STILL_NEEDED,
+  TITLE, WHY,
+} from './copy';
 import { ProfileGrowth } from '../home/lazyMoments';
 import { SECTIONS } from './registry';
 import type { Finished } from './Flow';
@@ -59,13 +62,16 @@ export function ProfilePage({ profile }: { profile: ProfileState }) {
   const nav = useNavigate();
   const first = profile.sections.find((s) => !isFinished(s.status));
   const loc = useLocation();
-  const came = (loc.state as Finished | null) ?? null;
+  const sent = (loc.state as (Partial<Finished> & { fromHome?: boolean }) | null) ?? null;
+  const [fromHome] = useState(() => sent?.fromHome === true);         // kept after the state is cleared below
+  const came = sent && !sent.fromHome ? (sent as Finished) : null;
   const [cheer] = useState(() => (came?.allDone ? CHEER_ALL : came?.finished === 'kids' ? CHEER_KIDS : came?.finished === 'home' ? CHEER_HOME : null));
   const [doneLine] = useState(() => nextLine('profileDone'));
   const full = profile.done === profile.total && momentAllowed('profileDone', { parent: false }).line;
   const meter = useRef<HTMLDivElement>(null);
   const rows = useRef<HTMLOListElement>(null);
   useEffect(() => {
+    if (fromHome) nav(loc.pathname, { replace: true, state: null });   // once: a reload doesn't say it again
     if (!came) return;
     nav(loc.pathname, { replace: true, state: null });       // once: a reload doesn't play it again
     const kind = came.allDone ? 'all' : came.finished === 'kids' ? 'kids' : came.finished === 'home' ? 'home' : null;
@@ -89,6 +95,7 @@ export function ProfilePage({ profile }: { profile: ProfileState }) {
     <div className="screen profile">
       <h1>{TITLE}</h1>
       {problem && <Notice tone="error">{problem}</Notice>}
+      {fromHome && <p className="muted" data-testid="opened-from-home">{OPENED_FROM_HOME} <Link to="/">{GO_HOME}</Link></p>}
       {!profile.me.seen && canEdit && (
         <section className="card prof-band" aria-label={TITLE}>
           <ShieldCheck className="i" size={24} aria-hidden="true" />

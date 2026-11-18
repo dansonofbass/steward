@@ -14,7 +14,7 @@
 name: steward
 
 x-proxy: &proxy
-  image: ghcr.io/steward-money/steward-proxy:0.1.0
+  image: ghcr.io/steward-money/steward-proxy:0.1.1
   restart: unless-stopped
   env_file:
     - path: proxy.env
@@ -34,7 +34,7 @@ x-proxy: &proxy
     - steward
 
 x-gateway: &gateway
-  image: ghcr.io/steward-money/steward-gateway:0.1.0
+  image: ghcr.io/steward-money/steward-gateway:0.1.1
   restart: unless-stopped
   volumes:
     - gateway-config:/etc/steward-gateway
@@ -56,20 +56,28 @@ x-gateway: &gateway
     retries: 3
     start_period: 15m
 
+# Ollama reads transaction descriptions, statement pages and redacted questions for the gateway, so it sits only on
+# gateway-private, which has no way out: idle or busy, it contacts nothing. Models come in through ollama-pull below.
+# OLLAMA_NO_CLOUD turns off Ollama's hosted models and web search, so a model name can't send text off this box, and
+# stops its server fetching model recommendations from ollama.com. OLLAMA_NOPRUNE: an Ollama starting up deletes blobs
+# no model names, half-done downloads included, so without it a restart of any Ollama on the shared models volume
+# during a pull (compose up, a watchdog, an update) would delete that pull's partial download.
 x-ollama: &ollama
   image: ollama/ollama:0.40.15@sha256:0e59999e0e8f9fd4e704bd788a89b7e4cad399367fb1365f8c102ac662288761
   restart: unless-stopped
+  environment:
+    OLLAMA_NO_CLOUD: "1"
+    OLLAMA_NOPRUNE: "1"
   volumes:
     - ollama-models:/root/.ollama
   networks:
     - gateway-private
-    - gateway-egress
   cap_drop: ["ALL"]
   security_opt: ["no-new-privileges:true"]
 
 services:
   steward:
-    image: ghcr.io/steward-money/steward:0.1.0
+    image: ghcr.io/steward-money/steward:0.1.1
     restart: unless-stopped
     ports:
       - "127.0.0.1:8420:8420"
@@ -146,10 +154,32 @@ services:
     profiles: ["gateway"]
 
   # A local model for the gateway: categorizing, chat titles and scanned statements. The gateway's start line
-  # (docker compose logs gateway) names the models to pull with docker compose exec ollama ollama pull <model>.
+  # (docker compose logs gateway) names the models to pull with docker compose run --rm ollama-pull <model>.
   ollama:
     <<: *ollama
     profiles: ["ollama"]
+
+  # Pulls one model into the models volume, then exits: docker compose run --rm ollama-pull <model>. It runs its own
+  # Ollama on its loopback, on gateway-egress only, so it reaches Ollama's model library and never the gateway or
+  # Steward. The Ollama that serves the gateway sees the new model without a restart. Its own profile keeps `up`
+  # from starting it. Every GPU profile uses it too, since the models volume is shared.
+  ollama-pull:
+    <<: *ollama
+    profiles: ["ollama-pull"]
+    restart: "no"
+    environment:
+      OLLAMA_NO_CLOUD: "1"
+      OLLAMA_NOPRUNE: "1"
+      OLLAMA_HOST: 127.0.0.1:11434
+    networks:
+      - gateway-egress
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        /bin/ollama serve >/dev/null 2>&1 & for _ in $$(seq 60); do /bin/ollama list >/dev/null 2>&1 && break; sleep 1; done;
+        exec /bin/ollama pull "$$1"
+      - ollama-pull
 
   # The gateway on an NVIDIA GPU (docs/guides/gpu.md). Built on this machine the first time (10 to 20 minutes, several
   # GB), from the source in this clone: the context is the folder above this one. Steward never publishes it.
@@ -186,7 +216,6 @@ services:
     networks:
       gateway-private:
         aliases: ["ollama"]
-      gateway-egress: {}
     deploy:
       resources:
         reservations:
@@ -230,7 +259,6 @@ services:
     networks:
       gateway-private:
         aliases: ["ollama"]
-      gateway-egress: {}
     devices: ["/dev/kfd", "/dev/dri"]
     depends_on:
       gateway-amd:
@@ -240,7 +268,7 @@ networks:
   # Steward, the gateway and Ollama; nothing on it reaches the internet.
   gateway-private:
     internal: true
-  # The gateway's and Ollama's way out: Claude, Hugging Face and Ollama's model library.
+  # The gateway's way out to Claude and Hugging Face, and ollama-pull's to Ollama's model library.
   gateway-egress: {}
 
 volumes:

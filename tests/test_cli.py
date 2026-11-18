@@ -88,6 +88,28 @@ def test_seed_demo_refuses_then_force_adds(settings):
     assert count() > first
 
 
+def test_seed_demo_marks_its_finished_profile_seen(settings):
+    """Issue #30: the demo's profile is complete, so its people land on Home, not on Profile's first visit."""
+    from steward.books.registry import open_books
+    from steward.db.directory_models import User
+    from steward.demo import DEMO_LOGINS
+    from steward.services.profile import FINISHED, marks_out, section_states
+    from steward import clock
+    from sqlalchemy import select
+    assert runner.invoke(app, ["init-key"]).exit_code == 0
+    assert runner.invoke(app, ["migrate"]).exit_code == 0
+    assert runner.invoke(app, ["seed-demo", "--years", "1"]).exit_code == 0
+    books = open_books(settings)
+    try:
+        with Session(books.directory) as ddb:
+            ids = [ddb.scalar(select(User.id).where(User.username == u)) for u, *_ in DEMO_LOGINS]
+        with Session(books.engine_for(books.book("ours"))) as db:
+            assert all(s.status in FINISHED for s in section_states(db))
+            assert all(marks_out(db, uid, clock.now())["seen"] for uid in ids)
+    finally:
+        books.dispose()
+
+
 def test_serve_without_key_explains_and_never_binds(settings, monkeypatch):
     import uvicorn
 
@@ -346,6 +368,21 @@ def test_serve_in_prod_refuses_a_vault_that_keeps_a_demo_login(settings, monkeyp
     assert r.exit_code == 1
     assert "spouse still signs in with the demo password, and STEWARD_ENV is prod." in said
     assert "`steward reset-password spouse`" in said and "pw-demo" not in r.output
+
+
+def test_serve_and_seed_demo_refuse_an_unknown_steward_env_in_one_plain_line(settings, monkeypatch):
+    """Issue #9: STEWARD_ENV=production used to start with the demo sign-ins in place. Now nothing starts."""
+    import uvicorn
+    from steward.settings import ENV_RULE
+
+    def boom(*a, **k):
+        raise AssertionError("serve must not start")
+    monkeypatch.setattr(uvicorn, "run", boom)
+    monkeypatch.setenv("STEWARD_ENV", "production")
+    monkeypatch.delenv("STEWARD_ALLOW_DEMO", raising=False)
+    for command in (["serve"], ["seed-demo", "--years", "1"]):
+        r = runner.invoke(app, command)
+        assert r.exit_code == 1 and r.output.replace("\n", " ").strip() == ENV_RULE, (command, r.output)
 
 
 def test_serve_in_prod_refuses_a_vault_an_older_demo_seeded(settings, monkeypatch):

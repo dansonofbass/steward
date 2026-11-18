@@ -10,24 +10,20 @@ import { fromHundredths, toHundredths } from '../settings/money';
 import { failure } from '../settings/shared';
 import { careKey, removeQuote, saveQuote, type CareCost } from './api';
 import * as C from './copy';
+import { today } from '../../lib/today';
 
-const todayIso = () => {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-};
 
 /** A family's quote for one care cost, which replaces the typical figure (spec 4.2). Going back to the typical figure
  *  removes the quote with no Undo, so it asks first with the Care screen's inline Remove/Keep (T3). */
 export function QuoteSheet({ cost, onClose, onRemoved }: { cost: CareCost | null; onClose: () => void; onRemoved?: (label: string) => void }) {
   const qc = useQueryClient();
   const [amount, setAmount] = useState('');
-  const [on, setOn] = useState(todayIso());
+  const [on, setOn] = useState(today());
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    if (cost) { setAmount(cost.quote ? fromHundredths(cost.quote.cents) : ''); setOn(cost.quote?.quoted_on ?? todayIso()); setError(null); setAsking(false); }
+    if (cost) { setAmount(cost.quote ? fromHundredths(cost.quote.cents) : ''); setOn(cost.quote?.quoted_on ?? today()); setError(null); setAsking(false); }
   }, [cost]);
 
   async function run(fn: () => Promise<unknown>, after?: () => void) {
@@ -56,7 +52,7 @@ export function QuoteSheet({ cost, onClose, onRemoved }: { cost: CareCost | null
       {cost && (
         <form className="stack" onSubmit={save}>
           <Field label={C.QUOTE_AMOUNT}><MoneyInput value={amount} onValueChange={setAmount} post={C.PER[cost.per]} /></Field>
-          <Field label={C.QUOTE_DATE}><input type="date" value={on} max={todayIso()} onChange={(e) => setOn(e.target.value)} /></Field>
+          <Field label={C.QUOTE_DATE}><input type="date" value={on} max={today()} onChange={(e) => setOn(e.target.value)} /></Field>
           {error && <Notice tone="error">{error}</Notice>}
           <Button type="submit" busy={busy} disabled={!amount.trim()}>{SAVE}</Button>
           {cost.quote && (asking ? (

@@ -1,6 +1,7 @@
 // Each route's name for the browser tab and a screen reader (WEB-3): "<Screen> · Steward". routes.tsx puts one in every
 // route's handle; RouteFrame sets document.title from the deepest match that has one, and routeTitles.test.ts fails on
-// a route without one. Plain nouns, the page's own name where it has one.
+// a route without one. Plain nouns, the page's own name where it has one. A page for one item (an account, a trip)
+// shows its noun only while the item loads, then the item's name (frame/itemTitle.ts, issue #29).
 import type { Params } from 'react-router-dom';
 import { SECTION_NAME, SECTION_STEPS, isSection } from './profileSections';
 import { ACCOUNTS, ASK, BUSINESS, CARE, HELP, HOME, INVENTORY, PLAN, REVIEW, S_ABOUT, S_APPEARANCE, SIGN_IN_AND_DEVICES, SPENDING, TAXES } from './copy';

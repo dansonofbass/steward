@@ -1,9 +1,13 @@
+import json
+import re
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 from sqlalchemy import select
 
 from steward.auth import passkeys as pk
+from steward.auth.cookies import HOST_DEVICE
 from steward.auth.users import create_user
 from steward.db.directory_models import Passkey, User
 from steward.deps import now
@@ -89,7 +93,7 @@ def test_register_verify_rejects_reused_or_expired_challenge(client, ddb, monkey
     body = {"challenge_id": cid, "credential": {"id": "ZmFrZQ", "rawId": "ZmFrZQ"}, "label": "x"}
     assert client.post("/api/auth/passkeys/register/verify", json=body).status_code == 201
     r = client.post("/api/auth/passkeys/register/verify", json=body)
-    assert r.status_code == 400 and r.json() == {"error": "That sign-in attempt expired. Try again."}
+    assert r.status_code == 400 and r.json() == {"error": "That sign-in attempt expired. Try again.", "code": "expired"}
 
 
 def test_register_verify_failure_is_plain_words(client, ddb, monkeypatch):
@@ -125,8 +129,31 @@ def test_delete_own_passkey_only(client, ddb, monkeypatch):
     assert r.status_code == 404 and r.json() == {"error": "That passkey isn't on your account."}
     client.post("/api/auth/logout")
     client.post("/api/auth/login", json={"username": "jr", "password": "pw-one-two-3"})
-    assert client.delete(f"/api/auth/passkeys/{pid}").status_code == 204
+    assert client.delete(f"/api/auth/passkeys/{pid}").status_code == 200
     assert client.get("/api/auth/passkeys").json()["passkeys"] == []
+
+
+def test_delete_answers_the_passkeys_still_accepted_for_the_device_to_hear(client, ddb, monkeypatch):
+    # Issue #13: after a removal the page calls PublicKeyCredential.signalAllAcceptedCredentials, so the device's
+    # credential manager stops offering the removed passkey. The answer is the list as it stands after the delete.
+    login(client, ddb)
+    user_handle = client.post("/api/auth/passkeys/register/options", json=PW).json()["options"]["user"]["id"]
+    first = _register(client, ddb, monkeypatch, cred_id=b"cred-1")
+    _register(client, ddb, monkeypatch, cred_id=b"cred-2")
+    r = client.delete(f"/api/auth/passkeys/{first}")
+    assert r.status_code == 200
+    assert r.json() == {"accepted": {"rp_id": "nas.tail1234.ts.net", "user_id": user_handle,
+                                     "credential_ids": [pk.bytes_to_base64url(b"cred-2")]}}
+    only = ddb.scalars(select(Passkey)).one()
+    r = client.delete(f"/api/auth/passkeys/{only.id}")
+    assert r.json()["accepted"]["credential_ids"] == []   # the last one gone: the device hides them all
+
+
+def test_the_signal_names_the_same_user_handle_the_passkey_was_made_with():
+    # signalAllAcceptedCredentials matches on (rpId, userId); a handle that drifted from registration's hides nothing.
+    user = User(id=42, username="jr", email="jr@x.com", display_name="JR")
+    o = json.loads(pk.registration_options(pk.relying_party("https://nas.tail1234.ts.net"), user, [])[0])
+    assert o["user"]["id"] == pk.user_handle(user)
 
 
 def test_login_options_need_no_auth_and_allow_any_credential(client):
@@ -168,7 +195,8 @@ def test_login_verify_unknown_credential(client, ddb, monkeypatch):
     r = client.post("/api/auth/passkeys/login/verify",
                     json={"challenge_id": cid, "credential": {"id": raw_id, "rawId": raw_id}, "device_label": ""})
     assert r.status_code == 401
-    assert r.json() == {"error": "That passkey isn't registered any more. Sign in with your password and add it again."}
+    assert r.json() == {"error": "That passkey isn't registered any more. Sign in with your password and add it again.",
+                        "code": "unknown_credential"}
 
 
 def test_login_verify_deleted_passkey_is_refused(client, ddb, monkeypatch):
@@ -204,6 +232,24 @@ def test_login_verify_bad_raw_id_is_400(client):
     r = client.post("/api/auth/passkeys/login/verify",
                     json={"challenge_id": cid, "credential": {"id": "***", "rawId": "***"}, "device_label": ""})
     assert r.status_code == 400 and r.json() == {"error": "That passkey couldn't be checked. Try again."}
+
+
+def test_login_verify_expired_challenge_says_so_in_a_code_the_page_reads(client):
+    # Issue #13: the username box's autofill starts again quietly on this answer instead of showing it.
+    raw_id = pk.bytes_to_base64url(b"cred-1")
+    r = client.post("/api/auth/passkeys/login/verify",
+                    json={"challenge_id": "gone", "credential": {"id": raw_id, "rawId": raw_id}, "device_label": ""})
+    assert r.status_code == 400 and r.json()["code"] == "expired"
+
+
+def test_the_username_box_fetches_a_new_challenge_before_the_old_one_expires():
+    # web/src/auth/passkeys.ts restarts the autofill wait with fresh options on this clock, so a pick from a sign-in
+    # page left open still finds its challenge here.
+    src = (Path(__file__).resolve().parents[1] / "web/src/auth/passkeys.ts").read_text()
+    def ms(name: str) -> int:
+        return int(re.search(rf"{name} = ([0-9_]+);", src).group(1).replace("_", ""))
+    assert ms("CHALLENGE_LIFE_MS") == pk.CHALLENGE_TTL_S * 1000
+    assert 0 < ms("AUTOFILL_REFRESH_MS") < pk.CHALLENGE_TTL_S * 1000
 
 
 def test_revoke_all_can_keep_one(ddb):
@@ -271,12 +317,6 @@ def test_register_verify_duplicate_race_is_409(client, ddb, monkeypatch):
     assert r.status_code == 409 and r.json() == {"error": "This passkey is already registered."}
 
 
-def _lock(ddb, username):
-    u = ddb.scalars(select(User).where(User.username == username)).one()
-    u.locked_until = now() + timedelta(minutes=10)
-    ddb.commit()
-
-
 def test_register_options_need_your_current_password(client, ddb):
     login(client, ddb)
     r = client.post("/api/auth/passkeys/register/options", json={"current_password": "wrong-one"})
@@ -284,12 +324,30 @@ def test_register_options_need_your_current_password(client, ddb):
     assert client.post("/api/auth/passkeys/register/options", json={}).status_code == 422
 
 
+def _lock(ddb, username):
+    """The account's own lock (the backstop): it holds a device the account doesn't know. A session used without the
+    device cookie it signed in with, as a copied session would be, is such a device, and stays one after a page
+    gives it a new device cookie: only a sign-in makes a device known (tests/test_device_lockout.py)."""
+    u = ddb.scalars(select(User).where(User.username == username)).one()
+    u.locked_until = now() + timedelta(minutes=10)
+    ddb.commit()
+
+
 def test_register_options_refused_while_locked(client, ddb):
     login(client, ddb)
     _lock(ddb, "jr")
+    client.cookies.delete(HOST_DEVICE)
     r = client.post("/api/auth/passkeys/register/options", json=PW)
     assert r.status_code == 423 and r.json()["error"].startswith("Too many tries.")
     assert "locked_until" in r.json()
+
+
+def test_the_account_lock_doesnt_hold_a_device_that_signed_in(client, ddb):
+    """Issue #7 review: strangers' wrong passwords can lock the account, but not the member's own signed-in phone out
+    of adding a passkey or changing the password."""
+    login(client, ddb)
+    _lock(ddb, "jr")
+    assert client.post("/api/auth/passkeys/register/options", json=PW).status_code == 200
 
 
 def _two_people(client, ddb, ours):
@@ -314,6 +372,7 @@ def test_reset_other_needs_your_current_password(client, ddb, ours):
 def test_reset_other_refused_while_locked(client, ddb, ours):
     sp = _two_people(client, ddb, ours)
     _lock(ddb, "jr")
+    client.cookies.delete(HOST_DEVICE)
     r = client.post(f"/api/users/{sp.id}/reset-password", json={**PW, "password": "reset-by-jr-77"})
     assert r.status_code == 423 and r.json()["error"].startswith("Too many tries.")
     assert "locked_until" in r.json()

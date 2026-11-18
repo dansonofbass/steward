@@ -16,11 +16,14 @@ const BEST_KEY = 'steward-home-best';
 const FLOOR = 2;
 const DAY_LINE = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 
-/** P41: "Friday, Oct 30", from the server's day (as_of), never the browser's clock. */
-export function dayLine(asOf: string): string {
+/** The server's day (as_of) as a local date, never the browser's clock (P41). */
+const dayOf = (asOf: string): Date => {
   const [y, m, d] = asOf.split('-').map(Number);
-  return DAY_LINE.format(new Date(y, m - 1, d));
-}
+  return new Date(y, m - 1, d);
+};
+
+/** P41: "Friday, Oct 30", from the server's day. */
+export const dayLine = (asOf: string): string => DAY_LINE.format(dayOf(asOf));
 
 /** The bar's two widths in percent: in / (in + out) and the rest, a side with money at least 2% wide. Null when
  *  nothing came in or went out. */
@@ -123,7 +126,7 @@ export function Verdict({ data, ready }: { data?: HomeData; ready: boolean }) {
   return (
     <section className="verdict" data-testid="verdict" data-ready={ready ? 'true' : undefined} aria-labelledby="verdict-h">
       <p className="verdict__date">{dayLine(data.as_of)}{momentAllowed('greeting', { parent: false, red }).line && <span className="verdict__greet"> · {greeting()}</span>}</p>
-      <h1 id="verdict-h" className="verdict__headline">{headline(data.verdict)}</h1>
+      <h1 id="verdict-h" className="verdict__headline">{headline(data.verdict, dayOf(data.as_of))}</h1>
       {!empty && <Link className="verdict__flow" to={`/spending?month=${data.month}`}><Figure flow={data.flow} /></Link>}
       {!empty && (momentAllowed('payday', { parent: false, red }).line ? <Payday data={data} /> : usually(data))}
       {!empty && data.verdict.best_month && <Joy month={data.month} />}

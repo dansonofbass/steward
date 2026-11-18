@@ -34,7 +34,7 @@ test.describe.serial('books', () => {
     await sheet.getByLabel('Owner names 1', { exact: true }).fill('Margaret');
     await sheet.getByRole('button', { name: 'Add book' }).click();
     await expect(page).toHaveURL(new RegExp(`/b/${slug}/settings/members$`));
-    await expect(page.getByText(`${name} added. Add the people who help with it.`)).toBeVisible();
+    await expect(page.getByRole('main').getByText(`${name} added. Add the people who help with it.`)).toBeVisible();
     await expect(tab(page, 'Plan')).toHaveCount(0);
     await shot(page, info.project.name, 'settings-members');
 
@@ -96,7 +96,7 @@ test.describe.serial('books', () => {
     await sheet.getByLabel('Email', { exact: true }).fill(email);
     await sheet.getByLabel('Name', { exact: true }).fill('Guest');
     await sheet.getByRole('button', { name: 'Invite' }).click();
-    await expect(page.getByText(`Invite sent to ${email}.`)).toBeVisible();
+    await expect(page.getByRole('main').getByText(`Invite sent to ${email}.`)).toBeVisible();
     await expect(page.getByText('Invited').first()).toBeVisible();
   });
 
@@ -131,7 +131,7 @@ test.describe.serial('books', () => {
     await expect(page.getByRole('button', { name: 'Add a book' })).toHaveCount(0);
 
     await page.goto(`/b/${seedSlug}/review`);
-    await expect(page.getByText('You can see this book but not change it.')).toBeVisible();
+    await expect(page.getByRole('main').getByText('You can see this book but not change it.')).toBeVisible();
     const card = page.getByTestId('review-card').first();
     await expect(card).toBeVisible();
     const buttons = card.getByRole('button');

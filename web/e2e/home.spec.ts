@@ -33,7 +33,7 @@ test('the four signs open Spending, Fixed costs, the Plan and Accounts', async (
   const { month } = (await (await page.request.get('/api/b/ours/home')).json()) as { month: string };
   await expect(page.getByRole('link', { name: /^Flexible spending: / })).toHaveAttribute('href', `/b/ours/spending?month=${month}#flexible`);
   await expect(page.getByRole('link', { name: /^Bills: / })).toHaveAttribute('href', `/b/ours/spending?month=${month}#fixed`);
-  await expect(page.getByRole('link', { name: /^Plan: (Comfortably at \d+|Not by 70|No plan yet)$/ })).toHaveAttribute('href', '/b/ours/plan');
+  await expect(page.getByRole('link', { name: /^Plan: ((Comfortably at \d+|Not by 70) · saved [A-Z][a-z]{2} \d{1,2}(, \d{4})?|No plan yet)$/ })).toHaveAttribute('href', '/b/ours/plan');
   await expect(page.getByRole('link', { name: /^Net worth: \$[\d.,]+[KM]? · / })).toHaveAttribute('href', '/b/ours/accounts');
 });
 
@@ -72,6 +72,33 @@ test('the Review tab shows how many are waiting', async ({ page }) => {
   await page.goto('/');
   const review = page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: /Review/ });
   await expect(review.locator('.nav__count')).toHaveText(/^\d+\+?$/);
+});
+
+test('the strip and Since hold their places while their chunks load, so For you and the accounts never move (issue #24)', async ({ page }) => {
+  // Hold both chunks until the rooms are measured: the slow-phone case, made certain. At the narrowest phone, where
+  // Since's heading with its when word ("Since you last looked (Friday)") takes two lines.
+  await page.setViewportSize({ width: 320, height: 740 });
+  let release!: () => void;
+  const held = new Promise<void>((r) => { release = r; });
+  let holding = 0;
+  await page.route(/\/assets\/(MonthStrip|HomeSince)-[\w-]+\.js$/, async (route) => { holding += 1; await held; await route.continue(); });
+  await page.goto('/');
+  await expect(ready(page)).toBeVisible();
+  await expect(page.getByTestId('strip-room')).toBeVisible();
+  await expect(page.getByTestId('since-room')).toBeVisible();
+  expect(holding).toBe(2);
+  await page.evaluate(() => document.fonts.ready);
+  const box = async (testId: string) => (await page.getByTestId(testId).boundingBox())!;
+  const accounts = async () => (await page.getByRole('heading', { level: 2, name: 'Accounts' }).boundingBox())!.y;
+  const before = { strip: (await box('strip-room')).height, since: (await box('since-room')).height, forYou: (await box('for-you')).y, accounts: await accounts() };
+  release();
+  await expect(page.getByTestId('flow-strip')).toBeVisible();
+  await expect(page.getByTestId('since')).toBeVisible();
+  // Each room is as tall as the part that took its place, and so nothing under them moved.
+  expect((await box('flow-strip')).height).toBeCloseTo(before.strip, 0);
+  expect((await box('since')).height).toBeCloseTo(before.since, 0);
+  expect((await box('for-you')).y).toBeCloseTo(before.forYou, 0);
+  expect(await accounts()).toBeCloseTo(before.accounts, 0);
 });
 
 test('the strip opens Spending on this month', async ({ page }) => {

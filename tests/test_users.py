@@ -3,7 +3,7 @@ import pytest
 
 from steward.auth.passwords import hash_password, verify_password
 from steward.auth.users import (
-    BadCredentials, Locked, UserExists, check_login, create_user, find_user, set_password,
+    ACCOUNT_LOCK_AFTER, BadCredentials, Locked, UserExists, check_login, create_user, find_user, set_password,
 )
 
 NOW = datetime(2026, 10, 12, 12, 0, tzinfo=timezone.utc)
@@ -27,12 +27,12 @@ def test_create_and_find_case_insensitive(ddb):
 def test_check_login_and_lockout(ddb):
     create_user(ddb, "jr", "jr@x.com", "JR", "pw-one-two-3")
     assert check_login(ddb, "JR", "pw-one-two-3", NOW).username == "jr"
-    for i in range(5):
+    for i in range(ACCOUNT_LOCK_AFTER):    # the account's own lock is the backstop; devices lock at 5 (test_auth_api)
         with pytest.raises(BadCredentials):
             check_login(ddb, "jr", "nope", NOW + timedelta(seconds=i))
     with pytest.raises(Locked) as e:
-        check_login(ddb, "jr", "pw-one-two-3", NOW + timedelta(seconds=6))
-    assert e.value.until == NOW + timedelta(seconds=4, minutes=15)
+        check_login(ddb, "jr", "pw-one-two-3", NOW + timedelta(seconds=ACCOUNT_LOCK_AFTER + 1))
+    assert e.value.until == NOW + timedelta(seconds=ACCOUNT_LOCK_AFTER - 1, minutes=15)
     # lock expires, success resets the counter
     u = check_login(ddb, "jr", "pw-one-two-3", NOW + timedelta(minutes=16))
     assert u.failed_logins == 0 and u.locked_until is None

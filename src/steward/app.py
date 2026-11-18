@@ -9,16 +9,19 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from steward import clock, gateway_name
 from steward.advisor.gateway import client_from_settings
 from steward.advisor.monitor import AdvisorMonitor, AdvisorRuntime
-from steward.api import advisor_tools, grants as grants_api, books as books_api, accounts, asset_classes, auth, business, care, categorize, cashflow, changes, chat, children, events, facts, flags, growth, health, home, exports, imports, install, inventory, inventory_files, investments, labels, notes, passkeys, plan, profile, ready, reimburse, review, same_accounts, setasides, setup as setup_api, simplefin, spending, statements as statements_api, ss, suggestions, summary, tax_forms, taxes, transactions, undo, watching, welcome
+from steward.api import advisor_tools, grants as grants_api, books as books_api, accounts, asset_classes, auth, business, care, categorize, cashflow, changes, chat, children, csp_report, events, facts, flags, growth, health, home, exports, imports, install, inventory, inventory_files, investments, labels, notes, passkeys, plan, profile, ready, reimburse, review, same_accounts, setasides, setup as setup_api, simplefin, spending, statements as statements_api, ss, suggestions, summary, tax_forms, taxes, transactions, undo, watching, welcome
 from steward.api.exports import Downloads
 from steward.api.compress import CompressReads
 from steward.api.first_run import FirstRun, gate_on
 from steward.api.headers import SecurityHeaders, content_security_policy
+from steward.api.hosts import HostCheck
 from steward.api.limits import BodyLimit
 from steward.api.origin import SameOrigin
 from steward.auth import setup_link
+from steward.auth.cookies import MoveSession
 from steward.app_settings import AppSettings, apply_effective
 from steward.auth.passkeys import ChallengeStore
+from steward.auth.devices import DeviceKeys, DeviceLockouts
 from steward.auth.ratelimit import RateLimiter
 from steward.books import sample
 from steward.books.jobs import sync_all_books
@@ -65,7 +68,7 @@ def create_app(settings: Settings | None = None, books: BookRegistry | None = No
 
     def sync_job() -> None:
         try:
-            sync_all_books(books, http, app.state.model, now(), settings.allowed_hosts)
+            sync_all_books(books, http, app.state.model, now(), settings.simplefin_allowed_hosts)
         except Exception:  # noqa: BLE001 - never kill the scheduler thread
             log.exception("Scheduled SimpleFIN sync failed")
         if settings.env != "test":
@@ -129,10 +132,12 @@ def create_app(settings: Settings | None = None, books: BookRegistry | None = No
 
     app = FastAPI(title="Steward", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(BodyLimit)
+    app.add_middleware(MoveSession)     # issue #14: a 0.1.0 session cookie moves on any answer, 204s included
     app.add_middleware(CompressReads)   # phase 18: API reads gzipped when asked
     if gate_on(settings, first_run_gate):       # release spec 2026-11-05, section 6: 503 until someone exists
         app.add_middleware(FirstRun, has_people=lambda: setup_link.has_people_in(books.directory))
     app.add_middleware(SameOrigin, base_url=settings.base_url)   # outside the body cap: a refused write never streams
+    app.add_middleware(HostCheck, names=settings.api_hosts)       # issue #8: /api/ answers only at Steward's own names
     # Outermost (the last added): every answer gets the headers, refusals included; the page's CSP allows its inline
     # first-paint script by the hash of the built index.html.
     app.add_middleware(SecurityHeaders, csp=content_security_policy(inline_script_hashes(settings.web_dir)))
@@ -214,6 +219,8 @@ def create_app(settings: Settings | None = None, books: BookRegistry | None = No
 
     app.state.challenges = ChallengeStore()
     app.state.rate_limits = RateLimiter()           # hardening plan: per-address limits, in memory like the challenges
+    app.state.device_keys = DeviceKeys.from_master(books.master)   # issue #7: the device cookie, signed with steward.key
+    app.state.device_lockouts = DeviceLockouts()    # issue #7: wrong passwords per device and account
     app.state.export_downloads = Downloads()
     app.state.import_staging = ImportStaging()     # import/export spec P3: staged files live here, in memory only
     statement_client = statement_client_for(settings)
@@ -231,6 +238,7 @@ def create_app(settings: Settings | None = None, books: BookRegistry | None = No
         return JSONResponse(body, status_code=exc.status_code, headers=exc.headers)
 
     app.include_router(health.router)
+    app.include_router(csp_report.router)
     app.include_router(auth.router)
     app.include_router(auth.users_router)
     app.include_router(passkeys.router)

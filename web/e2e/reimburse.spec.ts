@@ -74,6 +74,6 @@ test('add a trip, mark its likely work, sort the repayment, settle the rest', as
   const settle = page.getByRole('dialog', { name: 'Settle' });
   await expect(settle).toContainText(/Settle the \$[\d,.]+ Acme still owes you as not coming back\?/);
   await settle.getByRole('button', { name: 'Settle' }).click();
-  await expect(page.getByText('All square with Acme.')).toBeVisible();
+  await expect(page.getByRole('main').getByText('All square with Acme.')).toBeVisible();
   expect(await owed(page)).toBe(0);
 });

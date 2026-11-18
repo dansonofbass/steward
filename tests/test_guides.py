@@ -41,3 +41,13 @@ def test_restore_covers_the_check_and_the_hand_restore():
 def test_moving_keeps_the_key_and_the_address():
     text = guide("move").read_text()
     assert "steward.key" in text and "STEWARD_BASE_URL" in text
+
+
+def test_bank_data_says_why_a_row_waits_to_sort():
+    """The To sort reason names every source that can sort a row, and the payment apps the built-ins always leave to
+    Review (P2P_MERCHANTS): a newcomer with a Venmo row reads why it waits (#32)."""
+    from steward.services.categorize import P2P_MERCHANTS
+
+    line = next(ln for ln in guide("bank-data").read_text().splitlines() if ln.startswith("- To sort:"))
+    assert "rule of yours" in line and "built-in rules" in line and "local model" in line
+    assert P2P_MERCHANTS and all(m in line for m in P2P_MERCHANTS), P2P_MERCHANTS

@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from steward.app_settings import AppSettings, apply_effective
+from steward.app_settings import AppSettings, apply_effective, zone_needed
 from steward.auth import reset, users
 from steward.books.registry import BookRegistry, DirectoryUnavailable
 from steward.books.service import BookRefused, add_membership, create_book
@@ -19,7 +19,7 @@ from steward.settings import Settings
 app = typer.Typer(no_args_is_help=True, help="Steward household finance vault")
 
 
-OWN_SETTINGS = {"gateway_name", "timezone", "backup_at", "backup_ping_url"}     # settings whose refusal is one plain line, not a traceback (spec 2026-11-05, s. 7)
+OWN_SETTINGS = {"env", "allowed_hosts", "gateway_name", "timezone", "backup_at", "backup_ping_url"}     # settings whose refusal is one plain line, not a traceback (spec 2026-11-05, s. 7)
 
 
 def _settings() -> Settings:
@@ -138,12 +138,13 @@ def setup():
             except setup_link.AlreadySetUp:
                 typer.echo(setup_link.ALREADY_CLI)
                 raise typer.Exit(1)
+        unset = zone_needed(AppSettings(s, books.directory, books.master))
     finally:
         books.dispose()
-    typer.echo(f"Time zone: {clock.household_tz().key}")
+    typer.echo(setup_link.ZONE_NOT_SET if unset else f"Time zone: {clock.household_tz().key}")
     typer.echo(f"Open this within {setup_link.TTL_MINUTES} minutes to make the first account:\n\n"
                f"    {s.base_url.rstrip('/')}/setup#{token}\n\n"
-               "It works once. Run steward setup again for a new link.")
+               "It works once. Run the same command again for a new link.")
 
 
 @app.command()
@@ -234,7 +235,7 @@ def seed_demo(years: int = 2, seed: int = 7, force: bool = False):
     """Load the fake demo household. Never run this against real data."""
     from sqlalchemy import func, select
     from steward.db.models import Transaction
-    from steward.demo import seed as do_seed, seed_people
+    from steward.demo import mark_profiles_seen, seed as do_seed, seed_people
     s = _settings()
     if s.env == "prod" and os.environ.get("STEWARD_ALLOW_DEMO") != "1":
         typer.echo("Refusing to seed demo data into a production vault. "
@@ -253,7 +254,9 @@ def seed_demo(years: int = 2, seed: int = 7, force: bool = False):
                 typer.echo(f"Could not seed: {e}. Use a fresh database.")
                 raise typer.Exit(1)
         with Session(books.directory) as ddb:
-            seed_people(ddb, books.book("ours").id)
+            people = seed_people(ddb, books.book("ours").id)
+        with Session(_ours(books)) as db:
+            mark_profiles_seen(db, people)
     finally:
         books.dispose()
     typer.echo(f"Seeded demo household: {counts}")
@@ -344,7 +347,7 @@ def sync(book: str = typer.Option(None, "--book", help="Only this book (default:
     model = client_for(s)
     try:
         with httpx2.Client(timeout=60) as http:
-            results = sync_all_books(books, http, model, now(), s.allowed_hosts, only=book)
+            results = sync_all_books(books, http, model, now(), s.simplefin_allowed_hosts, only=book)
     finally:
         model.close()
         books.dispose()

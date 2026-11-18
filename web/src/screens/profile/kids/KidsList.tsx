@@ -18,8 +18,9 @@ import { collapse } from '../motion';
 import type { BodyProps } from '../sections';
 import { useKidSave } from './kidSave';
 import { SavedUndo } from './SavedUndo';
+import { thisYear } from '../../../lib/today';
 
-const range = () => { const y = new Date().getFullYear(); return { lo: y - 30, hi: y + 1 }; };
+const range = () => { const y = thisYear(); return { lo: y - 30, hi: y + 1 }; };
 function check(name: string, year: string): { name?: string; year?: string } {
   const { lo, hi } = range();
   const out: { name?: string; year?: string } = {};

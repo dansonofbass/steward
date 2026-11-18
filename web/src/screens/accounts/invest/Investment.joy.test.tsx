@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { reply, stubFetch, wrapBook } from '../../../test-utils';
+import { ME, reply, stubFetch, wrapBook } from '../../../test-utils';
 import { acct } from '../fixtures';
 import { forgetJoy } from '../joy';
 import { LINE, page } from './fixtures';
@@ -22,7 +22,7 @@ const MAXED = page({ type: 'k401', contributions: {
 describe("the page's cheers (investment views spec, Joy)", () => {
   it('a limit reached cheers once on this device, with a burst while celebrations are on', async () => {
     motion(false);
-    stubFetch({ '/api/accounts/3/investment': MAXED });
+    stubFetch({ '/api/auth/me': ME, '/api/accounts/3/investment': MAXED });
     const { unmount } = wrapBook(<Investment account={k401} />);
     expect(await screen.findByText('Maxed your 401(k) for 2026.')).toBeInTheDocument();
     await waitFor(() => expect(fx.burst).toHaveBeenCalledTimes(1));
@@ -35,7 +35,7 @@ describe("the page's cheers (investment views spec, Joy)", () => {
 
   it('on a device set to reduce motion the cheer is still said, and nothing loads or moves', async () => {
     motion(true);
-    stubFetch({ '/api/accounts/3/investment': MAXED });
+    stubFetch({ '/api/auth/me': ME, '/api/accounts/3/investment': MAXED });
     wrapBook(<Investment account={k401} />);
     expect(await screen.findByText('Maxed your 401(k) for 2026.')).toBeInTheDocument();
     await new Promise((r) => setTimeout(r, 0));

@@ -7,12 +7,13 @@ money."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from statistics import median
 from typing import Literal
 
 from sqlalchemy.orm import Session
 
+from steward import clock
 from steward.engine import Levers
 from steward.engine.decisions import Conversion, conversion_room, retirement_choice
 from steward.engine.project import Assumptions, Expense, Income, ProjectionInputs, project
@@ -28,7 +29,7 @@ END_AGE = 95
 RMD_YEARS = 10
 MEDICARE_AGE = 65
 FINISH_PLAN = "Finish Plan setup to compare with retirement."
-SAVED = "your saved plan"
+SAVED = "the {which} age in the plan saved {date}"   # #17: which age, and when, as Home says it
 NOT_SAVED = "65 until a plan is saved"
 NOW_ONLY = "Traditional saves about {pct} of each dollar in tax this year; there's no retirement estimate to compare with yet."
 
@@ -92,13 +93,24 @@ def later_rate(pi: PlanInputs, levers: Levers, retire_age: int, source: str, a: 
                      "Security.")
 
 
+def saved_label(at: datetime, today: date) -> str:
+    """"Oct 7", or "Dec 30, 2025" from another year: the household's day, as the web writes a saved plan's date."""
+    d = at.astimezone(clock.household_tz()).date()
+    return f"{d:%b} {d.day}" if d.year == today.year else f"{d:%b} {d.day}, {d.year}"
+
+
 def saved_plan_later_rate(db: Session, today: date, pi: PlanInputs) -> LaterRate:
     """The rate later for the saved plan: its likely retirement age (comfortable age, then 65 when none is saved),
-    its claiming ages and its spending (ruling 16). Shared by Roth or traditional and part 4's step 5."""
+    its claiming ages and its spending (ruling 16). Shared by Roth or traditional and part 4's step 5. The line says
+    which age and when the plan was saved (#17): Home shows the saved Comfortably age with its date, Plan today's."""
     row = latest_plan(db)
     state = saved_state(row)
+    assumed = state.assumed if state else Levers()   # levers that no longer parse (a renamed lever) fall back to defaults
     age = (row.likely_age or row.comfortable_age) if row is not None else None
-    return later_rate(pi, state.assumed if state else Levers(), age or DEFAULT_RETIRE_AGE, SAVED if age else NOT_SAVED)
+    if row is None or age is None:
+        return later_rate(pi, assumed, DEFAULT_RETIRE_AGE, NOT_SAVED)
+    which = "Likely" if row.likely_age else "Comfortably"
+    return later_rate(pi, assumed, age, SAVED.format(which=which, date=saved_label(row.saved_at, today)))
 
 
 @dataclass(frozen=True)

@@ -8,6 +8,7 @@ import { aboutFor } from '../../ask/about';
 import { saveKind } from '../../api/spending';
 import type { EverydayRow, SpendingKind, SpendingMonth, TrendRow, Txn } from '../../api/types';
 import { useCanEdit } from '../../book/BookContext';
+import { useItemTitle } from '../../frame/itemTitle';
 import { Link } from '../../book/links';
 import { label } from '../../lib/categories';
 import { SHOW_MORE, TRY_AGAIN } from '../../lib/copy';
@@ -235,6 +236,7 @@ export function Category() {
   const known = SPENDING_KEYS.includes(category);
   const q = useSpending(month, known);
   const trends = useSpendingTrends(12, known);
+  useItemTitle(known ? label(category) : null);
   const back = <BackLink to={month ? `/spending?month=${month}` : '/spending'}>{C.SPENDING}</BackLink>;
   if (!known) return <div className="screen spending">{back}<h1>{C.SPENDING}</h1><p>{C.UNKNOWN_CATEGORY}</p></div>;
   if (q.isError) return <div className="screen spending">{back}<h1>{waitingTitle(month)}</h1><Refused error={q.error} month={month} retry={() => void q.refetch()} /></div>;

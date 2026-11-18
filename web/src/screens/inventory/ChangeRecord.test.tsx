@@ -1,5 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setHouseholdZone } from '../../lib/today';
 import { stubFetch, wrapBook } from '../../test-utils';
 import { ChangeRecord } from './ChangeRecord';
 
@@ -46,6 +47,23 @@ describe('Change record', () => {
     await screen.findAllByRole('link', { name: 'Homeowners' });
     expect(screen.getByText(/Oct 17, 2026$/)).toBeInTheDocument();
     expect(screen.getByText(/Oct 17, 2025$/)).toBeInTheDocument();
+  });
+  it("heads each day and times each row on the household's clock, wherever the device is (#26)", async () => {
+    setHouseholdZone('Pacific/Kiritimati');   // UTC+14: these two are either side of midnight at home
+    stubFetch({ '/api/changes': { ...PAGE1, next: null, changes: [
+      ROW('late', '2026-10-16T10:30:00+00:00', 'edited {item}'), ROW('early', '2026-10-16T09:30:00+00:00', 'edited {item}')] } });
+    const { container } = wrapBook(<ChangeRecord />, { slug: 'margaret-ellis', name: 'Margaret Ellis', kind: 'parent' }, '/b/margaret-ellis/settings/changes');
+    await screen.findAllByRole('link', { name: 'Homeowners' });
+    expect([...container.querySelectorAll('.chg__day')].map((d) => d.textContent)).toEqual(['Sat, Oct 17, 2026', 'Fri, Oct 16, 2026']);
+    expect([...container.querySelectorAll('.chg__time')].map((t) => t.textContent)).toEqual(['12:30 AM', '11:30 PM']);
+  });
+  it('shows a row whose time is empty or unreadable, under a blank heading, instead of failing the record', async () => {
+    stubFetch({ '/api/changes': { ...PAGE1, next: null, changes: [
+      ROW('ok', '2026-10-17T15:00:00+00:00', 'edited {item}'), ROW('blank', '', 'added {item}'), ROW('bad', 'not a time', 'removed {item}')] } });
+    const { container } = wrapBook(<ChangeRecord />, { slug: 'margaret-ellis', name: 'Margaret Ellis', kind: 'parent' }, '/b/margaret-ellis/settings/changes');
+    expect(await screen.findByText(/removed/)).toBeInTheDocument();
+    expect(screen.getByText(/added/)).toBeInTheDocument();
+    expect([...container.querySelectorAll('.chg__day')].map((d) => d.textContent)).toEqual(['Sat, Oct 17, 2026', '']);
   });
   it('keeps the person choices while a filtered list is loading', async () => {
     stubFetch({ '/api/changes?kind=files': () => new Promise(() => {}), '/api/changes': PAGE1 });

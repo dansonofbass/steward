@@ -3,26 +3,9 @@ import { Link } from '../../book/links';
 import { label } from '../../lib/categories';
 import { dollars } from '../../lib/format';
 import * as C from './sinceCopy';
-import './since.css';
+import { nothingNew, SINCE_HEAD, whenWord } from './sinceWhen';
 
-const WEEKDAY = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
-const SHORT = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
-const DAY_MS = 86_400_000;
 const fill = (s: string, vars: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k]));
-const local = (iso: string) => {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d);
-};
-
-/** P34: the last look's day in words, from the server's days (as_of and from_day), never the browser's clock:
- *  earlier today, yesterday, a weekday up to 6 days back, then "Oct 12"; over a month ago when it was. */
-export function whenWord(fromDay: string, asOf: string, overMonth: boolean): string {
-  if (overMonth) return C.WHEN_OVER_MONTH;
-  const n = Math.round((local(asOf).getTime() - local(fromDay).getTime()) / DAY_MS);
-  if (n <= 0) return C.WHEN_TODAY;
-  if (n === 1) return C.WHEN_YESTERDAY;
-  return n <= 6 ? WEEKDAY.format(local(fromDay)) : SHORT.format(local(fromDay));
-}
 
 /** One wording (P31): "{Category} · {payee}" for a Bill, the payee alone for a large charge, a group by places or
  *  by charges. Names only, never a note (P43). */
@@ -45,10 +28,10 @@ export default function HomeSince({ since, asOf }: { since: SinceData; asOf: str
   return (
     <section className="card since" aria-labelledby="since-h" data-testid="since">
       <h2 id="since-h">
-        {C.SINCE_HEAD}
+        {SINCE_HEAD}
         {!nothing && <>{' '}<time className="since__when muted" dateTime={since.from_day}>({when})</time></>}
       </h2>
-      {nothing ? <p className="muted" data-testid="since-nothing">{fill(C.NOTHING_NEW, { when })}</p> : (
+      {nothing ? <p className="muted" data-testid="since-nothing">{nothingNew(when)}</p> : (
         <ul className="since__list">
           {since.lines.map((l, i) => (
             <li key={`${l.kind}-${i}`} className="since__row" data-testid="since-line">

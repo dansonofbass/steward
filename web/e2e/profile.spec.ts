@@ -15,6 +15,7 @@ test('a first visit lands on Profile with the band; You and your partner saves a
   await page.goto('/');
   await expect(page).toHaveURL(/\/b\/ours\/profile$/);
   await expect(page.getByText('Everything you enter stays on your home server.')).toBeVisible();
+  await expect(page.getByText("Steward opened your profile in place of Home because it isn't finished.")).toBeVisible();
   await page.getByRole('button', { name: 'Start' }).click();
   await expect(page).toHaveURL(/\/profile\/you\/you$/);
   await expect(page.getByRole('img', { name: 'Step 1 of 4' })).toBeVisible();

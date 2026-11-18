@@ -2,7 +2,8 @@ import { dateLabelFromIso, dollars } from '../../lib/format';
 import type { InputsSummary, PlanReady, SavedPlan } from './api';
 import * as C from './copy';
 
-export type ChangeDir = 'up' | 'down' | 'same';
+/** Which way the Comfortably age moved: earlier is the good direction. */
+export type ChangeDir = 'earlier' | 'later' | 'same';
 /** `months`: how far the Comfortably age moved; null when one side is "not by 70". */
 export type Change = { dir: ChangeDir; months: number | null; text: string };
 export type Closer = 'half' | 'year' | 'years';
@@ -75,17 +76,17 @@ export function changeLine(data: PlanReady, today: Date): Change | null {
   const tail = facts.length === 0 ? '.' : `: ${facts.length === 2 ? C.FACTS_AND.replace('{a}', facts[0]).replace('{b}', facts[1]) : facts[0]}.`;
   const same: Change = { dir: 'same', months: 0, text: C.CHANGE_SAME.replace('{date}', date) };
   if (now.age === null && then.age === null) return same;
-  if (now.age === null) return { dir: 'down', months: null, text: C.CHANGE_NOT_NOW.replace('{age}', String(then.age)).replace('{date}', date) + tail };
-  if (then.age === null) return { dir: 'up', months: null, text: C.CHANGE_NOW_ABLE.replace('{age}', String(now.age)).replace('{date}', date) + tail };
+  if (now.age === null) return { dir: 'later', months: null, text: C.CHANGE_NOT_NOW.replace('{age}', String(then.age)).replace('{date}', date) + tail };
+  if (then.age === null) return { dir: 'earlier', months: null, text: C.CHANGE_NOW_ABLE.replace('{age}', String(now.age)).replace('{date}', date) + tail };
   const d = monthsMoved(now, then)!;
   if (d === 0) return same;
-  if (d < 0) return { dir: 'up', months: -d, text: C.CHANGE_UP.replace('{span}', spanText(d)).replace('{date}', date) + tail };
-  return { dir: 'down', months: d, text: C.CHANGE_DOWN.replace('{span}', spanText(d)).replace('{date}', date) + tail };
+  if (d < 0) return { dir: 'earlier', months: -d, text: C.CHANGE_EARLIER.replace('{span}', spanText(d)).replace('{date}', date) + tail };
+  return { dir: 'later', months: d, text: C.CHANGE_LATER.replace('{span}', spanText(d)).replace('{date}', date) + tail };
 }
 
 /** Which cheers a change earns (Engineering choice 7): none under 6 months earlier, later or the same. */
 export function closerOf(c: Change): Closer | null {
-  if (c.dir !== 'up') return null;
+  if (c.dir !== 'earlier') return null;
   if (c.months === null) return 'years';            // from "not by 70" to an age
   if (c.months < 6) return null;
   if (c.months < 12) return 'half';

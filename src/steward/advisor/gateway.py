@@ -75,6 +75,10 @@ class GatewayClient:
     def sent_since(self, since: datetime) -> dict:
         return self._call("GET", "/v1/sent", params={"since": since.isoformat()})
 
+    def instructions(self) -> dict:
+        """The fixed instructions and tool definitions behind a Getting ready row's hash (public issue #3)."""
+        return self._call("GET", "/v1/instructions")
+
     def prewarm_plan(self, book_id: int, user_id: int) -> dict:
         return self._call("POST", "/v1/prewarm/plan", json={"book_id": book_id, "user_id": user_id})
 

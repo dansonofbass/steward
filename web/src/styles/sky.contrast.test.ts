@@ -150,7 +150,7 @@ const LIGHT_LEDGER: readonly [name: string, inPlace: () => boolean][] = [
   ['2.2: a fieldset card has no groove border', has('ui/Card.css', 'fieldset.card', 'border: 0')],
   ['2.5: the light snow reads on paper', () => PALETTES.snow.light.join() === '#5E7FA3,#4A6A8E,#54749A'],
   ['2.7: the Care legend keeps marker-sized svgs', has('screens/care/care.css', '.care-legend svg', 'flex: none')],
-  ['2.7: phone tab rows wrap instead of cutting a label', has('ui/SubNav.css', '.subnav', 'flex-wrap: wrap')],
+  ['2.7, then #22: a phone tab row scrolls with its edges faded instead of cutting a label', has('ui/SubNav.css', '.subnav.more-end', '--subnav-fade-end')],
   ['2.7: Appearance\'s switches sit beside their words', has('screens/Settings.css', '.line.check-row', 'justify-content: flex-start')],
   ['2.7: an empty book says so in Review', () => REVIEW_EMPTY_BOOK === 'Nothing here yet. Import a file and Steward starts sorting.'],
 ];

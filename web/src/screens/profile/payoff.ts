@@ -1,3 +1,5 @@
+import { today } from '../../lib/today';
+
 // The mortgage payoff date from balance, rate and monthly principal and interest (carried decision; ruling 9).
 export type Month = { year: number; month: number };   // month is 1-12
 export type Payoff = { kind: 'paid_off' } | { kind: 'never' } | { kind: 'months'; payments: number; year: number; month: number };
@@ -25,7 +27,7 @@ export function payoff(balanceCents: number, rateMilli: number, paymentCents: nu
 }
 
 export const payoffYmd = (m: Month): string => `${m.year}-${String(m.month).padStart(2, '0')}-01`;
-export const thisMonth = (d: Date = new Date()): Month => ({ year: d.getFullYear(), month: d.getMonth() + 1 });
+export const thisMonth = (d: Date = new Date()): Month => { const t = today(d); return { year: Number(t.slice(0, 4)), month: Number(t.slice(5, 7)) }; };
 /** The month of an ISO date or year-month, like "2026-10-14" or "2026-10". */
 export const monthOf = (iso: string): Month => ({ year: Number(iso.slice(0, 4)), month: Number(iso.slice(5, 7)) });
 /** Whole months from a to b ("2026-10" to "2026-12" is 2). */

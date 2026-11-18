@@ -3,7 +3,7 @@ import type { SignsData } from '../../api/home';
 import type { BusinessReport } from '../../api/types';
 import { Link } from '../../book/links';
 import { label } from '../../lib/categories';
-import { dollars, money } from '../../lib/format';
+import { dateLabelFromIso, dollars, money } from '../../lib/format';
 import { Skeleton } from '../../ui/Skeleton';
 import * as C from './copy';
 
@@ -28,9 +28,11 @@ function bills(b: SignsData['bills']): Pick<Tile, 'text' | 'tone'> {
   return { text: `${paid} · ${late}`, tone: 'amber' };
 }
 
-function plan(p: SignsData['plan']): Pick<Tile, 'text' | 'tone'> {
+/** #17: the saved plan's age, with when it was saved; Plan itself shows today's. `month` gives the year to leave out. */
+function plan(p: SignsData['plan'], month: string): Pick<Tile, 'text' | 'tone'> {
   if (p === null) return { text: C.PLAN_NONE, tone: 'muted' };
-  return { text: p.age === null ? C.PLAN_NOT_BY_70 : fill(C.PLAN_AT, { age: p.age }) };
+  const saved = fill(C.PLAN_SAVED, { date: dateLabelFromIso(p.saved_at, `${month}-01`) });
+  return { text: `${p.age === null ? C.PLAN_NOT_BY_70 : fill(C.PLAN_AT, { age: p.age })} · ${saved}` };
 }
 
 /** JR, Oct 30: the total stays, with this month's change, green only when up. */
@@ -56,7 +58,7 @@ export function Signs({ signs, month, business, businessFailed }: { signs: Signs
   const tiles: Tile[] = [
     { key: 'flexible', label: C.SIGN_FLEXIBLE, to: `/spending?month=${month}#flexible`, ...flexible(signs.flexible) },
     { key: 'bills', label: C.SIGN_BILLS, to: `/spending?month=${month}#fixed`, ...bills(signs.bills) },
-    { key: 'plan', label: C.SIGN_PLAN, to: '/plan', ...plan(signs.plan) },
+    { key: 'plan', label: C.SIGN_PLAN, to: '/plan', ...plan(signs.plan, month) },
     { key: 'net-worth', label: C.SIGN_NET_WORTH, to: '/accounts', ...netWorth(signs.net_worth) },
   ];
   const showBusiness = signs.has_business && !businessFailed && business?.type !== 'none';

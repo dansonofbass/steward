@@ -1,7 +1,8 @@
 // The lever model: the delta body the API expects (M2-B ruling 9), what each row shows, and its words.
 // One slider per lever (design decision 4, spec 3.6 amendment): the slider is the assumed value; the try value is the
 // suggestion in the closed row, moved onto the slider by "Try this" and pinned only through "Change suggestion".
-import { dateLabelFromIso, dollars } from '../../lib/format';
+import { dateLabelFromIso, dollars, localYmd } from '../../lib/format';
+import { clockTime, today } from '../../lib/today';
 import type { CostLevel, DeltaBody, Impact, LeverField, LeverKey, LeverSpec, LeverState, LeverValue, LeverValues, PlanCollege, Scale } from './api';
 import { LEVEL_NAME } from './copy';
 import type { People } from './people';
@@ -204,9 +205,10 @@ export function rankedKeys(impacts: Impact[]): LeverKey[] {
   return seen;
 }
 
+/** "today at 3:10 pm" or "on Nov 16": the day and the time both on the household's clock (issue #26), so the two
+ *  halves never disagree near midnight. */
 export function savedWhen(iso: string, now: Date): string {
-  const d = new Date(iso);
-  if (d.toDateString() !== now.toDateString()) return `on ${dateLabelFromIso(iso, now)}`;
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\s?([AP])M$/, (_m, x: string) => ` ${x.toLowerCase()}m`);
+  if (localYmd(iso) !== today(now)) return `on ${dateLabelFromIso(iso, now)}`;
+  const time = clockTime(iso).replace(/\s?([AP])M$/, (_m, x: string) => ` ${x.toLowerCase()}m`);
   return `today at ${time}`;
 }

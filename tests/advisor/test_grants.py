@@ -109,7 +109,7 @@ def test_a_password_reset_revokes_the_persons_grants_and_a_lockout_does_not(ddb,
     assert G.resolve(ddb, jr_text, NOW) is not None                       # nobody else's
     line = G.rows(ddb, ours.id, now=NOW, today=TODAY, me=jr.id, manager=True)
     assert next(r for r in line if r["id"] == for_sam.id)["line"] == "Revoked by Steward, Oct 21"
-    for _ in range(users.LOCK_AFTER - 1):
+    for _ in range(users.ACCOUNT_LOCK_AFTER - 1):
         with pytest.raises(users.BadCredentials):
             users.check_password(ddb, jr, "not the password", NOW)
     assert G.resolve(ddb, jr_text, NOW) is not None                       # not locked yet

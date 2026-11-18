@@ -6,6 +6,7 @@ import { setUnauthorizedHandler } from './api/client';
 import { forgetHome } from './api/home';
 import { forgetGatewayWatch } from './lib/gateway';
 import { forgetGatewayName } from './lib/gatewayName';
+import { forgetHouseholdZone } from './lib/today';
 import { forgetPersonPrefs } from './lib/celebrations';
 import { forgetLines } from './lib/lines';
 import { preloadAllScreens } from './lib/lazyScreen';
@@ -47,6 +48,7 @@ afterEach(() => {
   forgetHome();
   forgetGatewayWatch();
   forgetGatewayName();
+  forgetHouseholdZone();
   forgetDialogs();
 });
 

@@ -78,11 +78,26 @@ class ChallengeStore:
             del self._items[cid]
 
 
+def _user_handle_bytes(user: User) -> bytes:
+    return str(user.id).encode()
+
+
+def user_handle(user: User) -> str:
+    """The WebAuthn user handle a passkey is made with, base64url, as the browser's signal calls name it."""
+    return bytes_to_base64url(_user_handle_bytes(user))
+
+
+def accepted(rp: RelyingParty, user: User, passkeys: list[Passkey]) -> dict:
+    """What PublicKeyCredential.signalAllAcceptedCredentials needs: the passkeys this user can still sign in with."""
+    return {"rp_id": rp.rp_id, "user_id": user_handle(user),
+            "credential_ids": [bytes_to_base64url(p.credential_id) for p in passkeys]}
+
+
 def registration_options(rp: RelyingParty, user: User, existing: list[Passkey]) -> tuple[str, bytes]:
     """Returns (options JSON for the browser, challenge bytes to remember)."""
     opts = generate_registration_options(
         rp_id=rp.rp_id, rp_name=rp.name,
-        user_id=str(user.id).encode(), user_name=user.username, user_display_name=user.display_name,
+        user_id=_user_handle_bytes(user), user_name=user.username, user_display_name=user.display_name,
         exclude_credentials=[PublicKeyCredentialDescriptor(id=p.credential_id) for p in existing],
         authenticator_selection=AuthenticatorSelectionCriteria(
             resident_key=ResidentKeyRequirement.REQUIRED,

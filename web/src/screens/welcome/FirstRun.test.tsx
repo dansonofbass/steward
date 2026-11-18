@@ -158,7 +158,7 @@ describe('the first run, the steps', () => {
     current = state({ step: 'sort', waiting: 12, money: { in: true, linked: false, rows: 143, accounts: 2 } });
     stubFetch(routes());
     const first = mount('/welcome?step=money');
-    expect(await screen.findByText('143 rows in. 12 wait in Review.')).toBeInTheDocument();
+    expect(await screen.findByText('143 rows in. 12 to sort in Review.')).toBeInTheDocument();
     first.unmount();
     current = state({ step: 'sort', money: { in: true, linked: true, rows: 0, accounts: 4 } });
     mount('/welcome?step=money');
@@ -186,11 +186,11 @@ describe('the first run, the steps', () => {
     away.unmount();
     current = state({ step: 'sort', waiting: 3, money: { in: true, linked: false, rows: 9, accounts: 1 } });
     const back = mount('/welcome?step=money');
-    await screen.findByText('9 rows in. 3 wait in Review.');
+    await screen.findByText('9 rows in. 3 to sort in Review.');
     await waitFor(() => expect(fx.acorn).toHaveBeenCalledTimes(1));
     back.unmount();
     mount('/welcome?step=money');
-    await screen.findByText('9 rows in. 3 wait in Review.');
+    await screen.findByText('9 rows in. 3 to sort in Review.');
     expect(fx.acorn).toHaveBeenCalledTimes(1);
   });
 

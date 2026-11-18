@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAccounts, useSummary } from '../../api/hooks';
+import { useAccounts, useMe, useSummary } from '../../api/hooks';
 import type { Account, SplitKey } from '../../api/types';
+import { useBook } from '../../book/BookContext';
 import { Link } from '../../book/links';
 import { vehicleLoan } from '../../lib/accountKinds';
 import { withCelebrate } from '../../lib/celebrations';
 import { dollars, money } from '../../lib/format';
 import { Notice } from '../../ui/Notice';
 import { Skeleton } from '../../ui/Skeleton';
-import { crossedMilestone } from './joy';
+import { crossedMilestone, joyScope } from './joy';
 import { DOWN_THIS_YEAR, LINE_LABELS, MILESTONE_CHEER, NET_WORTH, UP_THIS_YEAR, VEHICLE_LINE } from './splitCopy';
 import './split.css';
 
@@ -30,14 +31,15 @@ export default function NetWorthSplit() {
   const ref = useRef<HTMLElement>(null);
   const [cheer, setCheer] = useState<string | null>(null);
   const worth = s.data?.net_worth_cents;
+  const scope = joyScope(useMe().data?.user.id, useBook()?.slug);
   useEffect(() => {
     if (worth === undefined) return;
-    const m = crossedMilestone(worth);
+    const m = crossedMilestone(scope, worth);
     if (m === null) return;
     setCheer(MILESTONE_CHEER.replace('{amount}', dollars(m)));
     const el = ref.current;
     if (el) void withCelebrate((c) => { c.burst({ over: el }); });
-  }, [worth]);
+  }, [worth, scope]);
   if (s.isPending) return <Skeleton lines={4} />;
   if (s.isError) return <Notice tone="error"><p>{s.error.message}</p></Notice>;
   const { split, net_worth_cents: total, change_year_cents: change } = s.data;

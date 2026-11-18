@@ -71,8 +71,10 @@ def test_four_packages_are_built():
 
 def test_the_pdf_package_imports_nothing_from_either_side():
     """Remote-reading P56: both machines run steward_pdf; it needs neither the NAS app nor the gateway. It imports only
-    the standard library, steward_boundary and, in the child, the PDF libraries."""
-    allowed = set(sys.stdlib_module_names) | {"steward_pdf", "steward_boundary", "pdfplumber", "pypdfium2"}
+    the standard library, steward_boundary and, in the child, the PDF libraries and the dependencies of theirs that it
+    imports before the wall (#12)."""
+    allowed = set(sys.stdlib_module_names) | {"steward_pdf", "steward_boundary", "pdfplumber", "pypdfium2", "pdfminer",
+                                              "cryptography", "PIL"}
     for path in sorted((ROOT / "src" / "steward_pdf").rglob("*.py")):
         for name in _imports(path):
             assert name.split(".")[0] in allowed, f"{path} imports {name}"

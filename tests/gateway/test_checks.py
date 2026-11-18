@@ -160,19 +160,25 @@ def test_a_name_guess_in_an_approved_store_name_does_not_stop_the_turn():
     assert e.value.check == "model"
 
 
-def test_an_approved_payment_app_payee_can_be_a_persons_name_and_the_docs_say_so():
-    """Gate finding PRIV-2: a Zelle payee is a person the book doesn't know. Payee cleaning keeps the name, and in an
-    approved store row a [name] guess doesn't stop the turn, so Claude receives it. That is by design (the manager saw
-    the row on the card), so the claims must name it as the exception rather than say Claude never receives names."""
-    from steward.advisor.tools.merchant import clean_store
-    from steward.watch.payees import payee
+def test_a_ticked_payment_app_payee_can_be_a_persons_name_and_the_docs_say_so():
+    """Gate finding PRIV-2, then public issue #1: a Zelle payee is a person the book doesn't know. merchant_detail sends
+    "Zelle to [name]" unless the manager ticks that row on the card (tests/advisor/test_approvals.py); a ticked row
+    keeps the name, and in an approved store row a [name] guess doesn't stop the turn, so Claude receives it. The
+    claims name the tick as the exception."""
+    from steward.advisor.tools.merchant import _store, clean_store
+    from steward.watch.payees import known_label, payee
     from tests.public_docs import ROOT, flat, ledger_cells, section
-    name = clean_store(payee("ZELLE PAYMENT TO PRIYA NAIR 0412").name, ())
-    assert name == "Priya Nair"
-    check(rows(name))                                     # NameListDetector tags it [name]; the approved row still goes
+    p = payee("ZELLE PAYMENT TO PRIYA NAIR 0412")
+    assert _store(known_label(p), p.key, ()) == ("Zelle to [name]", "Zelle to Priya Nair")
+    check(rows("Zelle to [name]"))                        # unticked: the token goes, and the checks take it
+    ticked = clean_store(known_label(p), ())
+    check(rows(ticked))                                   # NameListDetector tags it [name]; the ticked row still goes
     privacy = ROOT / "docs/explanations/privacy.md"
     for heading in ("## What never reaches Claude", "## What the checks can miss"):
         assert "store rows a manager approves" in flat(section(privacy, heading)), heading
+    for text in (ledger_cells("P4")[1], section(privacy, "## What the checks can miss"),
+                 section(ROOT / "README.md", "### Private")):
+        assert "the manager ticks that row" in flat(text)
     assert "store rows a manager approves" in flat(ledger_cells("P4")[1])
     readme = flat((ROOT / "README.md").read_text(encoding="utf-8"))
     assert "except in store rows a manager approves" in readme
@@ -353,3 +359,17 @@ def test_only_enums_are_left_out_of_a_tool_results_fingerprints():
     with pytest.raises(Stopped) as e:
         check_parts([tool("holdings", holdings)], detectors=DET, salt=SALT, hashes=ABOUT_CLASH, issued=ISSUED)
     assert (e.value.check, e.value.path) == ("fingerprint", "parts[0].content.holdings[0].symbol")
+
+
+@pytest.mark.parametrize("member, symbol", [("Wei Ma", "MA"), ("Jin Ko", "KO"), ("Mo", "MO")])
+def test_a_two_letter_name_part_never_stops_a_holdings_symbol_that_spells_it(member, symbol):
+    """Review of public issue #2: the exact pass replaces a 2-letter part in the question, but its fingerprint isn't
+    sent, so a household with a member named Wei Ma can still read a Mastercard holding."""
+    hashes = hashes_for([(member, True)], SALT)
+    holdings = {"holdings": [{"symbol": symbol, "asset_class": "us_stock", "account": "Account 1", "value_cents": 1,
+                              "cost_basis_cents": None, "as_of": "2026-10-01"}], "totals_by_asset_class": []}
+    check_parts([tool("holdings", holdings)], detectors=DET, salt=SALT, hashes=hashes, issued=ISSUED)
+    if " " in member:
+        with pytest.raises(Stopped):          # the whole name is still fingerprinted
+            check_parts([Part("question", {"text": f"How is {member.lower()} doing?"})], detectors=DET, salt=SALT,
+                        hashes=hashes, issued=ISSUED)

@@ -103,12 +103,48 @@ describe('Home (phase 11 spec)', () => {
     expect(screen.getByRole('link', { name: 'All accounts ›' })).toHaveAttribute('href', '/b/ours/accounts');
   });
 
-  it('the strip loads after ready, under the signs, and opens Spending on this month', async () => {
+  it("the strip and Since take their places with /api/home, before /api/accounts answers, so nothing moves at ready (issue #24)", async () => {
+    let release!: () => void;
+    const hold = new Promise<void>((r) => { release = r; });
+    stubFetch({ ...ROUTES, '/api/accounts': async () => { await hold; return reply(ACCOUNTS); },
+      '/api/home': homeWith({ since: { from: '2026-10-27T19:00:00+00:00', from_day: '2026-10-27', over_month: false, lines: [], more: 0, net_worth_cents: null } }) });
+    wrapBook(<Home />);
+    expect(await screen.findByTestId('flow-strip')).toBeInTheDocument();
+    expect(screen.getByTestId('since')).toBeInTheDocument();
+    expect(screen.getByTestId('verdict')).not.toHaveAttribute('data-ready');
+    release();
+    await ready();
+  });
+
+  it("shows nothing under the verdict until /api/home answers, so the accounts' placeholder is never pushed down (issue #24)", async () => {
+    let release!: () => void;
+    const hold = new Promise<void>((r) => { release = r; });
+    let answered = false;
+    stubFetch({ ...ROUTES, '/api/home': async () => { await hold; return reply(HOME); }, '/api/accounts': () => { answered = true; return reply(ACCOUNTS); } });
+    const { container } = wrapBook(<Home />);
+    await waitFor(() => expect(answered).toBe(true));
+    expect(container.querySelector('.verdict[aria-busy=true]')).not.toBeNull();
+    expect(screen.queryByRole('region', { name: 'Accounts' })).toBeNull();
+    expect(screen.queryByTestId('account-row')).toBeNull();
+    release();
+    expect(await screen.findAllByTestId('account-row')).not.toHaveLength(0);
+  });
+
+  it('the strip sits under the signs and opens Spending on this month', async () => {
     stubFetch(ROUTES);
     wrapBook(<Home />);
     const strip = await screen.findByTestId('flow-strip');
     expect(strip).toHaveAttribute('href', '/b/ours/spending?month=2026-10');
     expect(screen.getByTestId('signs').compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('with months but no money in or out yet, the strip still lands in its room, on this month (issue #24)', async () => {
+    const months = HOME.flow.months.map((m) => ({ ...m, in_cents: 0, out_cents: 0, net_cents: 0 }));
+    stubFetch({ ...ROUTES, '/api/home': homeWith({ flow: { ...HOME.flow, months } }) });
+    wrapBook(<Home />);
+    const strip = await screen.findByTestId('flow-strip');
+    expect(strip).toHaveAttribute('href', `/b/ours/spending?month=${months[months.length - 1].month}`);
+    expect(screen.queryByTestId('strip-room')).toBeNull();
   });
 
   it("sends one glance with the server's mark once ready", async () => {
@@ -143,7 +179,7 @@ describe('Home (phase 11 spec)', () => {
     expect(screen.getByTestId('signs').compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('Since loads after ready, after For you, when there was a last look', async () => {
+  it('Since comes after For you, when there was a last look', async () => {
     stubFetch({ ...ROUTES, '/api/home': homeWith({ since: { from: '2026-10-27T19:00:00+00:00', from_day: '2026-10-27', over_month: false, lines: [], more: 0, net_worth_cents: null } }) });
     wrapBook(<Home />);
     const since = await screen.findByTestId('since');

@@ -8,7 +8,7 @@ from steward.events import log_event
 
 def test_health(client):
     r = client.get("/api/health")
-    assert r.status_code == 200 and r.json() == {"ok": True, "version": "0.1.0"}
+    assert r.status_code == 200 and r.json() == {"ok": True, "version": "0.1.1"}
 
 
 def test_log_event(db):
@@ -38,6 +38,6 @@ def test_http_exception_dict_detail_is_the_body(app):
         raise HTTPException(418, detail={"error": "teapot"})
 
     from fastapi.testclient import TestClient
-    with TestClient(app) as c:
+    with TestClient(app, base_url="https://nas.tail1234.ts.net") as c:    # a name the API answers at (issue #8)
         r = c.get("/api/teapot")
     assert r.status_code == 418 and r.json() == {"error": "teapot"}

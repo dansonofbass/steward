@@ -27,6 +27,7 @@ def test_a_time_zone_save_moves_the_clock_and_clears_plan_caches(settings, books
         r = c.put("/api/install/settings/general", json={"timezone": "America/Chicago"})
         assert r.json()["general"]["timezone"]["running"] == "America/Chicago"
         assert str(clock.household_tz()) == "America/Chicago" and cache.results.get("k") is None
+        assert c.get("/api/auth/me").json()["timezone"] == "America/Chicago"     # issue #26: the web's today follows
 
 
 def test_the_saved_zone_and_name_apply_at_the_next_start_and_reach_me(settings, books, ddb, ours, monkeypatch):

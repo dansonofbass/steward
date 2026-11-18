@@ -6,7 +6,9 @@ gate stays open without asking."""
 import json
 from collections.abc import Callable
 
-NEEDS_SETUP = "Run steward setup on the server."
+from steward.auth.setup_link import SETUP_COMMAND
+
+NEEDS_SETUP = f"Run {SETUP_COMMAND} on the server."
 READS = frozenset({"GET", "HEAD"})
 
 

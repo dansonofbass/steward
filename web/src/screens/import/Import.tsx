@@ -429,7 +429,7 @@ export default function Import() {
         {result && resultText && (
           <>
             <UndoToast key={result.set_id} text={resultText} onUndo={() => void undoResult()} onClose={() => setResult(null)} />
-            {result.imported > 0 && typeof result.waiting === 'number' && <ImportDone key={`done-${result.set_id}`} n={result.imported} m={result.waiting} />}
+            {result.imported > 0 && typeof result.waiting === 'number' && <ImportDone key={`done-${result.set_id}`} n={result.imported} m={result.waiting} dupes={result.duplicates ?? 0} />}
             {result.statements >= 2 && result.added_up === result.statements && celebrationsChosen()
               ? <p className={`imp-joy${celebrationsOn() ? ' imp-joy--lively' : ''}`}><Check className="imp-joy__mark" aria-hidden="true" />{C.ST_JOY.replace('{n}', String(result.statements))}</p>
               : result.months >= 12 && <p className={`imp-joy${celebrationsOn() ? ' imp-joy--lively' : ''}`}>{C.JOY.replace('{n}', String(result.months))}</p>}

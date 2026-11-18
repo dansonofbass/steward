@@ -17,6 +17,9 @@ export const START = 'Start';
 export const CONTINUE = 'Continue';
 export const SKIPPED = 'Skipped';
 export const FIRST_VISIT = 'Everything you enter stays on your home server.';
+// Issue #30: Home sends an unseen, unfinished profile here once a session; this says why.
+export const OPENED_FROM_HOME = "Steward opened your profile in place of Home because it isn't finished.";
+export const GO_HOME = 'Go to Home';
 export const NEXT = 'Next';
 export const DONE = 'Done';
 export const SKIP = 'Skip';

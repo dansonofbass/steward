@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, json } from '../api/client';
-import type { Me } from '../api/types';
+import { freshMe } from '../api/hooks';
 import { bookHref } from '../book/BookContext';
 import { HOME, INVITE_HEADING, INVITE_JOINED_NO_BOOKS, INVITE_NO_TOKEN, INVITE_WORKING } from '../lib/copy';
 import { Notice } from '../ui/Notice';
@@ -32,7 +32,7 @@ export default function Invite() {
       }
       // BookScope sends an unknown book to another one, so the new book must be in the list first.
       try {
-        await qc.fetchQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/auth/me'), staleTime: 0 });
+        await freshMe(qc);
       } catch {
         // The accept worked: say so, rather than showing an error for a person who is in.
         setJoinedNote(INVITE_JOINED_NO_BOOKS.replace('{book}', joined.name));

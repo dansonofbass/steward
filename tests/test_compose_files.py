@@ -50,7 +50,8 @@ def test_the_profiles_are_tailscale_domain_lan_gateway_and_ollama():
     assert {n: s.get("profiles") for n, s in services().items()} == {
         "steward": None, "tailscale": ["tailscale"], "proxy": ["domain"], "proxy-lan": ["lan"],
         "gateway": ["gateway"], "ollama": ["ollama"], "gateway-nvidia": ["gateway-nvidia"],
-        "ollama-nvidia": ["gateway-nvidia"], "gateway-amd": ["gateway-amd"], "ollama-amd": ["gateway-amd"]}
+        "ollama-nvidia": ["gateway-nvidia"], "gateway-amd": ["gateway-amd"], "ollama-amd": ["gateway-amd"],
+        "ollama-pull": ["ollama-pull"]}   # its own profile: `up` never starts it, `docker compose run` does
 
 
 def test_nothing_is_published_beyond_this_box_unless_env_says_so():
@@ -73,6 +74,15 @@ def test_every_image_is_ours_at_this_version_or_pinned_by_digest():
             built_here = "build" in s and s["image"].endswith(":local")      # a GPU gateway, built on the person's machine
             assert (m and m[2] == VERSION) or re.search(r"@sha256:[0-9a-f]{64}$", s["image"]) or built_here, (name, svc)
     assert services()["tailscale"]["image"] == TAILSCALE
+
+
+def test_every_steward_money_image_tag_is_the_package_version():
+    """A release bumps pyproject.toml, steward.__version__ and every tag of ours in deploy/*.yml together."""
+    from steward import __version__
+    assert VERSION == __version__
+    tags = [(p.name, m[1]) for p in sorted(DEPLOY.glob("*.yml"))
+            for m in re.finditer(r"ghcr\.io/steward-money/steward(?:-proxy|-gateway)?:([^\s@\"']+)", p.read_text())]
+    assert len(tags) >= 4 and all(t == __version__ for _, t in tags), tags
 
 
 def test_the_demo_runs_the_same_release_image():
@@ -127,8 +137,8 @@ def test_the_gateway_and_ollama_publish_nothing_and_sit_on_their_own_networks():
     """Release spec 2026-11-05, section 7: a private network with Steward, a second one with egress. Claim S12."""
     c, svc = compose(), services()
     assert c["networks"] == {"gateway-private": {"internal": True}, "gateway-egress": {}}
-    for name in ("gateway", "ollama"):
-        assert "ports" not in svc[name] and svc[name]["networks"] == GATEWAY_NETS, name
+    assert "ports" not in svc["gateway"] and svc["gateway"]["networks"] == GATEWAY_NETS
+    assert "ports" not in svc["ollama"] and svc["ollama"]["networks"] == ["gateway-private"]
     assert svc["steward"]["networks"] == ["default", "gateway-private"]
     for name in ("tailscale", "proxy", "proxy-lan"):
         assert "networks" not in svc[name], name             # default only: the tailnet and the LAN never reach them
@@ -153,6 +163,47 @@ def test_ollama_is_pinned_and_keeps_its_models():
     o = services()["ollama"]
     assert o["image"] == OLLAMA and o["restart"] == "unless-stopped"
     assert o["volumes"] == ["ollama-models:/root/.ollama"] and {k: o[k] for k in LOCKED} == LOCKED
+
+
+OLLAMAS = ("ollama", "ollama-nvidia", "ollama-amd", "ollama-pull")
+# Ollama 0.40.15's envconfig reads OLLAMA_NO_CLOUD (docs/faq.mdx, "How do I disable Ollama's cloud features?"). Off,
+# a model name ending in :cloud can't send a description to Ollama's hosted models, and the server's timer stops
+# fetching model recommendations from ollama.com (server/model_recommendations.go), which it does every four hours
+# from its start otherwise. Pulling a local model isn't a cloud feature and still works.
+NO_CLOUD = {"OLLAMA_NO_CLOUD": "1"}
+# An Ollama starting up deletes blobs no model names, half-done downloads included. With every Ollama on the shared
+# volume set not to, a restart of the serving one, or a second pull, never deletes a pull's partial download.
+NO_PRUNE = {"OLLAMA_NOPRUNE": "1"}
+
+
+def test_ollama_reads_descriptions_with_no_way_out_and_its_cloud_features_off():
+    """Public issue #4: Ollama reads raw descriptions, statement pages and redacted questions. It sits only on
+    gateway-private, which is internal, so with no route out it contacts nothing, idle or categorizing. Claims P1, P9."""
+    svc = services()
+    assert compose()["networks"]["gateway-private"] == {"internal": True}
+    for name in ("ollama", "ollama-nvidia", "ollama-amd"):
+        assert list(svc[name]["networks"]) == ["gateway-private"], name
+        assert "ports" not in svc[name], name
+    for name in OLLAMAS:
+        assert {k: v for k, v in svc[name].get("environment", {}).items() if k in NO_CLOUD} == NO_CLOUD, name
+        assert {k: v for k, v in svc[name].get("environment", {}).items() if k in NO_PRUNE} == NO_PRUNE, name
+    on_egress = {n for n, s in svc.items() if "gateway-egress" in s.get("networks", [])}
+    assert on_egress == {"gateway", "gateway-nvidia", "gateway-amd", "ollama-pull"}
+
+
+def test_a_model_is_pulled_by_a_one_shot_service_on_egress_that_never_serves_the_gateway():
+    """Public issue #4: `docker compose run --rm ollama-pull <model>` starts Ollama's own server inside a one-shot
+    container on gateway-egress, listening only on its loopback, pulls into the shared volume and exits. It never joins
+    gateway-private, so nothing the gateway sends reaches a container that can reach the internet."""
+    p, o = services()["ollama-pull"], services()["ollama"]
+    assert p["image"] == o["image"] == OLLAMA and p["volumes"] == o["volumes"]
+    assert p["networks"] == ["gateway-egress"] and "ports" not in p
+    assert p["restart"] == "no" and p["profiles"] == ["ollama-pull"]
+    assert p["environment"] == {**NO_CLOUD, **NO_PRUNE, "OLLAMA_HOST": "127.0.0.1:11434"}
+    assert {k: p[k] for k in LOCKED} == LOCKED
+    script = p["entrypoint"]
+    assert script[:2] == ["/bin/sh", "-c"] and script[3] == "ollama-pull"
+    assert re.search(r"/bin/ollama serve .*&", script[2]) and script[2].rstrip().endswith('exec /bin/ollama pull "$$1"')
 
 
 def test_the_env_example_points_at_the_compose_gateway():
@@ -313,7 +364,7 @@ def test_the_gpu_ollamas_answer_as_ollama_and_wait_for_their_gateway():
     for vendor, image in (("nvidia", OLLAMA), ("amd", OLLAMA_ROCM)):
         o = services()[f"ollama-{vendor}"]
         assert o["image"] == image and "ports" not in o and "build" not in o
-        assert o["networks"] == {"gateway-private": {"aliases": ["ollama"]}, "gateway-egress": {}}
+        assert o["networks"] == {"gateway-private": {"aliases": ["ollama"]}}
         assert o["volumes"] == ["ollama-models:/root/.ollama"]
         assert o["depends_on"] == {f"gateway-{vendor}": {"condition": "service_healthy"}}   # a refused license stops both
 
@@ -348,7 +399,7 @@ def test_the_gateway_guide_gives_the_commands_compose_runs():
                  "docker compose run --rm --no-deps gateway steward-gateway check",
                  "docker compose exec gateway steward-gateway pair",
                  "docker compose exec gateway steward-gateway pdf-check",
-                 "docker compose exec ollama ollama pull qwen3.5:9b-q4_K_M",
+                 "docker compose run --rm ollama-pull qwen3.5:9b-q4_K_M",
                  "docker compose cp gateway:/etc/steward-gateway/gateway.toml gateway.toml",
                  "docker compose run --rm --no-deps gateway steward-gateway eval redaction",
                  "[S12](../CLAIMS.md#s12)", "[Speed up the gateway with a GPU](gpu.md)"):

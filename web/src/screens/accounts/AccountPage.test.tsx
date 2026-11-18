@@ -103,6 +103,16 @@ describe("one account's page", () => {
     expect(screen.getByRole('dialog', { name: 'Update Betterment' })).toBeInTheDocument();
   });
 
+  it("names the owner as the server words it, a member's name, whatever the open book's list holds (issue 31)", async () => {
+    useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 25, 12, 0));
+    const roth = acct({ id: 9, name: 'Roth IRA', type: 'roth_ira', source: 'manual', owner: 'jr', owner_label: 'Alex', institution: 'Manual', as_of: '2026-10-01', balance_cents: 100 });
+    stubFetch({ '/api/accounts/9/investment': page({ account_id: 9, institution: 'Robo Invest', manual: true, sends: null }),
+      '/api/accounts': { accounts: [...ACCTS, roth] }, '/api/transactions': { transactions: [], next_cursor: null } });
+    wrapBook(<Routes><Route path="/b/:slug/accounts/:id" element={<AccountPage />} /></Routes>, { ...ours, owners: [] }, '/b/ours/accounts/9');
+    expect(await screen.findByText('Entered by hand · Oct 1 · Alex')).toBeInTheDocument();
+  });
+
   it('a connected investment account names its bank, how fresh it is and its owner; a viewer gets no Update', async () => {
     useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 25, 12, 0));

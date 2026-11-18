@@ -209,9 +209,9 @@ export const ONE_OFFS_IN_PLAN = '{n} one-offs in the plan';
 export const ONE_OFF_IN_PLAN = '1 one-off in the plan';
 export const NO_ONE_OFFS = 'no one-offs in the plan';
 
-// What changed since the last saved plan (plan subpages). The arrow is drawn beside the words, not in them.
-export const CHANGE_UP = 'Up {span} since {date}';
-export const CHANGE_DOWN = '{span} later than on {date}';
+// What changed since the last saved plan (plan subpages). The arrow is drawn beside the words, not in them, and points the way the age moved.
+export const CHANGE_EARLIER = '{span} earlier than on {date}';
+export const CHANGE_LATER = '{span} later than on {date}';
 export const CHANGE_SAME = 'No change since {date}.';
 export const CHANGE_NOW_ABLE = 'Comfortably at {age} now, from not by 70 on {date}';
 export const CHANGE_NOT_NOW = 'Not by 70 now, from {age} on {date}';

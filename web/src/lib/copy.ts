@@ -62,6 +62,8 @@ export const OR = "or";
 export const USERNAME = "Username";
 export const PASSWORD = "Password";
 export const FORGOT = "Forgot your password?";
+export const PAUSED_SIGN_IN = "Five wrong tries pause password sign-in for 15 minutes.";
+export const PASSKEY_STILL_WORKS = "A passkey still works.";
 export const SIGN_OUT = "Sign out";
 export const HOME = "Home";
 export const REVIEW = "Review";
@@ -118,6 +120,17 @@ export const NEW_PASSWORD = "New password";
 export const CHANGE_PASSWORD = "Change password";
 export const PASSWORD_CHANGED = "Your password is changed. Sign in with it.";
 export const BACK_TO_SIGN_IN = "Back to sign in";
+// A bank whose SimpleFIN sign-in lapsed: Banks names it and gives the step, as Get Steward ready does (#16). The first
+// line is the server's Home warning (steward/services/simplefin/sync.py SIGN_IN_AGAIN) with a full stop.
+export const SIGN_IN_NEEDED = "{bank} needs you to sign in again at SimpleFIN.";
+// The bank's own line on Banks, under the notice that already says the sentence and the step.
+export const SIGN_IN_TAG = "Needs a sign-in";
+export const SIGN_IN_STEP = "Sign in again at SimpleFIN Bridge, then choose Update now.";
+export const SIGN_IN_STEP_UNLINKED = "Sign in again at SimpleFIN Bridge, then link SimpleFIN with a new setup token.";
+// The reset page with no token in its address (a cut link, a bookmark), and the server's words for a link that's gone
+// (steward/auth/reset.py LINK_GONE). Both link to Forgot your password (#19).
+export const RESET_NO_LINK = "Open this page from the link in your email.";
+export const RESET_LINK_GONE = "That link has expired or was already used.";
 export const FORGOT_LEDE = "Enter your username or email and we will send you a link to choose a new password.";
 export const RESET_LEDE = "Choose a new password. This signs you out everywhere, removes your passkeys and ends any Claude Code grants.";
 export const PASSKEYS = "Passkeys";
@@ -256,6 +269,7 @@ export const OVER_MANY = "{n} categories are over, {total} in all. {name} is fur
 export const SEE_NAME = "See {name}";
 export const SEE_ALL = "See all {n}";
 export const STRIP_LABEL = "Income minus spending for each of the last {m} months. Income was more than spending in {n} of them.";
+export const STRIP_LABEL_ONE = "Income minus spending this month.";
 export const WHAT_THIS_MEANS = "What this means";
 export const LEGEND_DONE = "Done";
 export const LEGEND_CURRENT = "This step";
@@ -470,9 +484,11 @@ export const H_BILL_MORE = "{category} came in higher than usual";
 export const H_SPENDING_ON_TRACK = "spending's on track";
 export const H_SPENDING_CLOSE = "spending's close to its targets";
 export const H_BILLS_PAID = "bills are paid";
-export const H_PLAN_STILL = "the plan still says {age}";
-export const H_PLAN = "the plan says {age}";
-export const H_STALE = "One account hasn't updated in a few days.";
+export const H_PLAN_STILL = "the plan saved {date} still says {age}";
+export const H_PLAN = "the plan saved {date} says {age}";
+export const H_STALE_ONE = "{account} hasn't updated in {days} days.";
+export const H_STALE_N = "{n} accounts haven't updated in {days} days.";
+export const H_STALE_RANGE = "{n} accounts haven't updated in {newest} to {days} days.";
 
 // Ask about this (phase 13 spec, Copy): the button reads ASK; its name says what it's about.
 export const ASK_ABOUT = 'Ask about {thing}';

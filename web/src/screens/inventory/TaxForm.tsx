@@ -14,6 +14,7 @@ import { importTaxForms, refreshInventory, saveTaxForm, uploadFile, type TaxResu
 import * as C from './copy';
 import { fill, parentName, possessive } from './format';
 import './inventory.css';
+import { thisYear as householdYear } from '../../lib/today';
 
 type Form = (typeof C.FORMS)[number];
 
@@ -23,7 +24,7 @@ export function TaxForm() {
   const canEdit = useCanEdit();
   const names = possessive(parentName(book));
   const [sp] = useSearchParams();
-  const thisYear = new Date().getFullYear();
+  const thisYear = householdYear();
   const [form, setForm] = useState<Form>('1099-INT');
   const [year, setYear] = useState(String(thisYear - 1));
   const [recipient, setRecipient] = useState(owners.find((o) => o.key !== 'joint')?.key ?? owners[0]?.key ?? '');

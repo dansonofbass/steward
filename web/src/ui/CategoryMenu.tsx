@@ -6,6 +6,7 @@ import { CATEGORY_GROUPS, findCategories, label, UNSORTED } from '../lib/categor
 import { CAT_UNSURE, CATEGORY, FIND_CATEGORY, NO_CATEGORY_MATCH, TYPE_TO_FIND, YOUR_USUAL } from '../lib/copy';
 import { composing } from '../lib/ime';
 import { menuPlace, type MenuPlace } from '../lib/menuPlace';
+import { anchoredStyle, anchorName, canAnchor, canPopover, invokerAttrs, usePopoverOpen } from '../lib/popover';
 import { useWide } from '../lib/useWide';
 import { Sheet } from './Sheet';
 import './CategoryMenu.css';
@@ -36,7 +37,12 @@ type MenuProps = {
 };
 
 /** Sorting redesign, The picker: an ARIA combobox (a search box and a listbox, aria-activedescendant). Mount it only
- *  while open. Desktop: a popover under or above the trigger, two columns of plain rows. Phone: a half sheet. */
+ *  while open. Desktop: a popover under or above the trigger, two columns of plain rows. Phone: a half sheet.
+ *
+ *  Issue #27: on a desktop it is a native popover shown from its trigger, which becomes the popover's invoker while
+ *  it is open, so the browser closes it on a press or tap outside and never on the trigger itself; CSS anchor
+ *  positioning keeps it by the trigger through resizing and zooming (CategoryMenu.css). Without anchor positioning it
+ *  is placed once from the trigger's box (lib/menuPlace.ts); without popovers its own listener closes it. */
 export function CategoryMenu({ anchor, value, title = CATEGORY, withUnsorted = false, onPick, onClose }: MenuProps) {
   const desktop = useWide(DESKTOP);
   const usual = useUsual().data?.keys ?? [];
@@ -44,11 +50,17 @@ export function CategoryMenu({ anchor, value, title = CATEGORY, withUnsorted = f
   const [active, setActive] = useState(0);
   const [place, setPlace] = useState<MenuPlace | null>(null);
   const input = useRef<HTMLInputElement>(null);
-  const pop = useRef<HTMLDivElement>(null);
+  const [pop, setPop] = useState<HTMLDivElement | null>(null);
   const moved = useRef(false);
   const closer = useRef(onClose);
   closer.current = onClose;
   const id = useId();
+  const popId = `${id}-pop`;
+  const name = anchorName(id);
+  const popover = desktop && canPopover();
+  const anchored = desktop && canAnchor();
+  const placed = desktop && (anchored || place !== null);
+  usePopoverOpen(popover ? pop : null, { after: (now) => { if (!now) closer.current(); } });
   const sections = menuSections(q, usual, withUnsorted);
   const flat = sections.flatMap((s) => s.keys.map((k) => ({ key: k, id: `${id}-${s.id}-${k}` })));
   const at = Math.min(active, Math.max(0, flat.length - 1));
@@ -63,29 +75,46 @@ export function CategoryMenu({ anchor, value, title = CATEGORY, withUnsorted = f
   }, []);
 
   useLayoutEffect(() => {
-    if (!desktop) return;
+    if (!desktop || anchored) return;
     const r = anchor?.getBoundingClientRect() ?? { left: 16, top: 16, bottom: 16 };
     setPlace(menuPlace(r, document.documentElement.clientWidth || window.innerWidth, window.innerHeight, window.scrollX, window.scrollY));
-  }, [desktop, anchor]);
+  }, [desktop, anchored, anchor]);
 
-  useEffect(() => { if (desktop && place) input.current?.focus(); }, [desktop, place]);
+  // Shown from its trigger, which is its anchor and, while it is open, its invoker.
+  useLayoutEffect(() => {
+    if (!popover || !pop) return;
+    const attrs = invokerAttrs(popId, 'show');
+    if (anchor) {
+      anchor.style.setProperty('anchor-name', name);
+      for (const [k, v] of Object.entries(attrs)) anchor.setAttribute(k, v);
+    }
+    try { (pop.showPopover as (o?: { source?: HTMLElement }) => void)({ source: anchor ?? undefined }); } catch { pop.showPopover(); }
+    return () => {
+      if (!anchor) return;
+      anchor.style.removeProperty('anchor-name');
+      for (const k of Object.keys(attrs)) anchor.removeAttribute(k);
+    };
+  }, [popover, pop, anchor, popId, name]);
+
+  // Once shown: a popover is shown in the commit after its element is known.
+  useEffect(() => { if (placed && (!popover || pop)) input.current?.focus(); }, [placed, popover, pop]);
 
   useEffect(() => {
-    if (!desktop) return;
+    if (!desktop || popover) return;
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node;
-      if (!pop.current?.contains(t) && !anchor?.contains(t)) closer.current();
+      if (!pop?.contains(t) && !anchor?.contains(t)) closer.current();
     };
     document.addEventListener('pointerdown', onDown);
     return () => document.removeEventListener('pointerdown', onDown);
-  }, [desktop, anchor]);
+  }, [desktop, popover, pop, anchor]);
 
   // Only after the user moves the active row, and only once a desktop popover is placed: scrolling an unplaced
   // (hidden, end-of-body) popover would scroll the page and leave the popover off screen.
   useLayoutEffect(() => {
-    if (!moved.current || !(desktop ? place : true)) return;
+    if (!moved.current || !(desktop ? placed : true)) return;
     if (activeId) document.getElementById(activeId)?.scrollIntoView?.({ block: 'nearest' });
-  }, [activeId, desktop, place]);
+  }, [activeId, desktop, placed]);
 
   const leave = () => { anchor?.focus(); onClose(); };
   const pick = (k: string) => { anchor?.focus(); onPick(k); };
@@ -135,9 +164,11 @@ export function CategoryMenu({ anchor, value, title = CATEGORY, withUnsorted = f
   if (!desktop) {
     return <Sheet open onClose={onClose} title={title} focusRef={input} className="catmenu-sheet">{body}</Sheet>;
   }
+  const style = anchored ? anchoredStyle(name)
+    : place ? { left: place.left, top: place.top, width: place.width, height: place.height } : { visibility: 'hidden' as const };
   return createPortal(
-    <div ref={pop} className="catmenu-pop" role="dialog" aria-label={title}
-      style={place ? { left: place.left, top: place.top, width: place.width, height: place.height } : { visibility: 'hidden' }}>
+    <div ref={setPop} id={popId} className="catmenu-pop" role="dialog" aria-label={title} style={style}
+      {...(popover ? { popover: 'auto' as const } : {})}>
       {body}
     </div>,
     document.body,

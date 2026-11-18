@@ -13,6 +13,8 @@
 .chat__sent-row { width: 100%; justify-content: flex-start; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .chat__sent-row:hover { background: var(--surface-2); }
 .chat__parts { display: flex; flex-direction: column; gap: var(--s-3); padding: 0 var(--s-4) var(--s-4); }
+.log__fixed summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; color: var(--accent-text); }
+.log__fixed[open] summary { margin-bottom: var(--s-2); }
 .chat__json { margin: 0; padding: var(--s-3); border-radius: var(--r-m); background: var(--surface-2); font-size: var(--fs-1); overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
 
 /* Sent to Anthropic (plan B). */
@@ -44,7 +46,7 @@
 .chat .stack--tight { gap: var(--s-1); }
 .chat-set-rows { padding: 0; overflow: hidden; }
 /* Rows of a settings card: the name and its line take the room, the switch or button keeps to the right. */
-.chat-set-row > .stack { flex: 1 1 12rem; min-width: 0; }
+.chat-set-row > .stack { flex: 1 1 11.25rem; min-width: 0; }
 .chat-set-rows > * + * { border-top: 1px solid var(--line); }
 .chat__sentlink:hover { background: var(--surface-2); }
 .chat-cc { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3) var(--s-4); }
@@ -63,7 +65,7 @@
 .meter--warn span { background: var(--warn); }
 .meter--full span { background: var(--danger); }
 .chat__budget { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s-3); }
-.chat__budget input { max-width: 10rem; }
+.chat__budget input { max-width: 9.375rem; }
 .split-table { width: 100%; border-collapse: collapse; font-size: var(--fs-2); }
 .split-table th { text-align: left; font-weight: 600; color: var(--ink-muted); font-size: var(--fs-1); }
 .split-table td, .split-table th { padding: var(--s-1) 0; border-bottom: 1px solid var(--line); }

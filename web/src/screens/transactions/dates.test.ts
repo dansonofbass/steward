@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { forgetHouseholdZone, setHouseholdZone } from '../../lib/today';
 import { parseMode, rangeFor, ymd } from './dates';
 
 const d = (y: number, m: number, day: number) => new Date(y, m - 1, day, 23, 30);
@@ -18,6 +19,15 @@ describe('rangeFor', () => {
   it('this month starts on the first, even on the first', () => {
     expect(rangeFor('month', d(2026, 10, 13))).toEqual({ from: '2026-10-01', to: '2026-10-13' });
     expect(rangeFor('month', d(2026, 11, 1))).toEqual({ from: '2026-11-01', to: '2026-11-01' });
+  });
+  it("counts the household's days, not the device's (issue #26)", () => {
+    setHouseholdZone('Pacific/Kiritimati');   // UTC+14: noon UTC on Oct 31 is Nov 1 at home
+    try {
+      expect(rangeFor('month', new Date('2026-10-31T12:00:00Z'))).toEqual({ from: '2026-11-01', to: '2026-11-01' });
+      expect(rangeFor('7', new Date('2026-10-31T12:00:00Z'))).toEqual({ from: '2026-10-26', to: '2026-11-01' });
+    } finally {
+      forgetHouseholdZone();
+    }
   });
   it('all time clears both', () => {
     expect(rangeFor('all', d(2026, 10, 13))).toEqual({});

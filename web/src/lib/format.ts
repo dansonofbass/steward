@@ -1,3 +1,5 @@
+import { dayOf, daysBetween } from './today';
+
 const MINUS = '−';
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const compactUsd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 2 });
@@ -29,27 +31,25 @@ const shortMonthYear = new Intl.DateTimeFormat('en-US', { month: 'short', year: 
 const longMonthYear = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
 const groupedWhole = new Intl.NumberFormat('en-US');
 
-const dayMs = 86_400_000;
 function localDate(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
-function startOfDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
+/** The household's day (YYYY-MM-DD) for a today given as an instant or already as a day (issue #26, lib/today.ts). */
+const homeDay = (today: Date | string): string => (typeof today === 'string' ? today : dayOf(today));
 
-export function relativeDays(iso: string | null | undefined, today: Date): string {
+export function relativeDays(iso: string | null | undefined, today: Date | string): string {
   if (!iso) return 'Not yet';
-  const n = Math.round((startOfDay(today).getTime() - localDate(iso).getTime()) / dayMs);
+  const n = daysBetween(iso, homeDay(today));
   if (n <= 0) return 'Today';
   if (n === 1) return 'Yesterday';
   return `${n} days ago`;
 }
 
-export function dateLabel(iso: string, today: Date): string {
-  const d = localDate(iso);
-  const sameYear = d.getFullYear() === today.getFullYear();
-  return (sameYear ? shortDay : shortDayYear).format(d);
+export function dateLabel(iso: string, today: Date | string): string {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(iso)) return '';   // a day that can't be read (localYmd of a bad timestamp)
+  const sameYear = iso.slice(0, 4) === homeDay(today).slice(0, 4);
+  return (sameYear ? shortDay : shortDayYear).format(localDate(iso));
 }
 
 /** "Jun 2027", from a year and a 1-based month. */
@@ -61,14 +61,13 @@ export function monthLabel(iso: string): string {
   return longMonthYear.format(localDate(iso));
 }
 
-/** The viewer's local calendar day (YYYY-MM-DD) for a full timestamp, so a UTC time late or early in the day lands on the right date. */
+/** The household's calendar day (YYYY-MM-DD) for a full timestamp, so a UTC time late or early in the day lands on the
+ *  household's date, wherever the device is (issue #26). */
 export function localYmd(iso: string): string {
-  const d = new Date(iso);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return dayOf(iso);
 }
 
-export function dateLabelFromIso(iso: string, today: Date): string {
+export function dateLabelFromIso(iso: string, today: Date | string): string {
   return dateLabel(localYmd(iso), today);
 }
 

@@ -1,6 +1,7 @@
 """The sandbox child's seccomp filter (spec P8). Installed by the child after its rlimits, its parent-death signal, its
-deadline and the Landlock wall, and before it reads stdin or imports a PDF library: `prctl(PR_SET_NO_NEW_PRIVS)`, the
-wall (landlock.restrict), then a hand-built classic-BPF program through `seccomp(2)` with TSYNC. The filter goes on
+deadline, its import of the PDF libraries (no input read yet) and the Landlock wall, and before it reads stdin:
+`prctl(PR_SET_NO_NEW_PRIVS)`, the wall (landlock.restrict), then a hand-built classic-BPF program through `seccomp(2)`
+with TSYNC. The filter goes on
 last, so it can refuse landlock_* and seccomp themselves. Linux on x86_64 only (the NAS builds `linux/amd64`;
 deploy.sh): anywhere else, or if the kernel refuses, install raises Unconfined and the child refuses the PDF.
 

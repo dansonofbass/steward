@@ -227,7 +227,8 @@ LOG_METHODS = {"debug", "info", "warning", "warn", "error", "exception", "critic
 NAME_FIELDS = {"slug", "name", "msg", "origin", "pattern", "email", "username", "display_name", "description",
                "raw_description", "note", "body", "payee", "memo", "title", "label", "access_url", "base_url", "args"}
 EXCEPTIONS = {"e", "ex", "exc", "err", "error"}
-SCRUBBERS = {"outside_text", "log_safe"}                    # what they return is fit for a log
+SCRUBBERS = {"outside_text", "log_safe",                     # what they return is fit for a log
+             "directive_of", "blocked_of"}                  # api/csp_report.py: a directive's name; a keyword or origin
 # (file, enclosing function, what the scan found): each is a name Steward itself chose, never one a person typed.
 ALLOWED = {
     ("src/steward/books/bootstrap.py", "ensure_directory", "backup.name"),   # a file name Steward makes from the time

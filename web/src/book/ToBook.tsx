@@ -11,6 +11,6 @@ export function ToBook() {
   const loc = useLocation();
   if (me.isPending) return <div className="screen" aria-busy="true" />;
   const book = pickBook(me.data?.books ?? [], readLastBook());
-  if (!book) return <div className="screen"><EmptyState title={NO_BOOKS} body={NO_BOOKS_BODY} /></div>;
+  if (!book) return <div className="screen"><EmptyState page title={NO_BOOKS} body={NO_BOOKS_BODY} /></div>;
   return <Navigate to={`${bookHref(book.slug, loc.pathname)}${loc.search}`} replace />;
 }

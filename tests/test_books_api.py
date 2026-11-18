@@ -26,7 +26,7 @@ def test_me_lists_my_books_with_role_kind_owners_and_household_profile_marks(wor
     assert [(b["slug"], b["kind"], b["role"], b["available"]) for b in books] == [
         ("ours", "household", "manager", True), ("mom", "parent", "manager", True)]
     assert books[0]["owners"][:2] == [{"key": "jr", "label": "Jr"}, {"key": "spouse", "label": "Sam"}]
-    assert books[0]["profile"] == {"seen": False, "confirmed": False, "later_until": None}
+    assert books[0]["profile"] == {"seen": False, "confirmed": False, "later_until": None, "finished": False}
     assert books[1]["profile"] is None and books[1]["owners"][0] == {"key": "margaret", "label": "Margaret"}
     login(client, "vee")
     assert [b["slug"] for b in client.get("/api/books").json()["books"]] == ["mom"]

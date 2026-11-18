@@ -12,7 +12,7 @@ import { ToBook } from './book/ToBook';
 import { ToProfile } from './book/ToProfile';
 import AccountPage from './screens/accounts/AccountPage';
 import Accounts from './screens/accounts/Accounts';
-import Home from './screens/Home';
+import Home, { preloadHomeParts } from './screens/Home';
 import Login from './screens/Login';
 import { settingsTitle } from './screens/settings/sections';
 import { T } from './lib/routeTitles';
@@ -77,7 +77,7 @@ const spendingMonth = (month: string | null) =>
   want(['spending', month ?? 'now'], month ? `/api/spending?month=${encodeURIComponent(month)}` : '/api/spending');
 const BOOK_WARM: Warm = { wants: () => [want(['review'], '/api/review', { staleTime: 60_000 })] };
 const GROWTH = want(['growth'], GROWTH_PATH, GROWTH_OPTIONS);
-const HOME_WARM: Warm = { run: (at) => warmHome(at.key), wants: () => [ACCOUNTS, GROWTH] };
+const HOME_WARM: Warm = { code: () => preloadHomeParts(), run: (at) => warmHome(at.key), wants: () => [ACCOUNTS, GROWTH] };
 const SPENDING_WARM: Warm = { code: () => Spending.preload(), wants: (_p, q) => [spendingMonth(q.get('month')), ACCOUNTS] };
 const REVIEW_WARM: Warm = { code: () => Review.preload(), wants: () => [want(['usual'], '/api/categorize/usual', { staleTime: 300_000 })] };
 const PLAN_WARM: Warm = {

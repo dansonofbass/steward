@@ -26,6 +26,10 @@ describe('ignoreKey (review focus, Keyboard)', () => {
     expect(ignoreKey(key(document.body), { busy: false, menuOpen: true })).toBe(true);
     expect(ignoreKey(key(document.body), { busy: true, menuOpen: false })).toBe(true);
   });
+  it('lets keys through while a dialog that is a closed popover waits in the page, as the You menu does (issue #27)', () => {
+    document.body.innerHTML = '<div role="dialog" popover="auto" aria-label="You"></div><p>x</p>';
+    expect(ignoreKey(key(document.querySelector('p')), idle)).toBe(false);
+  });
   it('ignores modifiers, a held key and a key already handled', () => {
     for (const init of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }, { repeat: true }, { defaultPrevented: true }]) {
       expect(ignoreKey(key(document.body, init), idle)).toBe(true);

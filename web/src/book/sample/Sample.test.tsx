@@ -1,8 +1,9 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { api } from '../../api/client';
 import type { BookSummary, Me } from '../../api/types';
 import { makeQueryClient } from '../../queryClient';
 import { callsTo, reply, stubFetch } from '../../test-utils';
@@ -62,6 +63,37 @@ describe('the Sample Undo toast', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     await waitFor(() => expect(callsTo(fetchMock, 'POST', '/api/books/sample/restore')).toHaveLength(1));
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/b/sample'));
+  });
+
+  // The flaky e2e "Remove, Undo, Remove" (phone): Remove refetches /me, and that request, asked before the restore, could
+  // still be on its way when Undo asked for a fresh one. The fresh one joined it, so the book list came back without
+  // the Sample, and BookScope sent /b/sample back to /b/ours. Undo now drops a /me already on its way and asks anew.
+  it('opens the restored Sample even while a /me asked before the restore is still on its way', async () => {
+    let stale: (r: Response) => void = () => {};
+    let asked = 0;
+    const fetchMock = stubFetch({
+      'POST /api/books/sample/restore': { book: sample },
+      '/api/auth/me': () => (++asked === 1 ? new Promise<Response>((r) => { stale = r; }) : reply(meWith([ours, sample]))),
+    });
+    const qc = makeQueryClient();
+    qc.setQueryData(['me'], meWith([ours]));
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={['/b/ours']}><SampleUndo /><Routes><Route path="*" element={<Where />} /></Routes></MemoryRouter>
+      </QueryClientProvider>,
+    );
+    let removeAsk: Promise<Me> | undefined;                     // Remove's refetch, on its way
+    void qc.fetchQuery({ queryKey: ['me'], queryFn: () => (removeAsk = api<Me>('/api/auth/me')), staleTime: 0 }).catch(() => {});
+    await waitFor(() => expect(asked).toBe(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(callsTo(fetchMock, 'POST', '/api/books/sample/restore')).toHaveLength(1));
+    await waitFor(() => expect(asked).toBe(2));               // asked anew, after the restore
+    await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/b/sample'));
+    // The old answer lands late, and changes nothing. Wait for Remove's own query function to finish with it: React
+    // Query's handler on that promise was attached first, so any cache write it makes has happened by then.
+    stale(reply(meWith([ours])));
+    await act(async () => { await removeAsk?.catch(() => {}); });
+    expect(qc.getQueryData<Me>(['me'])?.books.map((b) => b.slug)).toEqual(['ours', 'sample']);
   });
 
   it('an Undo the server refuses says its words', async () => {

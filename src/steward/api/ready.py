@@ -19,7 +19,7 @@ from steward.services.plan_inputs import setup_items
 from steward.services.profile import FINISHED, missing, section_states
 from steward.services.review import waiting_filter
 from steward.services.scheduled_backup import read_last
-from steward.services.simplefin.sync import SYNC_FAILED
+from steward.services.simplefin.sync import SYNC_FAILED, needs_sign_in
 
 router = APIRouter(prefix="/ready", dependencies=[Depends(open_book), Depends(install_household), Depends(managers_only)])
 
@@ -67,7 +67,7 @@ def ready(request: Request, origin: str | None = None, db: Session = Depends(boo
                            len(required), next((s.key for s in states if s.status not in FINISHED), None)),
         rows.money_row(money_in=missing(db)["banks"] == [], linked=link is not None,
                        last_sync=link.last_sync_at if link else None, sync_failed=failed, accounts=accounts,
-                       last_import=last_import, waiting=waiting, today=day),
+                       last_import=last_import, waiting=waiting, today=day, sign_in=needs_sign_in(db)),
         rows.ask_row(url=url, paired=paired, reachable=reachable, state=state, chat_on=chat,
                      accelerator=(health or {}).get("accelerator")),
         rows.email_row(eff=eff, configured=store.email() is not None, last=store.last_mail(),

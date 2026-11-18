@@ -1,11 +1,12 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from steward import gateway_name
+from steward import clock, gateway_name
 from steward.api.body import bad, json_object, text
-from steward.auth import reset, sessions, users
+from steward.auth import cookies, devices, reset, sessions, users
 from steward.auth.passwords import verify_password
 from steward.auth.ratelimit import FORGOT, limit, try_again
 from steward.db.directory_models import Membership, Session as DbSession, User
@@ -33,34 +34,54 @@ def _prefs(u: User) -> dict:
     return {"celebrations": u.celebrations, "sound": u.sound}
 
 
-def _set_cookie(resp: Response, token: str, days: int) -> None:
-    resp.set_cookie(sessions.COOKIE, token, max_age=days * 86400, httponly=True,
-                    secure=True, samesite="lax", path="/")
+WRONG = "That username or password isn't right."
+
+
+def _wrong(request: Request, device: devices.Device) -> JSONResponse:
+    r = JSONResponse({"error": WRONG}, status_code=401)
+    devices.give_cookie(request, r, device)
+    return r
 
 
 @router.post("/login")
 def login(body: LoginIn, request: Request, response: Response, db: Session = Depends(directory_db)):
+    """Issue #7: wrong passwords count per device and account (auth/devices.py), and a device the account doesn't
+    know yet counts against its address too. A wrong password, a name nobody has, this device's lock and the
+    account's lock all answer the same 401 after one password hash, so none shows that a username exists."""
     t = now()
+    lockouts = request.app.state.device_lockouts
+    found = users.find_user(db, body.username)
+    device = devices.identify(request, found)
+    account = devices.account_key(found, body.username)
+    if lockouts.locked(device, account, t):
+        verify_password(users._DUMMY_HASH, body.password)   # one hash, as a wrong password takes
+        return _wrong(request, device)
     try:
-        u = users.check_login(db, body.username, body.password, t)
-    except users.Locked as e:
-        verify_password(users._DUMMY_HASH, body.password)  # keep timing close to a bad password
-        raise HTTPException(423, detail={"error": try_again(e.until, t), "locked_until": e.until.isoformat()})
+        u = users.check_login(db, body.username, body.password, t, backstop=not device.known)
+    except users.Locked:
+        # Charged like a wrong password: an uncharged try here, against a charged one at a name nobody has, would
+        # show by the address's lock whether the name exists.
+        verify_password(users._DUMMY_HASH, body.password)
+        lockouts.failed(device, account, t)
+        return _wrong(request, device)
     except users.BadCredentials:
-        raise HTTPException(401, detail={"error": "That username or password isn't right."})
+        lockouts.failed(device, account, t)
+        return _wrong(request, device)
+    lockouts.cleared(device, account)
     label = body.device_label or request.headers.get("user-agent", "")[:120]
     token, _ = sessions.create_session(db, u, label, t, request.app.state.settings.session_days)
-    _set_cookie(response, token, request.app.state.settings.session_days)
+    cookies.set_session(request, response, token, request.app.state.settings.session_days * 86400)
+    devices.signed_in(request, response, u, device)
     return {"user": _user_out(u)}
 
 
 @router.post("/logout", status_code=204)
 def logout(request: Request, db: Session = Depends(directory_db)):
-    token = request.cookies.get(sessions.COOKIE)
+    token, _ = cookies.read_session(request)
     if token:
         sessions.revoke_token(db, token, now())
     resp = Response(status_code=204)
-    resp.delete_cookie(sessions.COOKIE, path="/")
+    cookies.clear_session(request, resp)
     return resp
 
 
@@ -71,7 +92,8 @@ def me(request: Request, found=Depends(current_session), db: Session = Depends(d
     return {"user": {**_user_out(u), "email": u.email, "prefs": _prefs(u)},
             "session": {"id": s.id, "device_label": s.device_label, "created_at": s.created_at.isoformat()},
             "books": books_for(request, db, u.id),
-            "gateway_name": gateway_name.current()}   # spec 2026-11-05, section 7
+            "gateway_name": gateway_name.current(),   # spec 2026-11-05, section 7
+            "timezone": clock.household_tz().key}      # issue #26: the web's today is the household's
 
 
 NAME = "Enter a name of up to 80 characters."
@@ -109,20 +131,41 @@ def list_sessions(u: User = Depends(current_user), db: Session = Depends(directo
 
 
 @router.delete("/sessions/{sid}", status_code=204)
-def revoke_session(sid: int, u: User = Depends(current_user), db: Session = Depends(directory_db)):
+def revoke_session(sid: int, request: Request, found=Depends(current_session), db: Session = Depends(directory_db)):
+    u, this_session = found
     if not sessions.revoke(db, sid, u.id, now()):
         raise HTTPException(404, detail={"error": "That device isn't signed in."})
-    return Response(status_code=204)
+    resp = Response(status_code=204)
+    if sid == this_session.id:
+        # This device signed itself out: no queued move of a 0.1.0 cookie hands the revoked token back.
+        cookies.cancel_move(request)
+        cookies.clear_session(request, resp)
+    return resp
 
 
-def require_current_password(db: Session, me: User, password: str, t) -> None:
-    """Re-check the signed-in person's own password before a sensitive change; failures count toward the lock."""
+def _locked(until, t) -> HTTPException:
+    return HTTPException(423, detail={"error": try_again(until, t), "locked_until": until.isoformat()})
+
+
+def require_current_password(request: Request, db: Session, me: User, password: str, t) -> None:
+    """Re-check the signed-in person's own password before a sensitive change. Failures count as they do at sign-in,
+    toward this device's lock and, for a device the account doesn't know, its address's and the account's. A session
+    doesn't make its device known (only a sign-in does), so a copied session that takes new device ids is held like
+    any stranger. The person is signed in, so a lock may say so (423)."""
+    lockouts = request.app.state.device_lockouts
+    device = devices.identify(request, me)
+    account = devices.account_key(me, me.username)
+    until = lockouts.locked(device, account, t)
+    if until:
+        raise _locked(until, t)
     try:
-        users.check_password(db, me, password, t)
+        users.check_password(db, me, password, t, backstop=not device.known)
     except users.Locked as e:
-        raise HTTPException(423, detail={"error": try_again(e.until, t), "locked_until": e.until.isoformat()})
+        raise _locked(e.until, t)
     except users.BadCredentials:
+        lockouts.failed(device, account, t)
         raise HTTPException(403, detail={"error": "That isn't your current password."})
+    lockouts.cleared(device, account)
 
 
 class ChangePasswordIn(BaseModel):
@@ -131,17 +174,20 @@ class ChangePasswordIn(BaseModel):
 
 
 @router.post("/password", status_code=204)
-def change_password(body: ChangePasswordIn, found=Depends(current_session), db: Session = Depends(directory_db)):
+def change_password(body: ChangePasswordIn, request: Request, found=Depends(current_session),
+                    db: Session = Depends(directory_db)):
     me, this_session = found
     t = now()
-    require_current_password(db, me, body.current_password, t)
+    require_current_password(request, db, me, body.current_password, t)
     try:
         users.set_password(db, me, body.new_password)
     except users.WeakPassword as e:
         raise HTTPException(400, detail={"error": str(e)})
     reset.close_open_resets(db, me.id, t)
     sessions.revoke_all_for_user(db, me.id, t, keep=this_session.id)  # commits
-    return Response(status_code=204)
+    resp = Response(status_code=204)
+    devices.signed_in(request, resp, me)    # issue #7: the note for the old password is void; this device proved the new one
+    return resp
 
 
 class ForgotIn(BaseModel):
@@ -172,13 +218,16 @@ def forgot(body: ForgotIn, request: Request, background: BackgroundTasks, db: Se
 
 
 @router.post("/reset")
-def do_reset(body: ResetIn, db: Session = Depends(directory_db)):
+def do_reset(body: ResetIn, request: Request, response: Response, db: Session = Depends(directory_db)):
     try:
         u = reset.consume(db, body.token, body.password, now())
     except reset.BadToken:
-        raise HTTPException(400, detail={"error": "That link has expired or was already used."})
+        raise HTTPException(400, detail={"error": reset.LINK_GONE, "gone": True})   # the page drops its form (#19)
     except users.WeakPassword as e:
         raise HTTPException(400, detail={"error": str(e)})
+    # Issue #7: the new password voids every device's note. This device chose it, from the emailed link, so it gets a
+    # note for it, as a password change does, and isn't held by its address's count when it signs in next.
+    devices.signed_in(request, response, u)
     return {"user": _user_out(u)}
 
 
@@ -218,10 +267,11 @@ def list_users(me: User = Depends(current_user), db: Session = Depends(directory
 
 
 @users_router.post("/{uid}/reset-password", status_code=204)
-def reset_other(uid: int, body: ResetOtherIn, me: User = Depends(current_user), db: Session = Depends(directory_db)):
+def reset_other(uid: int, body: ResetOtherIn, request: Request, me: User = Depends(current_user),
+                db: Session = Depends(directory_db)):
     if uid == me.id:
         raise HTTPException(403, detail={"error": "Change your own password from Settings instead."})
-    require_current_password(db, me, body.current_password, now())
+    require_current_password(request, db, me, body.current_password, now())
     target = db.scalar(select(User).where(User.id == uid, User.id.in_(_shared_ids(db, me.id))))
     if target is None:
         raise HTTPException(404, detail={"error": "No such person."})

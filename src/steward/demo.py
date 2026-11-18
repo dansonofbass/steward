@@ -58,16 +58,29 @@ DEMO_LOGINS = (("alex", "alex@example.com", "Alex", "pw-demo-alex-2026"),
 RETIRED_DEMO_LOGINS = (("jr", "pw-demo-jr-2026"),)
 
 
-def seed_people(ddb: Session, book_id: int) -> None:
-    """The demo household's two people, managers of the book. Safe to run twice."""
+def seed_people(ddb: Session, book_id: int) -> list[int]:
+    """The demo household's two people, managers of the book; their ids, first member first. Safe to run twice."""
     from steward.auth.users import create_user, find_user
     from steward.books.service import add_membership
     from steward.db.directory_models import Membership
+    ids = []
     for username, email, name, pw in DEMO_LOGINS:
         u = find_user(ddb, username) or create_user(ddb, username, email, name, pw)
         if ddb.get(Membership, (u.id, book_id)) is None:
             add_membership(ddb, u.id, book_id, "manager", by=None, note="demo", welcomed=True)
+        ids.append(u.id)
     ddb.commit()
+    return ids
+
+
+def mark_profiles_seen(db: Session, user_ids: list[int], end: date | None = None) -> None:
+    """The demo's profile is complete, so its people have seen it: they land on Home, which the demo quick start shows,
+    not on Profile's first visit (issue #30)."""
+    from steward.services.profile import mark
+    at = datetime.combine(end or DEMO_END, time(19), timezone.utc)
+    for uid in user_ids:
+        mark(db, uid, at, seen=True)
+    db.commit()
 
 
 # Fixed, not today(): a given seed always yields the same data. The Sample book passes today (guided setup spec 8.2).

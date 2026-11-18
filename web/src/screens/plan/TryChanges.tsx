@@ -13,6 +13,7 @@ import { SaveBar } from './SaveBar';
 import { TryBar } from './TryBar';
 import { usePlanDraft } from './usePlanDraft';
 import { usePlanSave } from './usePlanSave';
+import { thisYear } from '../../lib/today';
 
 /** Try changes (plan subpages decision 3): today's "What would change it" as a simulator. The levers keep their
  *  behaviour (assumed versus try, pinned suggestions, impacts ranked once then frozen, the 150 ms debounce). The
@@ -22,7 +23,7 @@ export function TryChanges({ data }: { data: PlanReady }) {
   const qc = useQueryClient();
   const facts = useFacts();
   const kids = useChildren();
-  const planYear = data.result.band[0]?.year ?? new Date().getFullYear();
+  const planYear = data.result.band[0]?.year ?? thisYear();
   const people = peopleFrom(data.names, facts.data?.facts, planYear, data.result.band[0]?.jr_age ?? 40);
   const ctx: RowCtx = { ...people, childLabels: (kids.data?.children ?? []).map((c) => c.label), college: data.inputs.college };
   const live = usePlanDraft(data);

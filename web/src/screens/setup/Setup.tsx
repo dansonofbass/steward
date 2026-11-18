@@ -77,7 +77,7 @@ export default function Setup() {
   }
 
   if (stage === 'checking') return <AuthPanel heading={C.HEADING} lede={C.LEDE}><div aria-busy="true" /></AuthPanel>;
-  if (stage === 'gone') return <AuthPanel heading={C.HEADING} lede={C.LEDE}><Notice tone="error">{gone}</Notice></AuthPanel>;
+  if (stage === 'gone') return <AuthPanel heading={C.HEADING} lede={C.LEDE}><Notice tone="error"><WithCommand text={gone} /></Notice></AuthPanel>;
   if (stage === 'passkey') {
     return (
       <AuthPanel heading={C.PASSKEY_HEADING} lede={C.PASSKEY_LEDE}>
@@ -107,4 +107,11 @@ export default function Setup() {
       </form>
     </AuthPanel>
   );
+}
+
+/** The words with the setup command, wherever it appears, set as code. */
+function WithCommand({ text }: { text: string }) {
+  const [before, ...rest] = text.split(C.SETUP_COMMAND);
+  if (!rest.length) return <>{text}</>;
+  return <>{before}<code>{C.SETUP_COMMAND}</code>{rest.join(C.SETUP_COMMAND)}</>;
 }

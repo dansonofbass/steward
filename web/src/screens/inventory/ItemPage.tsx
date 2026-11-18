@@ -3,6 +3,7 @@ import { ArchiveRestore, ChevronLeft, ChevronRight, CircleCheck, CircleDashed, D
 import { Fragment, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBook, useCanEdit } from '../../book/BookContext';
+import { useItemTitle } from '../../frame/itemTitle';
 import { Link } from '../../book/links';
 import { dateLabel, localYmd, money } from '../../lib/format';
 import { TRY_AGAIN } from '../../lib/copy';
@@ -94,6 +95,7 @@ export function ItemPage() {
 
 function ItemBody({ itemId }: { itemId: number }) {
   const q = useItem(itemId);
+  useItemTitle(q.data?.name);
   const canEdit = useCanEdit();
   const slug = useBook()?.slug ?? 'ours';
   const qc = useQueryClient();

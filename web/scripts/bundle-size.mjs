@@ -35,6 +35,17 @@ for (const tag of html.match(/<link\b[^>]*>/gi) ?? []) {
   else if (relAttr.includes('stylesheet') && path.endsWith('.css')) css.add(rel(href));
 }
 if (js.size === 0) { console.error('Bundle check: no entry script found in dist/index.html'); process.exit(1); }
+// Issue #25: index.html preloads the two faces above the fold (scripts/preload-fonts.ts), and only those, each a file
+// the build wrote.
+const fontPreloads = (html.match(/<link\b[^>]*>/gi) ?? []).filter((t) => (attr(t, 'rel') ?? '').toLowerCase() === 'preload' && attr(t, 'as') === 'font');
+const preloaded = fontPreloads.map((t) => rel(attr(t, 'href') ?? ''));
+const wanted = [/^assets\/newsreader-latin-wght-normal-/, /^assets\/source-sans-3-latin-400-normal-/];
+if (preloaded.length !== 2 || !wanted.every((re) => preloaded.some((p) => re.test(p))) || fontPreloads.some((t) => !/\scrossorigin[\s=>]/i.test(t))) {
+  console.error(`Bundle check: index.html should preload Newsreader's latin face and Source Sans 3's latin 400, with crossorigin; it preloads ${JSON.stringify(preloaded)}`);
+  process.exit(1);
+}
+for (const p of preloaded) readFileSync(join(dist, p));
+console.log(`font preloads: ${preloaded.join(', ')}`);
 
 let total = 0;
 for (const f of [...js, ...css]) total += gzipSync(readFileSync(join(dist, f))).length;

@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 from steward.app import create_app
-from steward.auth.sessions import COOKIE
+from steward.auth.cookies import HOST_SESSION as COOKIE
 from steward.books import bootstrap
 from steward.books.registry import BookRegistry, DirectoryUnavailable
 from steward.db.engine import make_engine

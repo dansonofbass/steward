@@ -201,6 +201,22 @@ def test_prewarm_sends_the_prefix_once_per_five_minutes(gw_cfg, fake):
     assert body["max_tokens"] == 0 and "stream" not in body and body["messages"] == [{"role": "user", "content": "warmup"}]
 
 
+def test_the_fixed_instructions_come_whole_with_the_hash_the_log_records(gw_cfg, fake):
+    """Public issue #3: the text behind a Getting ready row's prefix_sha256. It is the same for every install of a
+    version: the system prompt and the tool definitions, no book, person or date, and no call to Anthropic."""
+    from steward_boundary.canonical import sha256_hex
+    from steward_gateway.prompt import PREFIX_ID, SYSTEM_PROMPT, prefix
+    with client_for(gw_cfg, fake) as c:
+        r = c.get("/v1/instructions", headers=AUTH)
+        assert c.get("/v1/instructions").status_code == 401
+    body = r.json()
+    assert r.status_code == 200 and set(body) == {"prefix", "prefix_sha256", "content"}
+    assert body["prefix"] == PREFIX_ID and body["content"] == prefix()
+    assert body["prefix_sha256"] == sha256_hex(body["content"]) == prewarm_payload()["prefix_sha256"]
+    assert body["content"]["system"][0]["text"] == SYSTEM_PROMPT
+    assert fake.requests == []
+
+
 def test_pair_needs_no_token_but_an_armed_code(gw_cfg, fake):
     with client_for(gw_cfg, fake, paired=False) as c:
         assert c.post("/v1/pair", json={"code": "ABCD-EFGH-JKMN-PQRS"}).status_code == 404

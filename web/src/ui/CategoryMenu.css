@@ -9,12 +9,28 @@
 .catmenu__trigger:disabled { cursor: default; opacity: 0.6; }
 .catmenu__trigger svg { flex: none; color: var(--ink-muted); }
 
-/* Desktop: placed once in page coordinates, so it scrolls with the page (lib/menuPlace.ts); a fixed height, so it
-   doesn't jump while you type. */
+/* Desktop: a fixed height, so it doesn't jump while you type. A popover in the top layer (issue #27); where anchor
+   positioning is missing, placed once in page coordinates, so it scrolls with the page (lib/menuPlace.ts). */
 .catmenu-pop {
-  position: absolute; z-index: 60; display: flex; flex-direction: column; overflow: hidden;
+  position: absolute; z-index: 60; flex-direction: column; overflow: hidden; padding: 0;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-m);
   box-shadow: var(--shadow-raised);
+}
+/* A display only while shown: on a closed popover it would beat the browser's display: none. :is() forgives a browser
+   that doesn't know :popover-open, which would otherwise drop the rule. */
+.catmenu-pop:is(:not([popover]), :popover-open) { display: flex; }
+.catmenu-pop[popover] { inset: auto; margin: 0; }
+/* Anchored to its trigger: about 320 x 380 under it, else above it, else as tall as fits (at least 160 px), the browser
+   moving it as the window is resized or zoomed (lib/menuPlace.ts kept the same rules by script). Fixed, so the
+   window is what it must fit. */
+@supports (anchor-name: --a) {
+  .catmenu-pop[popover] {
+    position: fixed; margin: 4px 0; width: min(320px, 100vw - 32px); height: 380px;
+    position-area: block-end span-inline-end;
+    position-try-fallbacks: flip-inline, flip-block, flip-block flip-inline, --catmenu-fit-below, --catmenu-fit-above;
+  }
+  @position-try --catmenu-fit-below { position-area: block-end span-inline-end; height: max(160px, calc(100% - 20px)); }
+  @position-try --catmenu-fit-above { position-area: block-start span-inline-end; height: max(160px, calc(100% - 20px)); }
 }
 .catmenu { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .catmenu__search {

@@ -111,6 +111,20 @@ def test_demo_household_is_ready_for_the_plan(db, ddb, ours):
     assert pi.names["spouse"] == "Sam"
 
 
+def test_every_demo_account_names_its_owner_as_a_member_or_a_role(client, db, ddb, ours):
+    """Issue #31: the accounts API gives each owner as the book shows it, a member's name or a role, never an internal
+    key. The demo's Roth IRA is its first member's."""
+    seed(db, years=1, seed=7)
+    seed_people(ddb, ours.id)
+    first, second = DEMO_LOGINS[0][2], DEMO_LOGINS[1][2]
+    assert client.post("/api/auth/login", json={"username": "alex", "password": "pw-demo-alex-2026"}).status_code == 200
+    accounts = client.get("/api/b/ours/accounts").json()["accounts"]
+    by_name = {a["name"]: a for a in accounts}
+    assert (by_name["Roth IRA"]["owner"], by_name["Roth IRA"]["owner_label"]) == ("jr", first)
+    assert {a["owner_label"] for a in accounts} <= {first, second, "Joint", "Business"}
+    assert all(a["owner_label"] != a["owner"] for a in accounts if a["owner"] in ("jr", "spouse"))
+
+
 def test_demo_plan_returns_ages(client, db, ddb, ours, frozen):
     seed(db, years=2, seed=7)
     seed_people(ddb, ours.id)

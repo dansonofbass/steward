@@ -16,16 +16,16 @@ def _both_manage_ours(ddb, ours, *people):
     ddb.commit()
 
 
-def test_forgot_sends_tailnet_link_even_from_lan(client, ddb, app):
+def test_forgot_sends_the_base_url_link_whatever_name_it_came_on(client, ddb, app):
     create_user(ddb, "jr", "jr@x.com", "JR", "pw-one-two-3")
     r = client.post("/api/auth/forgot", json={"username": "JR"},
-                    headers={"host": "192.168.1.10:8420"})
+                    headers={"host": "127.0.0.1:8420"})   # a curl on the box: loopback, so answered
     assert r.status_code == 202
     (to, subject, body), = app.state.mailer.sent
     assert to == "jr@x.com"
     link = re.search(r"https?://\S+", body).group(0)
     assert link.startswith("https://nas.tail1234.ts.net/reset?token=")
-    assert "192.168" not in body
+    assert "127.0.0.1" not in body
 
 
 def test_forgot_unknown_user_sends_nothing_same_response(client, app):
@@ -41,7 +41,7 @@ def test_reset_single_use_and_expiry(client, ddb, app):
     assert r.status_code == 200
     assert check_login(ddb, "jr", "brand-new-pass-1", now())
     r = client.post("/api/auth/reset", json={"token": token, "password": "another-pass-22"})
-    assert r.status_code == 400 and r.json()["error"] == "That link has expired or was already used."
+    assert (r.status_code, r.json()) == (400, {"error": "That link has expired or was already used.", "gone": True})
 
 
 def test_expired_token(ddb, app):
@@ -57,8 +57,16 @@ def test_weak_password_does_not_burn_link(client, ddb, app):
     create_user(ddb, "jr", "jr@x.com", "JR", "pw-one-two-3")
     client.post("/api/auth/forgot", json={"username": "jr"})
     token = re.search(r"token=(\S+)", app.state.mailer.sent[0][2]).group(1)
-    assert client.post("/api/auth/reset", json={"token": token, "password": "short"}).status_code == 400
+    r = client.post("/api/auth/reset", json={"token": token, "password": "short"})
+    assert r.status_code == 400 and "gone" not in r.json()            # the page keeps its form for another try
     assert client.post("/api/auth/reset", json={"token": token, "password": "long-enough-pass-9"}).status_code == 200
+
+
+def test_the_gone_link_words_are_the_web_apps():
+    """Issue #19: the web app's copy of the expired-link message, which the reset page's tests reply with, is the server's."""
+    from pathlib import Path
+    copy = (Path(__file__).resolve().parents[1] / "web/src/lib/copy.ts").read_text()
+    assert f'export const RESET_LINK_GONE = "{reset.LINK_GONE}";' in copy
 
 
 def test_email_reset_revokes_existing_sessions(client, ddb, app):

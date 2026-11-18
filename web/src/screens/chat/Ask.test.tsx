@@ -12,7 +12,7 @@ import { resetTourHidden } from './useAskTour';
 
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); setCurrentBook('ours'); });
 
-const DISCLOSURE = 'Steward sends Claude, an AI made by Anthropic, the numbers it needs to answer you: balances, income, spending totals, holdings, debts, ages, your state and tax facts. It replaces the names, account numbers, addresses, emails and birth dates it holds, and your gateway looks for others but can miss one. Store and payee names, which can be a person\'s, are sent only in rows a manager approves, and those rows stay in that conversation. Every part of your data that is sent is kept in this book\'s log, which every member can read. Your conversations are listed only for you.';
+const DISCLOSURE = 'Steward sends Claude, an AI made by Anthropic, the numbers it needs to answer you: balances, income, spending totals, holdings, debts, ages, your state and tax facts. It replaces the names, account numbers, addresses, emails and birth dates it holds, apart from the gaps Privacy lists, and your gateway looks for others but can miss one. Store and payee names are sent only in rows a manager approves, and those rows stay in that conversation. In a row Steward reads as Zelle, a wire, a transfer or a payment app (Privacy lists the words), the name is sent as [name] unless the manager ticks that row. Every part of your data that is sent is kept in this book\'s log, which every member can read. Your conversations are listed only for you.';
 const STATUS = {
   on: true, can_change: true, changed: null, seen: true, disclosure: DISCLOSURE,
   off_line: 'Chat is off for this book. A manager can turn it on in Settings → Chat.',

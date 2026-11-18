@@ -4,6 +4,7 @@ route goes through open_book; a person's conversations are listed only for them;
 from __future__ import annotations
 
 import json
+import re
 import secrets
 import threading
 from collections.abc import AsyncIterator, Callable, Iterator
@@ -40,8 +41,9 @@ from steward.deps import (
     BookContext, book_db, install_household, managers_only, not_recorded, open_book, real_book_only, sample_ok, viewer_ok,
 )
 from steward.inventory.present import at_label, day_label, month_year
+from steward_boundary import tools as T
 from steward_boundary.about import about_text
-from steward_boundary.canonical import sha256_hex
+from steward_boundary.canonical import canonical, sha256_hex
 from steward_boundary.protocol import LINES
 from steward_boundary.spans import Edit, apply, shift
 
@@ -333,17 +335,29 @@ async def stream_turn(turn: Iterator[dict], release: Callable[[], None]) -> Asyn
             await anyio.to_thread.run_sync(steps.leave)
 
 
+_TICK = re.compile(r"[rp][0-9]{1,3}")
+
+
+def _ticks_ok(ticked: object) -> bool:
+    """At most one tick per row and payee a card can hold, each "r<i>" or "p<i>"."""
+    return (isinstance(ticked, list) and len(ticked) <= T.MERCHANT_ROWS + 50
+            and all(isinstance(t, str) and _TICK.fullmatch(t) for t in ticked))
+
+
 @router.post("/approvals")
 @not_recorded("An approval is kept in the book's log of what was sent, with who approved it.")
 def approve(request: Request, body: dict = Depends(json_object), ctx: BookContext = Depends(open_book)):
     turn_id, call_id, send, digest = body.get("turn_id"), body.get("call_id"), body.get("send"), body.get("hash")
+    ticked = body.get("ticked", [])
     if (not isinstance(turn_id, str) or not isinstance(call_id, str) or not isinstance(send, bool)
-            or not isinstance(digest, str | None)):
+            or not isinstance(digest, str | None) or not _ticks_ok(ticked)):
         raise bad(NOT_UNDERSTOOD)
     # Viewers never reach here (no viewer_ok: open_book gives them 403, so only a manager now). The live turn takes the
     # answer only from its own person in its own book, for the call it is waiting on, with the hash of the card it
     # showed (Task 6.5); the turn checks again that the person is still a manager before anything is sent.
-    if not ctx.is_manager or not _rt(request).control.answer(turn_id, call_id, ctx.user_id, ctx.book.id, send, digest):
+    # `ticked` names the rows whose recipient's name goes too (public issue #1); the turn takes only keys its card offered.
+    if not ctx.is_manager or not _rt(request).control.answer(turn_id, call_id, ctx.user_id, ctx.book.id, send, digest,
+                                                             ticked):
         raise bad(NOT_WAITING, 404)
     return {"ok": True}
 
@@ -418,6 +432,33 @@ def sent_one(key: str, db: Session = Depends(book_db), ctx: BookContext = Depend
 def export_log(db: Session = Depends(book_db), ctx: BookContext = Depends(open_book)):
     return JSONResponse(export(db), headers={
         "Content-Disposition": f'attachment; filename="steward-{ctx.book.slug}-sent-to-anthropic.json"'})
+
+
+@router.get("/instructions")
+def instructions(request: Request, ctx: BookContext = Depends(open_book)):
+    """Steward's fixed instructions to Claude and its tool definitions, whole, with their hash (public issue #3): what a
+    Getting ready row's prefix_sha256 stands for. They hold no household data and are the same for every install of a
+    version. Shown only when the text the gateway sends hashes to the hash it gives, else None, as when it is away."""
+    gw = _rt(request).client
+    if gw is None:
+        return {"instructions": None}
+    try:
+        x = gw.instructions()
+    except (GatewayUnavailable, GatewayRefused):
+        return {"instructions": None}
+    content = x.get("content") if isinstance(x, dict) else None
+    try:
+        system = "\n\n".join(b["text"] for b in content["system"])
+        tools = [{"name": t["name"], "description": t["description"], "input_schema": t["input_schema"]}
+                 for t in content["tools"]]
+    except (KeyError, TypeError):
+        return {"instructions": None}
+    if not isinstance(x.get("prefix_sha256"), str) or sha256_hex(content) != x["prefix_sha256"]:
+        return {"instructions": None}
+    # `hashed` is the exact text the hash is of (canonical JSON, with each tool's flags and the cache marks), so a reader
+    # can hash it themselves rather than take "the same as this row's" on trust.
+    return {"instructions": {"prefix": x.get("prefix"), "sha256": x["prefix_sha256"], "system": system, "tools": tools,
+                             "hashed": canonical(content).decode("utf-8")}}
 
 
 @router.get("/usage")

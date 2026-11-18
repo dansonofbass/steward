@@ -8,7 +8,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const R: RothOut = {
   available: true, year: 2026, rate_now: 0.12, rate_later: 0.22, lean: 'roth', line: 'Roth this year: 12% now against about 22% later.',
-  later_line: 'From retiring at 63 (your saved plan), with required withdrawals from 2057 and Social Security.',
+  later_line: 'From retiring at 63 (the Likely age in the plan saved Oct 7), with required withdrawals from 2057 and Social Security.',
   conversion: { amount_cents: 1700000, tax_cents: 204000, line: "This year's rate is low: converting $17,000 of traditional money to Roth would cost about $2,040 in tax, filling the 10% federal bracket (2026 rules)." },
   rules_note: '2026 federal and 2025 California rules', notes: [], never: 'Steward never pays or files anything.',
 };

@@ -51,7 +51,7 @@ test("an empty book's Review shows no acorn and no caughtUp line (ruling R4)", a
     uncategorized: [], count: 0, sorted_count: 0, duplicates: [], duplicate_count: 0, top_categories: [], business: [], business_count: 0,
     background: { pending: 0, done: 0, waiting: false }, empty: true } }));
   await page.goto('/review');
-  await expect(page.getByText('Nothing here yet. Import a file and Steward starts sorting.')).toBeVisible();
+  await expect(page.getByRole('main').getByText('Nothing here yet. Import a file and Steward starts sorting.')).toBeVisible();
   await expect(page.locator('svg.acorn')).toHaveCount(0);
   await expect(page.getByTestId('caught-up-line')).toHaveCount(0);
 });

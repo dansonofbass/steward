@@ -24,7 +24,7 @@ export function ChangeLine({ data, today = new Date() }: { data: PlanReady; toda
   return (
     <div className="change">
       <p ref={ref} className={`change__line is-${change.dir}`} data-testid="change-line">
-        {change.dir !== 'same' && <span className="change__arrow" aria-hidden="true">{change.dir === 'up' ? '▲ ' : '▼ '}</span>}
+        {change.dir !== 'same' && <span className="change__arrow" aria-hidden="true">{change.dir === 'earlier' ? '▼ ' : '▲ '}</span>}
         <span className="change__text">{change.text}</span>
       </p>
       {cheer && <p className="change__cheer" data-testid="change-cheer">{cheer}</p>}

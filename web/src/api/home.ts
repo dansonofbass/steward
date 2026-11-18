@@ -18,15 +18,19 @@ export type Clause =
   | { kind: 'spending_close' }
   | { kind: 'spending_on_track' }
   | { kind: 'bills_paid' }
-  | { kind: 'plan'; age: number; still: boolean };
+  | { kind: 'plan'; age: number; still: boolean; saved_at: string };
 export type Opener = 'steady' | 'mostly' | 'new_month' | 'problem' | 'empty';
-export type VerdictData = { opener: Opener; problems: Problem[]; clauses: Clause[]; stale: boolean; best_month: boolean };
+/** The bank-fed day-to-day accounts 3 days old or more (#15): how many, their oldest and newest age in days, and the
+ *  name when there is one alone. */
+export type Stale = { n: number; oldest_days: number; newest_days: number; account: string | null };
+export type VerdictData = { opener: Opener; problems: Problem[]; clauses: Clause[]; stale: Stale | null; best_month: boolean };
 /** A Flexible row a little or clearly over its target, in Spending's order. */
 export type FlexRow = { category: string; spent_cents: number; target_cents: number; over_cents: number; over_level: 'little' | 'clear' };
 export type SignsData = {
   flexible: { spent_cents: number; target_cents: number | null; rows: FlexRow[] };
   bills: { paid: number; of: number; late: { category: string; usual_day: number }[] };
-  plan: { age: number | null; still: boolean } | null;
+  /** The newest saved plan, never today's solve (#17: that would cost Home its budget), so it is shown with its date. */
+  plan: { age: number | null; still: boolean; saved_at: string } | null;
   net_worth: { total_cents: number; change_cents: number | null };
   has_business: boolean;
 };

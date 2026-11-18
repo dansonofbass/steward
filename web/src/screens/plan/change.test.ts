@@ -30,7 +30,7 @@ describe('the span (plan subpages, What changed since the last saved plan)', () 
 });
 
 describe('the line, in its four cases and without a summary', () => {
-  it('Up: "▲ Up 1 year since Oct 12:" and the two biggest facts', () => {
+  it('Earlier: "▼ 1 year earlier than on Oct 12:" and the two biggest facts', () => {
     const d = plan((p, now) => {
       p.result.comfortable_age = 62;
       now.comfortable_months = 738;
@@ -38,13 +38,13 @@ describe('the line, in its four cases and without a summary', () => {
       now.spending_basis_cents -= 41_000 * 12;      // $410 a month
       now.saving_cents += 2_000;                    // $20 a month: too small to say
     });
-    expect(line(d)).toMatchObject({ dir: 'up', months: 12 });
-    expect(line(d)!.text).toMatch(re(`Up 1 year since ${ON}: retirement accounts grew \\$12,300 and spending is \\$410 a month lower\\.`));
+    expect(line(d)).toMatchObject({ dir: 'earlier', months: 12 });
+    expect(line(d)!.text).toMatch(re(`1 year earlier than on ${ON}: retirement accounts grew \\$12,300 and spending is \\$410 a month lower\\.`));
   });
 
-  it('Down: "6 months later than on Oct 12" with what changed', () => {
+  it('Later: "6 months later than on Oct 12" with what changed', () => {
     const d = plan((_p, now) => { now.comfortable_months = 756; now.saving_cents -= 20_000; });
-    expect(line(d)).toMatchObject({ dir: 'down', months: 6 });
+    expect(line(d)).toMatchObject({ dir: 'later', months: 6 });
     expect(line(d)!.text).toMatch(re(`6 months later than on ${ON}: you're saving \\$200 a month less\\.`));
   });
 
@@ -58,22 +58,22 @@ describe('the line, in its four cases and without a summary', () => {
     expect(line({ ...planFixture(), plan: null })).toBeNull();
   });
 
-  it('a save from before the summary: the move alone, "Up 1 year since Oct 12."', () => {
+  it('a save from before the summary: the move alone, "1 year earlier than on Oct 12."', () => {
     const d = plan((p, now) => { p.plan!.inputs_summary = null; p.plan!.comfortable_age = 64; now.spending_basis_cents -= 41_000 * 12; });
-    expect(line(d)!.text).toMatch(re(`Up 1 year since ${ON}\\.`));
+    expect(line(d)!.text).toMatch(re(`1 year earlier than on ${ON}\\.`));
   });
 
   it('a move inside the same whole age is said in months', () => {
     const d = plan((_p, now) => { now.comfortable_months = 747; });
-    expect(line(d)!.text).toMatch(re(`Up 3 months since ${ON}\\.`));
+    expect(line(d)!.text).toMatch(re(`3 months earlier than on ${ON}\\.`));
   });
 
   it('"not by 70" on either side reads plainly, never as a number of years', () => {
     const lost = plan((p, now) => { p.result.comfortable_age = null; now.comfortable_months = null; now.spending_basis_cents += 90_000 * 12; });
-    expect(line(lost)).toMatchObject({ dir: 'down', months: null });
+    expect(line(lost)).toMatchObject({ dir: 'later', months: null });
     expect(line(lost)!.text).toMatch(re(`Not by 70 now, from 63 on ${ON}: spending is \\$900 a month higher\\.`));
     const found = plan((p, _now, then) => { p.plan!.comfortable_age = null; then.comfortable_months = null; });
-    expect(line(found)).toMatchObject({ dir: 'up', months: null });
+    expect(line(found)).toMatchObject({ dir: 'earlier', months: null });
     expect(line(found)!.text).toMatch(re(`Comfortably at 63 now, from not by 70 on ${ON}\\.`));
     const neither = plan((p, now, then) => {
       p.result.comfortable_age = null; p.plan!.comfortable_age = null; now.comfortable_months = null; then.comfortable_months = null;
@@ -88,7 +88,7 @@ describe('the line, in its four cases and without a summary', () => {
     d.plan = { ...d.plan!, id: 9, saved_at: '2026-10-28T15:00:00+00:00', comfortable_age: 62 };
     d.result.comfortable_age = 62;
     d.inputs_summary.comfortable_months = 738;
-    expect(line(d)!.text).toMatch(re(`Up 1 year since ${ON}\\.`));
+    expect(line(d)!.text).toMatch(re(`1 year earlier than on ${ON}\\.`));
   });
 
   it('a plan saved today and none before: "No change since Oct 28."', () => {
@@ -138,10 +138,10 @@ describe('the facts', () => {
 });
 
 describe('the celebration band and its cheers (plan subpages decision 7)', () => {
-  const up = (months: number | null): Change => ({ dir: 'up', months, text: '' });
+  const up = (months: number | null): Change => ({ dir: 'earlier', months, text: '' });
   it('half a year from 6 months, a year at "1 year", years from "2 years" or up from not by 70; nothing smaller, later or the same', () => {
     expect([up(3), up(6), up(11), up(12), up(17), up(18), up(null)].map(closerOf)).toEqual([null, 'half', 'half', 'year', 'year', 'years', 'years']);
-    expect(closerOf({ dir: 'down', months: 12, text: '' })).toBeNull();
+    expect(closerOf({ dir: 'later', months: 12, text: '' })).toBeNull();
     expect(closerOf({ dir: 'same', months: 0, text: '' })).toBeNull();
   });
 

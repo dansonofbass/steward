@@ -1,6 +1,7 @@
 .design { padding: var(--s-4); }
 .design__title { margin-bottom: var(--s-4); }
-.design__cols { display: grid; grid-template-columns: 1fr; gap: var(--s-4); }
+.design__cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+.design__section .num { overflow-wrap: anywhere; }
 @media (min-width: 900px) { .design__cols { grid-template-columns: 1fr 1fr; } }
 .design__col { padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-l); }
 .design__theme { margin-bottom: var(--s-4); }

@@ -12,7 +12,8 @@ const navCss = read('./Nav.css');
 describe('Six tabs on a 320 px phone', () => {
   it('fit on one line, so the page never scrolls sideways', () => {
     const phone = navCss.match(/@media \(max-width: 899px\) \{\s*\.nav__link \{([^}]*)\}/)?.[1] ?? '';
-    expect(phone).toMatch(/font-size: 12px/);
+    // 12 px at the default text size, growing with the phone's text size to 15 px and no further (issue #28).
+    expect(phone).toMatch(/font-size: min\(0\.75rem, 15px\)/);
     expect(phone).toMatch(/white-space: nowrap/);
     const side = Number(phone.match(/padding: var\(--s-2\) (\d+)px/)?.[1]);
     expect(side).toBe(2);
@@ -20,8 +21,10 @@ describe('Six tabs on a 320 px phone', () => {
     // Counting 0.55 em (6.6 px) a letter leaves room for the current tab's bolder weight and a longer label.
     const labels = navItems('ours', 'household').map((i) => i.label);
     expect(labels).toHaveLength(6);
-    const width = labels.reduce((w, label) => w + label.length * 12 * 0.55 + 2 * side, 0);
-    expect(width).toBeLessThanOrEqual(320);
+    for (const px of [12, 15]) {
+      const width = labels.reduce((w, label) => w + label.length * px * 0.55 + 2 * side, 0);
+      expect(width, `${px} px`).toBeLessThanOrEqual(320);
+    }
     expect(navCss).toContain('Six tabs on the phone');
   });
 
@@ -37,8 +40,8 @@ describe('The brand at the top of the rail', () => {
     expect(navCss).toMatch(/\n\.nav--rail \.nav__brand \{ display: flex; \}/);
     expect(navCss).toMatch(/@media \(min-width: 900px\) \{\s*\.nav--auto \.nav__brand \{ display: flex; \}/);
   });
-  it('sets the word in the display serif at 20 px, weight 600', () => {
-    expect(navCss).toMatch(/\.nav__brand-name \{ font: 600 20px\/1 var\(--font-display\);/);
+  it('sets the word in the display serif at 20 px (1.25rem), weight 600', () => {
+    expect(navCss).toMatch(/\.nav__brand-name \{ font: 600 1\.25rem\/1 var\(--font-display\);/);
   });
 });
 

@@ -12,7 +12,7 @@ export const monthName = (ym: string) => LONG[Number(ym.slice(5, 7)) - 1];
 /** A month number (1-12) as its short and long name: "5" -> "May". */
 export const monthShortOf = (month: number) => SHORT[month - 1];
 export const monthNameOf = (month: number) => LONG[month - 1];
-export const monthLong =(ym: string) => `${monthName(ym)} ${ym.slice(0, 4)}`;
+export const monthLong = (ym: string) => `${monthName(ym)} ${ym.slice(0, 4)}`;
 export const isCurrent = (ym: string, asOf: string) => asOf.startsWith(ym);
 /** A month in progress is "<Month> <Year> so far" (design-pass copy rule). */
 export const monthTitle = (ym: string, asOf: string) => (isCurrent(ym, asOf) ? MONTH_SO_FAR.replace('{month}', monthLong(ym)) : monthLong(ym));
@@ -54,10 +54,18 @@ export function stripBars(months: FlowMonth[], asOf: string): { axis: number; ba
   return { axis: r1(axis), bars };
 }
 
+/** The strip's months from the first that had money in or out: the empty months before a book's first data say
+ *  nothing (#34). The current month always stays. */
+export function fromFirstData(months: FlowMonth[]): FlowMonth[] {
+  const first = months.findIndex((m) => m.in_cents !== 0 || m.out_cents !== 0);
+  return months.slice(first === -1 ? Math.max(0, months.length - 1) : Math.min(first, months.length - 1));
+}
+
 /** Home's hover readout (sorting redesign, Home): "September: Income $8,200 · Spending $6,900 · +$1,300"; the
- *  current month is "so far". */
+ *  current month is "so far", and a month from another year carries its year ("December 2025", #34). */
 export function monthReadout(m: FlowMonth, asOf: string): string {
-  const name = isCurrent(m.month, asOf) ? MONTH_SO_FAR.replace('{month}', monthName(m.month)) : monthName(m.month);
+  const name = isCurrent(m.month, asOf) ? MONTH_SO_FAR.replace('{month}', monthName(m.month))
+    : m.month.slice(0, 4) === asOf.slice(0, 4) ? monthName(m.month) : monthLong(m.month);
   return FLOW_READOUT.replace('{month}', name).replace('{in}', dollars(m.in_cents)).replace('{out}', dollars(m.out_cents))
     .replace('{net}', dollars(m.net_cents, { sign: 'always' }));
 }

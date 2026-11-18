@@ -1,6 +1,6 @@
 /* Ported from the mockup's "candidate" rules: review cards, chips, switch, duplicates, sorted state. */
 .review .raw { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-1); color: var(--ink-muted); letter-spacing: 0.02em; overflow-wrap: anywhere; }
-.review .tag { display: inline-flex; align-items: center; gap: var(--s-1); padding: 2px var(--s-2); border-radius: var(--r-pill); font: 600 0.7rem/20px var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); background: var(--surface-2); white-space: nowrap; }
+.review .tag { display: inline-flex; align-items: center; gap: var(--s-1); padding: 2px var(--s-2); border-radius: var(--r-pill); font: 600 0.65625rem/1.25rem var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); background: var(--surface-2); white-space: nowrap; }
 
 .rcards { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
 @media (min-width: 900px) { .rcards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); align-items: start; } }

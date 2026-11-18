@@ -8,9 +8,9 @@ import re
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
-from steward.api.auth import NAME, _set_cookie, _user_out
+from steward.api.auth import NAME, _user_out
 from steward.api.body import bad, json_object, text
-from steward.auth import sessions, setup_link, users
+from steward.auth import cookies, devices, sessions, setup_link, users
 from steward.auth.ratelimit import SETUP, limit
 from steward.deps import directory_db, now
 
@@ -63,5 +63,6 @@ def make_first(request: Request, response: Response, body: dict = Depends(json_o
     label = (label or request.headers.get("user-agent", ""))[:120]
     days = request.app.state.settings.session_days
     token, _ = sessions.create_session(db, u, label, t, days)
-    _set_cookie(response, token, days)
+    cookies.set_session(request, response, token, days * 86400)
+    devices.signed_in(request, response, u)     # issue #7: the owner's first device is one the account knows
     return {"user": _user_out(u)}

@@ -82,7 +82,8 @@ def _variants(kind: str, value: str) -> list[tuple[str, str]]:
     if kind == "name":
         return [("plain", value), ("lowercase", value.lower()), ("lookalike", _lookalike(value))]
     if kind == "dob":
-        return [(f"dob_{i}", f) for i, f in enumerate(dob_forms(date.fromisoformat(value)), 1)]
+        # the six forms the first 400 rows were drawn from; the forms added since come in ADDED, so those rows never move
+        return [(f"dob_{i}", f) for i, f in enumerate(dob_forms(date.fromisoformat(value))[:6], 1)]
     if kind == "email":
         return [("plain", value), ("uppercase", value.upper())]
     if kind == "number":
@@ -146,6 +147,10 @@ ADDED = [
     ("household", "secret", "last_four", "secret", False, "3456", "3456",
      "The last four of my social are {x}, is that on the 1099?"),
     ("parent", "secret", "access_code", "secret", False, "5509", "5509", "The access code for the pharmacy portal is {x}."),
+    # PR E review round 4: a date of birth with and without leading zeros (dob_forms' 7th and 8th forms).
+    ("household", "dob", "dob_7", "dob", True, "1985-06-14", "6/14/1985", "DOB {x}: what's the full retirement age?"),
+    ("household", "dob", "dob_8", "dob", True, "1987-02-02", "02/02/87",
+     "Her birthday is {x}; does the RMD start next year?"),
 ]
 
 

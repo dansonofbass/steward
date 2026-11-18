@@ -15,30 +15,43 @@ import type { ChatStatus } from './api';
 import { andList, fill, markSeen } from './askApi';
 import * as C from './copy';
 import { gw } from '../../lib/gatewayName';
+import { today } from '../../lib/today';
 
-export const nextMonth = (now = new Date()) => new Date(now.getFullYear(), now.getMonth() + 1, 1)
-  .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+// The household's month, not the device's (issue #26): read from the household's today (a YYYY-MM-DD) and named as
+// that date in UTC, so a device in another zone, or anyone near midnight on the last of the month, sees home's month.
+const MONTH_DAY = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
+const MONTH_NAME = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'long' });
+const ymd = (now: Date) => today(now).split('-').map(Number);
+
+/** The 1st of the household's next month, "Dec 1". */
+export const nextMonth = (now = new Date()) => { const [y, m] = ymd(now); return MONTH_DAY.format(Date.UTC(y, m, 1)); };
+
+/** The household's month today: its name, today's day of it and how many days it has. */
+export function thisMonth(now = new Date()): { name: string; day: number; days: number } {
+  const [y, m, d] = ymd(now);
+  return { name: MONTH_NAME.format(Date.UTC(y, m - 1, 1)), day: d, days: new Date(Date.UTC(y, m, 0)).getUTCDate() };
+}
 
 export function GatewayState({ s }: { s: ChatStatus }) {
   if (s.gateway.state === 'away') {
     return (
       <div className="state">
         <ServerOff size={24} aria-hidden="true" />
-        <h3>{gw(C.AWAY_TITLE)}</h3>
+        <h2>{gw(C.AWAY_TITLE)}</h2>
         <p>{s.gateway.line}</p>
         <p>{C.AWAY_BODY}</p>
         <p className="small muted">{C.AWAY_NOTE}{s.gateway.last_answered && ` ${fill(gw(C.AWAY_LAST), { when: s.gateway.last_answered })}`}</p>
       </div>
     );
   }
-  return <div className="state"><LockKeyhole size={24} aria-hidden="true" /><h3>{C.PAUSED_TITLE}</h3><p>{s.gateway.line}</p></div>;
+  return <div className="state"><LockKeyhole size={24} aria-hidden="true" /><h2>{C.PAUSED_TITLE}</h2><p>{s.gateway.line}</p></div>;
 }
 
 export function OffState({ viewer, slug, sample }: { viewer: boolean; slug: string; sample?: boolean }) {
   if (sample) return <div className="state"><p>{C.ASK_OFF_SAMPLE}</p></div>;
   return (
     <div className="state">
-      <PowerOff size={24} aria-hidden="true" /><h3>{C.OFF_TITLE}</h3><p>{C.OFF_BODY}</p>
+      <PowerOff size={24} aria-hidden="true" /><h2>{C.OFF_TITLE}</h2><p>{C.OFF_BODY}</p>
       {!viewer && <Link className="link" to={bookHref(slug, '/settings/chat')}><SettingsIcon size={20} aria-hidden="true" />{C.GO_SETTINGS}</Link>}
     </div>
   );
@@ -47,7 +60,7 @@ export function OffState({ viewer, slug, sample }: { viewer: boolean; slug: stri
 export function CapState({ s, slug }: { s: ChatStatus; slug: string }) {
   return (
     <div className="state">
-      <Gauge size={24} aria-hidden="true" /><h3>{C.CAP_TITLE}</h3><p>{s.budget?.cap_line}</p>
+      <Gauge size={24} aria-hidden="true" /><h2>{C.CAP_TITLE}</h2><p>{s.budget?.cap_line}</p>
       {s.can_budget && <Link className="link" to={bookHref(slug, '/settings/chat')}><SettingsIcon size={20} aria-hidden="true" />{C.CHANGE_BUDGET}</Link>}
     </div>
   );

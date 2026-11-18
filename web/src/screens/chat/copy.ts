@@ -117,6 +117,7 @@ export const CARD_NAMES = 'The store names that would be sent';
 export const CARD_EVERY_ROW = 'Every row, exactly as it would go';
 export const CARD_ACCOUNTS = '{pairs}; Claude gets only the alias. Nothing else from these transactions is sent.';
 export const CARD_MORE = 'More rows matched; these are the newest 200.';
+export const CARD_SEND_NAME = 'Send this name too';
 export const APPROVE = 'Approve for this conversation';
 export const DONT_SEND = "Don't send";
 export const CARD_FOOT = "The approval is kept in the book's log with your name. Without an answer by {time}, Claude stops and nothing is sent.";
@@ -162,10 +163,16 @@ export const D_SIZE = 'Size';
 export const CHECKS_TITLE = 'Checked on {gateway} before sending';
 export const EXACT_TITLE = 'Exactly what was sent';
 export const FINGERPRINT = 'Fingerprint {hash}';
+export const FIXED_SHOW = "Steward's fixed instructions";
+export const FIXED_SAME = "Fingerprint {hash}, the same as this row's.";
+export const FIXED_OTHER = 'Fingerprint {hash}. This row was sent with the instructions of another version.';
+export const FIXED_AWAY = "{gateway} isn't answering, so the text can't be shown now.";
+export const FIXED_TOOLS = 'Tools Claude can call';
+export const FIXED_HASHED = 'The exact text hashed';
 export const ALIAS_IS = '{alias} is {label}';
 
 // Settings → Chat (design pass screen 7).
-export const SETTINGS_LEDE = "Ask Claude about a book's money. Steward sends figures, not the account numbers and names it holds, except store and payee names a manager approves; a payee can be a person. Your gateway looks for other names and can miss one. Each part sent is logged.";
+export const SETTINGS_LEDE = "Ask Claude about a book's money. Steward sends figures, not the account numbers and names it holds, except store and payee names a manager approves. Your gateway looks for other names and can miss one. Each part sent is logged.";
 export const GATEWAY = '{gateway}';
 export const GATEWAY_OK = '{gateway} is answering';
 export const GATEWAY_AWAY = "{gateway} isn't answering";

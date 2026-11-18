@@ -97,6 +97,20 @@ def test_no_advisor_boundary_or_gateway_module_reads_payers_or_trips():
     assert [str(p) for p in files if any(w in p.read_text() for w in words)] == []
 
 
+def test_payer_names_and_nicknames_reach_the_advisor_only_as_names_to_remove():
+    """Public issue #2: steward.services.held_names reads payer names, set-asides and nicknames for the exact pass, so a
+    question that types one has it replaced. The only advisor module that calls it is identifiers.py, and what it
+    returns becomes "[payee]" or "[name]"; the text itself is never a tool's result or part of what is sent."""
+    import steward
+    from steward.advisor.identifiers import Identifier  # noqa: F401 - the one caller
+    src = Path(steward.__file__).parent
+    callers = sorted(str(p.relative_to(src)) for p in src.rglob("*.py")
+                     if "held_names" in p.read_text() and p.name != "held_names.py")
+    assert callers == ["advisor/identifiers.py"]
+    text = (src / "advisor/identifiers.py").read_text()
+    assert 'add(text, kind, "[payee]" if kind == "payee" else "[name]")' in text
+
+
 def test_no_advisor_boundary_or_gateway_module_reads_held_feeds_or_copies():
     """Same-account spec, Privacy: held payloads stay in the book; the advisor never reads held_feed, feed_txn_alias,
     same_account_answer or account_feed."""

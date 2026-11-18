@@ -1,6 +1,7 @@
 // Settings → Chat → Everything sent so far (was Sent to Anthropic; spec 4.6; design pass screen 4): who can read it, filters, requests grouped by
 // day, and one request opened with when, who asked and approved, the conversation, the four checks the gateway ran and
-// exactly what was sent with its aliases decoded. Nothing here can change the log.
+// exactly what was sent with its aliases decoded. Nothing here can change the log. A Getting ready row records Steward's
+// fixed instructions and tools only as their hash; opening it shows their full text with the hash beside it (issue #3).
 import { ArrowLeft, Check, ChevronDown, ChevronRight, Cpu, Download, History, MessageSquareText, ScanEye, Store, type LucideIcon } from 'lucide-react';
 import { Fragment, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -11,13 +12,52 @@ import { Card } from '../../ui/Card';
 import { Notice } from '../../ui/Notice';
 import { Skeleton } from '../../ui/Skeleton';
 import { andList, fill } from './askApi';
-import { useChatStatus, useSent, useSentDetail, type SentKind, type SentRow } from './api';
+import { useChatStatus, useInstructions, useSent, useSentDetail, type SentKind, type SentRow } from './api';
 import * as C from './copy';
 import { gw } from '../../lib/gatewayName';
 import './chat.css';
 
 const ICON: Record<SentKind, LucideIcon> = { question: MessageSquareText, results: ScanEye, store_rows: Store, prewarm: Cpu, history: History };
 const requestsWord = (n: number) => (n === 1 ? '1 request' : `${n} requests`);
+
+const loggedPrefix = (payload: unknown): string | null => {
+  const h = (payload as { prefix_sha256?: unknown } | null)?.prefix_sha256;
+  return typeof h === 'string' ? h : null;
+};
+
+/** The text a logged prefix_sha256 stands for, fetched once the disclosure opens. */
+function FixedInstructions({ payload }: { payload: unknown }) {
+  const logged = loggedPrefix(payload);
+  const [open, setOpen] = useState(false);
+  const q = useInstructions(open);
+  const x = q.data?.instructions;
+  return (
+    <details className="log__fixed" onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary>{C.FIXED_SHOW}</summary>
+      {q.isPending && open && <Skeleton lines={3} />}
+      {q.isError && <Notice tone="error">{q.error.message}</Notice>}
+      {q.isSuccess && !x && <p className="small muted">{gw(C.FIXED_AWAY)}</p>}
+      {x && (
+        <div className="stack stack--tight">
+          <p className="small muted">{fill(x.sha256 === logged ? C.FIXED_SAME : C.FIXED_OTHER, { hash: x.sha256 })}</p>
+          <pre className="chat__json">{x.system}</pre>
+          <span className="eyebrow">{C.FIXED_TOOLS}</span>
+          {x.tools.map((t) => (
+            <div key={t.name} className="stack stack--tight">
+              <span className="strong">{t.name}</span>
+              <p className="small">{t.description}</p>
+              <pre className="chat__json">{JSON.stringify(t.input_schema, null, 2)}</pre>
+            </div>
+          ))}
+          <details className="log__fixed">
+            <summary>{C.FIXED_HASHED}</summary>
+            <pre className="chat__json">{x.hashed}</pre>
+          </details>
+        </div>
+      )}
+    </details>
+  );
+}
 
 function Detail({ sentKey, title }: { sentKey: string; title: string }) {
   const d = useSentDetail(sentKey);
@@ -35,6 +75,7 @@ function Detail({ sentKey, title }: { sentKey: string; title: string }) {
         <div key={p.id} className="stack stack--tight">
           <span className="small muted">{p.label} · {fill(C.FINGERPRINT, { hash: p.sha256.slice(0, 12) })}</span>
           <pre className="chat__json">{JSON.stringify(p.payload, null, 2)}</pre>
+          {loggedPrefix(p.payload) !== null && <FixedInstructions payload={p.payload} />}
         </div>
       ))}
       {x.aliases.length > 0 && <ul className="plain small">{x.aliases.map((a) => <li key={a.alias}>{fill(C.ALIAS_IS, a)}</li>)}</ul>}

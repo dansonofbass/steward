@@ -1,7 +1,9 @@
 """Landlock for the sandbox child (remote-reading amendment P59). Just before confine's seccomp filter goes on (which
-then refuses landlock_* for good), the child walls off every file but the runtime it needs, read-only: the interpreter
-and its sys.path, the system library folders, fonts and its own empty folder. Seccomp sees a path only as a pointer;
-Landlock sees the path. On the gateway this keeps
+then refuses landlock_* for good), the child walls off every file but the few it still reads, read-only: the font
+folders pdfium looks in, pdfminer's character map folders and its own empty folder. It imports the PDF libraries
+before the wall (sandbox.preload), so the interpreter, its sys.path and the system library folders stay outside it:
+an editable install or a .pth file that puts a folder of private files on sys.path exposes nothing (#12). Seccomp
+sees a path only as a pointer; Landlock sees the path. On the gateway this keeps
 a child that a crafted PDF took over from opening the gateway's API key, pairing token, history key, grants and
 ledger, which the same account owns, and on Steward's own machine from opening the book key and the books. Linux
 x86_64 with Landlock (5.13+, enabled); anywhere else restrict() raises Unrestricted and no child reads a PDF there
@@ -11,6 +13,7 @@ show whether a path outside the wall exists and its metadata (confine's stated l
 from __future__ import annotations
 
 import ctypes
+import importlib.util
 import os
 import struct
 import sys
@@ -28,8 +31,8 @@ ABI1_RIGHTS = (1 << 13) - 1                                     # execute … ma
 REFER, TRUNCATE, IOCTL_DEV = 1 << 13, 1 << 14, 1 << 15          # ABI 2, 3 and 5
 DIR_READ = EXECUTE | READ_FILE | READ_DIR
 FILE_READ = EXECUTE | READ_FILE
-SYSTEM = ("/usr/lib", "/usr/lib64", "/lib", "/lib64", "/usr/local/lib", "/etc/ld.so.cache", "/usr/share/fonts",
-          "/usr/local/share/fonts", "/usr/share/locale")
+FONTS = ("/usr/share/fonts", "/usr/share/X11/fonts/Type1", "/usr/share/X11/fonts/TTF", "/usr/local/share/fonts")
+CMAPS = ("/usr/share/pdfminer",)                                # pdfminer's first place to look, before its own
 
 
 def _syscall(*args) -> int:
@@ -52,11 +55,18 @@ def handled(version: int) -> int:
         (IOCTL_DEV if version >= 5 else 0)
 
 
+def _own_cmaps() -> list[str]:
+    """pdfminer's own character map folder, found without importing it (the parent never imports the PDF libraries)."""
+    spec = importlib.util.find_spec("pdfminer")
+    return [os.path.join(os.path.dirname(spec.origin), "cmap")] if spec is not None and spec.origin else []
+
+
 def runtime_paths() -> list[str]:
-    """What the child may read: the interpreter (its prefixes and sys.path: stdlib, lib-dynload, site-packages, the
-    project's src), the system library folders and fonts, and its own empty working folder."""
-    seen = {sys.prefix, sys.base_prefix, sys.exec_prefix, sys.base_exec_prefix, os.getcwd(), *SYSTEM,
-            *(p for p in sys.path if p)}
+    """What the child may still read once the PDF libraries are imported: the folders pdfium looks in for a font a
+    PDF names but doesn't embed, the folders pdfminer loads a CID font's character map from on first use, and its own
+    empty working folder. Found by test (tests/test_pdf_wall.py): a real read and render of every kind of file the
+    tests know opens nothing else."""
+    seen = {os.getcwd(), *FONTS, *CMAPS, *_own_cmaps()}
     return sorted(p for p in seen if os.path.exists(p))
 
 

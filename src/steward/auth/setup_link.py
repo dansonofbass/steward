@@ -24,8 +24,10 @@ from steward.db.directory_models import Book, SetupLink, User
 TTL_MINUTES = 30
 MAX_TOKEN = 128
 FIRST_BOOK = "ours"
-LINK_GONE = "This link has expired or was already used. Run steward setup again for a new one."
+SETUP_COMMAND = "docker compose run --rm steward steward setup"   # as docs/quickstart/install.md gives it (issue #20)
+LINK_GONE = f"This link has expired or was already used. Run {SETUP_COMMAND} again for a new one."
 ALREADY = "Steward is already set up. Sign in."
+ZONE_NOT_SET = "Time zone: not set yet. You'll choose it on the welcome screen."
 ALREADY_CLI = "Steward already has an account. Sign in, or add someone with `steward create-user`."
 
 

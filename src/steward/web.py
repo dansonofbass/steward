@@ -8,6 +8,8 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
+from steward.auth import devices
+
 DEFAULT_DIST = Path(__file__).resolve().parents[2] / "web" / "dist"
 ASSET_CACHE = "public, max-age=31536000, immutable"  # Vite hashes asset names, so they never change in place
 # The build writes both beside each asset over 1 KB (web/scripts/precompress.mjs); the first the browser takes wins.
@@ -76,4 +78,6 @@ def mount_web(app: FastAPI, dist: Path | None) -> None:
             return FileResponse(candidate, headers={"Cache-Control": "no-cache"})
         if path.startswith("assets/"):
             return JSONResponse(not_found, status_code=404)  # a stale tab after a redeploy must not get HTML as a script
-        return FileResponse(index, headers={"Cache-Control": "no-cache"})
+        page = FileResponse(index, headers={"Cache-Control": "no-cache"})
+        devices.mark_page(request, page)    # issue #7: the sign-in page gives a new device its id
+        return page

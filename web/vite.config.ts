@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { preloadFonts } from './scripts/preload-fonts';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), preloadFonts()],
   server: { port: 5173, proxy: { '/api': 'http://127.0.0.1:8420' } },
   build: { outDir: 'dist', sourcemap: false, target: 'es2022' },
   test: {

@@ -2,6 +2,7 @@ import { CircleAlert, Info, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { useState } from 'react';
 import { useEvents } from '../../api/hooks';
 import { dateLabelFromIso } from '../../lib/format';
+import { clockTime } from '../../lib/today';
 import { NOTHING_HERE_YET, S_LOG, UNRESOLVED_ONLY } from '../../lib/copy';
 import { Card } from '../../ui/Card';
 import { IconLabel } from '../../ui/IconLabel';
@@ -33,12 +34,11 @@ export default function Log() {
           <ul className="plain">
             {events.data.events.map((e) => {
               const lvl = LEVELS[e.level] ?? LEVELS.info;
-              const when = new Date(e.at);
               return (
                 <li className="line" key={e.id}>
                   <div className="line__main">
                     <span>{e.message}</span>
-                    <span className="small muted">{dateLabelFromIso(e.at, today)} · {when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+                    <span className="small muted">{dateLabelFromIso(e.at, today)} · {clockTime(e.at)}</span>
                     {e.resolved_at && <span className="small muted">Resolved {dateLabelFromIso(e.resolved_at, today)}</span>}
                   </div>
                   <span className="small"><IconLabel icon={lvl.icon} label={lvl.label} /></span>

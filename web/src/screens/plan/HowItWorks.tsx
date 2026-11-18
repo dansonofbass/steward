@@ -14,6 +14,7 @@ import {
 import { Folds, type FoldKey } from './Folds';
 import { Moves } from './Moves';
 import { peopleFrom } from './people';
+import { thisYear } from '../../lib/today';
 
 export function isStale(note: string): boolean {
   return /last updated \d+ days ago|default mix|^Based on \d+ months/.test(note);
@@ -67,7 +68,7 @@ export function HowItWorks({ data }: { data: PlanReady }) {
   const kids = useChildren();
   const facts = useFacts();
   const result = data.result;
-  const younger = peopleFrom(data.names, facts.data?.facts, result.band[0]?.year ?? new Date().getFullYear(), result.band[0]?.jr_age ?? 40).younger;
+  const younger = peopleFrom(data.names, facts.data?.facts, result.band[0]?.year ?? thisYear(), result.band[0]?.jr_age ?? 40).younger;
   const list = accounts.data?.accounts;
   const untyped = list ? untypedCount(list) : 0;
   const rows = lastUpdatedRows({ accounts: list, accountsFailed: accounts.isError, factsAsOf: data.inputs.facts_as_of, earnings: earnings.data?.records,

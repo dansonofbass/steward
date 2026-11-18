@@ -20,7 +20,7 @@ describe('Verdict (Home spec, section 1)', () => {
   it("heads Home with the server's day, never the browser's, and the headline as the h1", () => {
     wrapBook(<Verdict data={homeWith({ as_of: '2026-10-27' })} ready />);
     expect(screen.getByText('Tuesday, Oct 27')).toBeInTheDocument();          // the browser's clock says Friday, Oct 30
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent("A steady month. Spending's on track, bills are paid, and the plan still says 54.");
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent("A steady month. Spending's on track, bills are paid, and the plan saved Oct 12 still says 54.");
     expect(screen.getByTestId('verdict')).toHaveAttribute('data-ready', 'true');
   });
 

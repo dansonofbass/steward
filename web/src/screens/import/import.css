@@ -14,7 +14,7 @@
 /* Wide: the name, the account and the remove on one line; the status tag under the name takes the row's full width, so
    a long one ("Scanned · reading on the gateway, about 20 s a page · page 1 of 2") never wraps in a narrow column. */
 @media (min-width: 900px) {
-  .imp-row__line { grid-template-columns: minmax(0, 1fr) minmax(0, 16rem) auto; }
+  .imp-row__line { grid-template-columns: minmax(0, 1fr) minmax(0, 15rem) auto; }
   .imp-row__name { grid-column: 1; grid-row: 1; }
   .imp-row__account, .imp-row__pad { grid-column: 2; grid-row: 1; }
   .imp-row__remove { grid-column: 3; grid-row: 1; }
@@ -26,7 +26,7 @@
 .imp-confirm__table { table-layout: fixed; }
 .imp-confirm__table th, .imp-confirm__table td { padding-inline: var(--s-1); }
 .imp-confirm__table td { white-space: normal; overflow-wrap: anywhere; }
-.imp-confirm__table select { width: 100%; min-width: 0; max-width: 12rem; min-height: 40px; padding-left: var(--s-2); padding-right: 24px;
+.imp-confirm__table select { width: 100%; min-width: 0; max-width: 11.25rem; min-height: 40px; padding-left: var(--s-2); padding-right: 24px;
   background-position: right 3px center; text-overflow: ellipsis; }
 .imp-confirm__q { border: 0; padding: 0; margin: 0; display: grid; gap: var(--s-2); }
 .imp-confirm__q legend { font-weight: 600; margin-bottom: var(--s-2); }
@@ -79,7 +79,7 @@ ul.imp-pv__notes { margin-bottom: var(--s-3); }                  /* the dl's own
 .imp-st__review td:nth-child(4):empty, .imp-st__review td[colspan="2"] { display: none; }
 .imp-st__review .imp-st__rm td { grid-column: 1 / -1; grid-row: auto; }
 @media (min-width: 640px) {
-  .imp-st__review tr { grid-template-columns: 11rem 9rem minmax(0, 1fr) 44px; }
+  .imp-st__review tr { grid-template-columns: 10.3125rem 8.4375rem minmax(0, 1fr) 44px; }
   .imp-st__review td:nth-child(4) { grid-column: 3; grid-row: 1; }
   .imp-st__review td:nth-child(5) { grid-column: 4; }
 }
@@ -93,7 +93,7 @@ ul.imp-pv__notes { margin-bottom: var(--s-3); }                  /* the dl's own
 .imp-st__held tr:not(.imp-st__rm) td:nth-child(4) { grid-column: 2 / -1; grid-row: 3; display: block; font-size: inherit; color: inherit; }
 .imp-st__held td:nth-child(4)::before { content: none; }
 @media (min-width: 640px) {
-  .imp-st__held tr:not(.imp-st__rm) { grid-template-columns: 5.5rem minmax(0, 1fr) 6.5rem 8rem 44px; }
+  .imp-st__held tr:not(.imp-st__rm) { grid-template-columns: 5.15625rem minmax(0, 1fr) 6.09375rem 7.5rem 44px; }
   .imp-st__held tr:not(.imp-st__rm) td:nth-child(n) { grid-row: 1; }
   .imp-st__held tr:not(.imp-st__rm) td:nth-child(1) { grid-column: 1; }
   .imp-st__held tr:not(.imp-st__rm) td:nth-child(2) { grid-column: 2; }

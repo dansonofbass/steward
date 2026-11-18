@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from steward import gateway_name
 from steward.books.sample_guard import SAMPLE_REFUSED, SampleRefused, is_sample
 from steward.db.models import Account, AccountType, EventLog, Institution, SimplefinLink, Source, Transaction
-from steward.events import log_event, resolve_event, resolve_events_matching
+from steward.events import log_event, resolve_event, resolve_events_matching, visible_to
 from steward.logs import outside_text
 from steward.services import feeds, txn_match
 from steward.services.accounts import latest_balance, record_balance
@@ -39,6 +39,17 @@ log = logging.getLogger(__name__)
 SYNC_FAILED = "Steward couldn't sync this book. It will try again at the next sync."   # logged by books/jobs.py
 LINK_MESSAGES = ("That SimpleFIN address isn't allowed.", UNREACHABLE)  # step-1 errors not starting with "SimpleFIN "
 MODEL_DOWN_MSG = "{gateway} is off, so categorization is paused"
+SIGN_IN_AGAIN = "{name} needs you to sign in again at SimpleFIN"
+_SIGN_IN_TAIL = SIGN_IN_AGAIN.format(name="")
+
+
+def needs_sign_in(db: Session, manager: bool = True) -> list[str]:
+    """The banks whose open warning says to sign in again at SimpleFIN, oldest first. These warnings are Home's For you
+    rows, so Banks and Get Steward ready name the same banks Home does (issue #16)."""
+    q = visible_to(select(EventLog.message), manager).where(
+        EventLog.kind == "sync", EventLog.resolved_at.is_(None), EventLog.message.endswith(_SIGN_IN_TAIL))
+    names = [m.removesuffix(_SIGN_IN_TAIL) for m in db.scalars(q.order_by(EventLog.id))]
+    return list(dict.fromkeys(n for n in names if n))
 
 
 @dataclass
@@ -77,7 +88,7 @@ def _day(d: datetime) -> str:
 
 def _plain_error(name: str, code: str) -> str:
     if code.startswith("con."):
-        return f"{name} needs you to sign in again at SimpleFIN"
+        return SIGN_IN_AGAIN.format(name=name)
     return f"{name}: SimpleFIN reported a problem with this connection. Steward will try again at the next sync."
 
 
@@ -395,7 +406,7 @@ def run_sync(db: Session, http, link: SimplefinLink, now: datetime, model: Model
         if not first_pull and last_good is not None and last_good < cut:
             # Back after longer than the window reaches: what it posted in between wasn't asked for. Say so, on Home.
             _event_once(db, GAP_MSG.format(name=inst.name, since=_day(last_good), cut=_day(cut)))
-        for prefix in (f"{inst.name} needs you to sign in again at SimpleFIN", f"{inst.name}: ",
+        for prefix in (SIGN_IN_AGAIN.format(name=inst.name), f"{inst.name}: ",
                        f"{inst.name} couldn't be synced"):
             resolve_events_matching(db, "sync", prefix, now)
 

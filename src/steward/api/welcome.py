@@ -3,12 +3,11 @@
 waits on the other."""
 from __future__ import annotations
 
-import os
-
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from steward.app_settings import zone_needed
 from steward.books.registry import household_book_id
 from steward.books.service import welcome_kind
 from steward.db.directory_models import Book, Membership, User
@@ -38,8 +37,7 @@ def welcome(request: Request, ctx: BookContext = Depends(open_book), ddb: Sessio
     db.rollback()
 
     money_in = linked or rows > 0
-    zone = request.app.state.app_settings.effective()["general.timezone"]
     return {"kind": kind, "seen": seen, "inviter": inviter,
             "money": {"in": money_in, "linked": linked, "accounts": accounts, "rows": rows}, "waiting": waiting,
-            "zone_needed": kind == "first_run" and zone.source == "default" and not os.environ.get("TZ"),
+            "zone_needed": kind == "first_run" and zone_needed(request.app.state.app_settings),
             "step": "money" if not money_in else "sort" if waiting else "extras"}

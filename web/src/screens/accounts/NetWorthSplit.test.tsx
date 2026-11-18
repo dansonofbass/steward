@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Summary } from '../../api/types';
-import { stubFetch, wrapBook } from '../../test-utils';
+import { ME, stubFetch, wrapBook } from '../../test-utils';
 import { ACCTS, acct } from './fixtures';
 import { forgetJoy, MILESTONE_KEY } from './joy';
 import NetWorthSplit from './NetWorthSplit';
@@ -23,7 +23,7 @@ const SUMMARY: Summary = {
   },
 };
 const show = (summary: Summary = SUMMARY) => {
-  stubFetch({ '/api/summary': summary, '/api/accounts': { accounts: [...ACCTS, subaru, carLoan] } });
+  stubFetch({ '/api/auth/me': ME, '/api/summary': summary, '/api/accounts': { accounts: [...ACCTS, subaru, carLoan] } });
   wrapBook(<NetWorthSplit />);
 };
 
@@ -66,12 +66,12 @@ describe('net worth at the top of Accounts (investment views spec, Net worth)', 
     show({ ...SUMMARY, net_worth_cents: 95_000_000 });
     await screen.findByRole('region', { name: 'Net worth' });
     expect(screen.queryByText(/just crossed/)).toBeNull();
-    expect(localStorage.getItem(MILESTONE_KEY)).toBe('90000000');
+    expect(localStorage.getItem(`${MILESTONE_KEY}:1:ours`)).toBe('90000000');
   });
 
   it('a higher milestone says "Net worth just crossed $1,000,000. Look at that." with a burst', async () => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: false, media: q, addEventListener: () => {}, removeEventListener: () => {} }));
-    localStorage.setItem(MILESTONE_KEY, '90000000');
+    localStorage.setItem(`${MILESTONE_KEY}:1:ours`, '90000000');
     show({ ...SUMMARY, net_worth_cents: 100_500_000 });
     expect(await screen.findByText('Net worth just crossed $1,000,000. Look at that.')).toBeInTheDocument();
     await waitFor(() => expect(fx.burst).toHaveBeenCalledTimes(1));

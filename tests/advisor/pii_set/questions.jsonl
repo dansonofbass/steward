@@ -411,3 +411,5 @@
 {"id": "pii-411", "book": "parent", "category": "secret", "variant": "password", "text": "My password is hunter2, did I use it for the bank?", "spans": [{"start": 15, "end": 22, "kind": "secret", "known": false, "value": "hunter2"}]}
 {"id": "pii-412", "book": "household", "category": "secret", "variant": "last_four", "text": "The last four of my social are 3456, is that on the 1099?", "spans": [{"start": 31, "end": 35, "kind": "secret", "known": false, "value": "3456"}]}
 {"id": "pii-413", "book": "parent", "category": "secret", "variant": "access_code", "text": "The access code for the pharmacy portal is 5509.", "spans": [{"start": 43, "end": 47, "kind": "secret", "known": false, "value": "5509"}]}
+{"id": "pii-414", "book": "household", "category": "dob", "variant": "dob_7", "text": "DOB 6/14/1985: what's the full retirement age?", "spans": [{"start": 4, "end": 13, "kind": "dob", "known": true, "value": "1985-06-14"}]}
+{"id": "pii-415", "book": "household", "category": "dob", "variant": "dob_8", "text": "Her birthday is 02/02/87; does the RMD start next year?", "spans": [{"start": 16, "end": 24, "kind": "dob", "known": true, "value": "1987-02-02"}]}

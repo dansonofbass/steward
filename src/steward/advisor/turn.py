@@ -591,7 +591,7 @@ def _managers(env: AskEnv) -> list[str]:
     return [p.display_name for p in env.people() if p.id in ids]
 
 
-def _card(env: AskEnv, call: dict, content: dict) -> dict:
+def _card(env: AskEnv, call: dict, content: dict, home: dict[str, str]) -> dict:
     labels = labels_for(env)
     today = env.today()
     rows = content["rows"]
@@ -605,16 +605,29 @@ def _card(env: AskEnv, call: dict, content: dict) -> dict:
             "first": label(days[0]) if days else None, "last": label(days[-1]) if days else None,
             "names": [{"name": n, "count": c} for n, c in names.most_common()],
             "rows": [{"date": label(r["date"]), "store": r["merchant"], "amount_cents": r["amount_cents"],
-                      "category": r["category"], "account": r["account"]} for r in rows],
-            "payees": content["payees"],
+                      "category": r["category"], "account": r["account"], "full": home.get(f"r{i}")}
+                     for i, r in enumerate(rows)],
+            "payees": [{**p, "full": home.get(f"p{i}")} for i, p in enumerate(content["payees"])],
             "accounts": [{"alias": a, "label": labels.get(a, a)} for a in accounts],
             "until": clock(deadline), "more": content["more"]}
 
 
-def card_digest(turn_id: str, call_id: str, content: dict) -> str:
+def card_digest(turn_id: str, call_id: str, content: dict, home: dict[str, str]) -> str:
     """The hash an approval must carry (Task 6.5): this turn, this call, and exactly the rows and names on the card,
-    which are byte for byte what would be sent."""
-    return sha256_hex({"turn_id": turn_id, "call_id": call_id, "content": content})
+    which are byte for byte what would be sent, and the names a tick could send instead (public issue #1)."""
+    return sha256_hex({"turn_id": turn_id, "call_id": call_id, "content": content, "home": home})
+
+
+def with_ticked(content: dict, home: dict[str, str], ticked: frozenset[str]) -> dict:
+    """The rows as sent: each ticked row or payee that has a name at home carries it; every other stays as the card
+    showed it. A tick for a key the card didn't offer changes nothing."""
+    out = json.loads(json.dumps(content))
+    for key in sorted(ticked & home.keys()):
+        if key[0] == "r":
+            out["rows"][int(key[1:])]["merchant"] = home[key]
+        else:
+            out["payees"][int(key[1:])]["name"] = home[key]
+    return out
 
 
 def _viewer(env: AskEnv, prep: Prepared, call: dict) -> Iterator[dict]:
@@ -629,12 +642,13 @@ def _merchant(env: AskEnv, prep: Prepared, call: dict) -> Iterator[dict]:
     ("stop", final) through `yield from`. An OK counts only from the asker, in this book, for this turn and call, with
     the hash of this card (Control), and only if the asker is still a manager of the book when it arrives."""
     result = run_call(call, **_tool_kw(env))
+    home = result.pop("home", None) or {}               # the names a tick could send stay here; never sent as such
     if result["error"] or not (result["content"]["rows"] or result["content"]["payees"]):
         return "result", result                                   # nothing to approve (plan B ruling 5)
     if env.control is None or member_role(env.directory, env.book.id, env.user_id) != "manager":
         return (yield from _viewer(env, prep, call))
-    card = _card(env, call, result["content"])
-    digest = card_digest(prep.turn_id, call["id"], result["content"])
+    card = _card(env, call, result["content"], home)
+    digest = card_digest(prep.turn_id, call["id"], result["content"], home)
     card["hash"] = digest
     yield {"type": "approval", "state": "ask", "card": card}
     answer = env.control.wait_for_ok(prep.turn_id, call["id"], env.approval_wait, digest=digest)
@@ -646,6 +660,7 @@ def _merchant(env: AskEnv, prep: Prepared, call: dict) -> Iterator[dict]:
                             "line": NOT_MEMBER if reason == "not_a_member" else OFF_LINE}
         if member_role(env.directory, env.book.id, env.user_id) != "manager":     # a manager at the moment of the OK
             return (yield from _viewer(env, prep, call))
+        result = {**result, "content": with_ticked(result["content"], home, env.control.ticked(prep.turn_id))}
         prep.approved[call["id"]] = (env.user_id, sha256_hex(result["content"]))
         update_turn(env, prep.turn_id, approval="approved", store_rows=card["count"], approved_by=env.user_id)
         name = next((p.display_name for p in env.people() if p.id == env.user_id), "You")

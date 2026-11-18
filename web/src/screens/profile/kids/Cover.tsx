@@ -8,8 +8,9 @@ import type { BodyProps } from '../sections';
 import { consequence, type Choice } from './consequence';
 import { useKidSave } from './kidSave';
 import { SavedUndo } from './SavedUndo';
+import { thisYear } from '../../../lib/today';
 
-const planYear = () => new Date().getFullYear();
+const planYear = () => thisYear();
 
 export function choiceOf(k: Child, over: Partial<Choice> = {}): Choice {
   return { birth_year: k.birth_year, level: k.cost_level, share_pct: k.share_pct, covers_living: k.covers_living,

@@ -6,7 +6,7 @@ const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8'
 
 describe("Home's CSS and red", () => {
   it('never uses --danger, and the red figure is --warn', () => {
-    for (const file of ['./home.css', './home/strip.css', './home/since.css']) expect(read(file)).not.toContain('--danger');
+    for (const file of ['./home.css', './home/strip.css']) expect(read(file)).not.toContain('--danger');
     expect(read('./home.css')).toMatch(/\.verdict__figure\.is-red\s*\{[^}]*color:\s*var\(--warn\)/);
   });
 });

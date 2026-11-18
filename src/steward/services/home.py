@@ -120,11 +120,12 @@ def bills_sign(bills: list[dict]) -> dict:
 
 def verdict(*, empty: bool, day: int, net: int, payday_day: int | None, typical_income: int | None,
             flexible: list[dict], has_flex_target: bool, bills: list[dict], overdrawn: list[tuple[str, int]],
-            plan: dict | None, stale: bool, best_month: bool) -> dict:
+            plan: dict | None, stale: dict | None, best_month: bool) -> dict:
     """The headline's signals, in the spec's priority order (The headline, Building it). `flexible` is flexible_rows,
-    `bills` the Bills of watched_rows, `overdrawn` (name, cents) per checking account below $0, `plan` {age, still}."""
+    `bills` the Bills of watched_rows, `overdrawn` (name, cents) per checking account below $0, `plan` {age, still,
+    saved_at}."""
     if empty:
-        return {"opener": "empty", "problems": [], "clauses": [], "stale": False, "best_month": False}
+        return {"opener": "empty", "problems": [], "clauses": [], "stale": None, "best_month": False}
     problems: list[dict] = []
     late = [b for b in bills if b["state"] == "late"]
     if len(late) == 1:
@@ -158,7 +159,7 @@ def verdict(*, empty: bool, day: int, net: int, payday_day: int | None, typical_
     if expected and all(b["state"] not in UNPAID for b in expected):
         good.append({"kind": "bills_paid"})
     if plan is not None and plan["age"] is not None:
-        good.append({"kind": "plan", "age": plan["age"], "still": plan["still"]})
+        good.append({"kind": "plan", "age": plan["age"], "still": plan["still"], "saved_at": plan["saved_at"]})
 
     new_month = day <= NEW_MONTH_DAYS
     if problems:
@@ -197,6 +198,18 @@ def _accounts(db: Session, today: date) -> list[tuple[int, str, AccountType, Sou
     return [(aid, name, t, src, *latest.get(aid, (None, None))) for aid, name, t, src in accts]
 
 
+def stale_accounts(accounts: list[tuple], today: date) -> dict | None:
+    """P4, #15: the bank-fed day-to-day accounts whose newest balance is 3 days old or more: how many, the oldest and
+    newest of their ages in days, and the account's name when there is one alone. These are the accounts Home lists
+    (web isDayToDay), so the name is already on the page. None when every one is fresh."""
+    old = sorted(((today - d).days, name) for _, name, t, src, d, _ in accounts
+                 if src != Source.manual and t in DAY_TO_DAY and d is not None and (today - d).days >= STALE_DAYS)
+    if not old:
+        return None
+    return {"n": len(old), "oldest_days": old[-1][0], "newest_days": old[0][0],
+            "account": old[0][1] if len(old) == 1 else None}
+
+
 def _income_rows(db: Session, start: date, end: date) -> list[tuple[date, int, datetime]]:
     """Payday's rows (engineering choice 9): income money in, personal share, over [start, end), with when Steward got
     each (phase 17: the payday moment); business income and interest don't count."""
@@ -208,15 +221,16 @@ def _income_rows(db: Session, start: date, end: date) -> list[tuple[date, int, d
 
 
 def _plan(db: Session, look_at: datetime | None) -> dict | None:
-    """P13: the newest saved plan's comfortable age, so Home never solves. "Still" when the newest save is older than
-    the last look, or has the same age as the save before it."""
+    """P13: the newest saved plan's comfortable age and when it was saved, so Home never solves. #17: Plan shows today's
+    solve, which would cost Home a build of the plan's inputs and, cold, a solve, so the web says the saved date
+    instead. "Still" when the newest save is older than the last look, or has the same age as the save before it."""
     saved = plan_history(db, 2)
     if not saved:
         return None
     newest = saved[0]
     still = ((look_at is not None and newest.saved_at < look_at)
              or (len(saved) > 1 and saved[1].comfortable_age == newest.comfortable_age))
-    return {"age": newest.comfortable_age, "still": still}
+    return {"age": newest.comfortable_age, "still": still, "saved_at": newest.saved_at.isoformat()}
 
 
 def _one_question_name(db: Session) -> str | None:
@@ -296,8 +310,7 @@ def home_view(db: Session, today: date, now: datetime, user_id: int, manager: bo
     came = landed_payday(paydays, this_month, typical_income, today, look)
     empty = not accounts or (not window and not any(m["in_cents"] or m["out_cents"] for m in months))
     overdrawn = [(name, c) for _, name, t, _, _, c in accounts if t == AccountType.checking and c is not None and c < 0]
-    stale = any(src != Source.manual and t in DAY_TO_DAY and d is not None and (today - d).days >= STALE_DAYS
-                for _, _, t, src, d, _ in accounts)
+    stale = stale_accounts(accounts, today)
     net = now_month["net_cents"]
     v = verdict(empty=empty, day=today.day, net=net, payday_day=payday, typical_income=typical_income,
                 flexible=flexible, has_flex_target=target > 0, bills=bills, overdrawn=overdrawn, plan=plan,

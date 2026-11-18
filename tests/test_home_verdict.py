@@ -1,7 +1,13 @@
 """The verdict's signals (Home spec, The headline): problems (at most 2, a late Bill before overdrawn), soft signals in
 the table's order (at most 2), good clauses (spending, bills, plan), the openers, the caveat and the empty book. The
 web words them (lib/headline.ts); these are the keys."""
+from datetime import date
+
+from steward.db.models import AccountType, Source
 from steward.services import home as hm
+
+STALE = {"n": 2, "oldest_days": 29, "newest_days": 4, "account": None}
+SAVED = "2026-11-07T19:00:00+00:00"
 
 
 def flex(category: str, level: str | None) -> dict:
@@ -15,9 +21,10 @@ def bill(category: str, state: str, *, expected: bool = True, spent: int = 10_00
 
 
 BASE = dict(empty=False, day=20, net=50_000, payday_day=None, typical_income=500_000, flexible=[flex("dining", "on")],
-            has_flex_target=True, bills=[bill("utilities", "as_usual")], overdrawn=[], plan={"age": 54, "still": True},
-            stale=False, best_month=False)
-ON_TRACK, PAID, PLAN_STILL = {"kind": "spending_on_track"}, {"kind": "bills_paid"}, {"kind": "plan", "age": 54, "still": True}
+            has_flex_target=True, bills=[bill("utilities", "as_usual")], overdrawn=[],
+            plan={"age": 54, "still": True, "saved_at": SAVED}, stale=None, best_month=False)
+ON_TRACK, PAID = {"kind": "spending_on_track"}, {"kind": "bills_paid"}
+PLAN_STILL = {"kind": "plan", "age": 54, "still": True, "saved_at": SAVED}
 
 
 def v(**kw) -> dict:
@@ -25,7 +32,7 @@ def v(**kw) -> dict:
 
 
 def test_a_steady_month_says_spending_bills_and_the_plan():
-    assert v() == {"opener": "steady", "problems": [], "clauses": [ON_TRACK, PAID, PLAN_STILL], "stale": False,
+    assert v() == {"opener": "steady", "problems": [], "clauses": [ON_TRACK, PAID, PLAN_STILL], "stale": None,
                    "best_month": False}
 
 
@@ -36,10 +43,10 @@ def test_mostly_steady_with_a_little_behind_and_one_category_ahead():
 
 
 def test_a_late_bill_is_a_problem_and_otherwise_the_good_clauses_follow():
-    got = v(bills=[bill("utilities", "late", day=12)], plan={"age": 54, "still": False})
+    got = v(bills=[bill("utilities", "late", day=12)], plan={"age": 54, "still": False, "saved_at": SAVED})
     assert got["opener"] == "problem"
     assert got["problems"] == [{"kind": "late_bill", "category": "utilities", "usual_day": 12}]
-    assert got["clauses"] == [ON_TRACK, {"kind": "plan", "age": 54, "still": False}]          # bills aren't all paid
+    assert got["clauses"] == [ON_TRACK, {**PLAN_STILL, "still": False}]                       # bills aren't all paid
 
 
 def test_overdrawn_alone():
@@ -74,8 +81,24 @@ def test_a_new_month_on_days_1_to_3_only():
 
 
 def test_stale_adds_its_caveat_whatever_came_before():
-    assert v(stale=True)["stale"] is True
-    assert v(stale=True, overdrawn=[("Checking", -1)])["stale"] is True
+    assert v(stale=STALE)["stale"] == STALE
+    assert v(stale=STALE, overdrawn=[("Checking", -1)])["stale"] == STALE
+
+
+def _acct(name: str, as_of: date | None, *, t: AccountType = AccountType.checking, src: Source = Source.simplefin):
+    return (1, name, t, src, as_of, 100)
+
+
+def test_stale_counts_the_bank_fed_day_to_day_accounts_and_says_how_old_and_which_one_alone():
+    """#15: the line said "One account hasn't updated in a few days" whatever the count and the age."""
+    today = date(2026, 11, 16)
+    fresh, quiet = _acct("Savings", date(2026, 11, 14)), _acct("Cash box", date(2026, 9, 1), src=Source.manual)
+    house = _acct("House", date(2026, 9, 1), t=AccountType.property)
+    assert hm.stale_accounts([fresh, quiet, house, _acct("New card", None)], today) is None
+    assert hm.stale_accounts([fresh, _acct("Joint checking", date(2026, 10, 18))], today) == {
+        "n": 1, "oldest_days": 29, "newest_days": 29, "account": "Joint checking"}
+    two = [_acct("Joint checking", date(2026, 10, 18)), _acct("Card", date(2026, 11, 13), t=AccountType.credit), fresh]
+    assert hm.stale_accounts(two, today) == {"n": 2, "oldest_days": 29, "newest_days": 3, "account": None}
 
 
 def test_a_little_behind_is_at_most_half_the_usual_income():
@@ -102,12 +125,12 @@ def test_bills_paid_needs_an_expected_bill_all_paid():
 
 
 def test_not_by_70_has_no_plan_clause():
-    assert v(plan={"age": None, "still": False})["clauses"] == [ON_TRACK, PAID]
+    assert v(plan={"age": None, "still": False, "saved_at": SAVED})["clauses"] == [ON_TRACK, PAID]
 
 
 def test_an_empty_book_says_only_that():
-    assert v(empty=True, overdrawn=[("Checking", -1)], stale=True) == {
-        "opener": "empty", "problems": [], "clauses": [], "stale": False, "best_month": False}
+    assert v(empty=True, overdrawn=[("Checking", -1)], stale=STALE) == {
+        "opener": "empty", "problems": [], "clauses": [], "stale": None, "best_month": False}
 
 
 def test_the_bills_sign_counts_paid_of_expected_and_names_the_late_ones():

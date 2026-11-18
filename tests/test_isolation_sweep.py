@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from fastapi.routing import APIRoute, iter_route_contexts
 
-from steward.auth.sessions import COOKIE
+from steward.auth.cookies import HOST_SESSION as COOKIE
 from steward.books.sample_guard import SAMPLE_REFUSED
 from steward.books.service import create_book
 from steward.deps import NOT_IN_THIS_BOOK, NO_SUCH_BOOK, SAFE_METHODS, VIEWER_COPY, book_db, open_book, open_book_by_grant
@@ -24,6 +24,7 @@ TOP_LEVEL = {
     "/api/install/settings", "/api/install/settings/email", "/api/install/settings/backups",
     "/api/install/settings/general", "/api/install/email/test", "/api/install/gateway/pair",
     "/api/books/sample", "/api/books/sample/restore",
+    "/api/csp-report",                   # issue #14: no book, no sign-in; it only writes a scrubbed log line
 }
 
 
@@ -177,7 +178,7 @@ def test_a_person_outside_ours_gets_nothing_of_ours_from_the_top_level_routes(sw
     assert [b["slug"] for b in r.json()["books"]] == ["mom"]   # ours is not listed, and none of its marks come back
     _as(sweeper, tokens, "manager_a")   # a member of ours still gets ours' marks
     r = sweeper.get("/api/auth/me")
-    assert r.status_code == 200 and r.json()["books"][0]["profile"] == {"seen": False, "confirmed": False, "later_until": None}
+    assert r.status_code == 200 and r.json()["books"][0]["profile"] == {"seen": False, "confirmed": False, "later_until": None, "finished": False}
 
 
 def test_sweep_in_a_parent_book_viewers_cannot_write_and_others_get_404(app, sweeper, tokens):

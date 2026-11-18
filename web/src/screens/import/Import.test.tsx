@@ -490,7 +490,7 @@ describe('the receipt and the hiccups (phase 17 spec 3.7)', () => {
     stubFetch(routes({ 'POST /api/import/batch/commit': () => reply({ ...COMMIT, waiting: 12 }, 201) }));
     await toPreview();
     fireEvent.click(screen.getByRole('button', { name: 'Import 2,486' }));
-    expect(await screen.findByTestId('import-done')).toHaveTextContent('2,486 rows in. 12 wait in Review.');
+    expect(await screen.findByTestId('import-done')).toHaveTextContent('2,486 rows in. 12 to sort in Review.');
     expect(screen.getByTestId('import-done')).toHaveAttribute('role', 'status');
     expect(screen.getByText('Imported 2,486 into 3 accounts')).toBeInTheDocument();       // the receipt and its Undo stay
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
@@ -507,7 +507,14 @@ describe('the receipt and the hiccups (phase 17 spec 3.7)', () => {
     stubFetch(routes({ 'POST /api/import/batch/commit': () => reply({ ...COMMIT, imported: 1, waiting: 1 }, 201) }));
     await toPreview();
     fireEvent.click(screen.getByRole('button', { name: 'Import 2,486' }));
-    expect(await screen.findByTestId('import-done')).toHaveTextContent('1 row in. 1 waits in Review.');
+    expect(await screen.findByTestId('import-done')).toHaveTextContent('1 row in. 1 to sort in Review.');
+  });
+
+  it('says why rows wait: to sort, and possible duplicates', async () => {
+    stubFetch(routes({ 'POST /api/import/batch/commit': () => reply({ ...COMMIT, imported: 3, waiting: 1, duplicates: 1 }, 201) }));
+    await toPreview();
+    fireEvent.click(screen.getByRole('button', { name: 'Import 2,486' }));
+    expect(await screen.findByTestId('import-done')).toHaveTextContent('3 rows in. 1 to sort and 1 possible duplicate in Review.');
   });
 
   it('no line and no coins when nothing was added', async () => {
@@ -541,7 +548,7 @@ describe('the receipt and the hiccups (phase 17 spec 3.7)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Preview' }));
     await screen.findByRole('heading', { name: 'Preview', level: 3 });
     fireEvent.click(screen.getByRole('button', { name: 'Import 2,486' }));
-    expect(await screen.findByTestId('import-done')).toHaveTextContent('2,486 rows in. 12 wait in Review.');
+    expect(await screen.findByTestId('import-done')).toHaveTextContent('2,486 rows in. 12 to sort in Review.');
     expect(screen.getByText('Imported 2,486 into 3 accounts')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     expect(fx.winMoment).not.toHaveBeenCalled();
@@ -554,7 +561,7 @@ describe('the receipt and the hiccups (phase 17 spec 3.7)', () => {
     stubFetch(routes({ 'POST /api/import/batch/commit': () => reply({ ...COMMIT, waiting: 12 }, 201) }));
     await toPreview();
     fireEvent.click(screen.getByRole('button', { name: 'Import 2,486' }));
-    expect(await screen.findByTestId('import-done')).toHaveTextContent('2,486 rows in. 12 wait in Review.');
+    expect(await screen.findByTestId('import-done')).toHaveTextContent('2,486 rows in. 12 to sort in Review.');
     expect(screen.getByText('Imported 2,486 into 3 accounts')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     expect(fx.winMoment).not.toHaveBeenCalled();
@@ -565,7 +572,7 @@ describe('the receipt and the hiccups (phase 17 spec 3.7)', () => {
     stubFetch(routes({ 'POST /api/import/batch/commit': () => reply({ ...COMMIT, waiting: 12 }, 201) }));
     await toPreview();
     fireEvent.click(screen.getByRole('button', { name: 'Import 2,486' }));
-    expect(await screen.findByTestId('import-done')).toHaveTextContent('2,486 rows in. 12 wait in Review.');
+    expect(await screen.findByTestId('import-done')).toHaveTextContent('2,486 rows in. 12 to sort in Review.');
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument();
     expect(fx.winMoment).not.toHaveBeenCalled();
   });

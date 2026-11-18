@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from steward import clock, gateway_name
-from steward.auth import sessions
+from steward.auth import cookies, sessions
 from steward.books.owners import OwnerName, owner_options
 from steward.books.people import Person, attach_people, sample_people
 from steward.books.sample_guard import SAMPLE_REFUSED
@@ -52,10 +52,15 @@ def directory_write_db(request: Request) -> Iterator[Session]:
 
 
 def current_session(request: Request, db: Session = Depends(directory_db)):
-    token = request.cookies.get(sessions.COOKIE)
-    found = sessions.resolve(db, token, now()) if token else None
+    token, name = cookies.read_session(request)
+    t = now()
+    found = sessions.resolve(db, token, t) if token else None
     if found is None:
         raise HTTPException(401, detail={"error": "Please sign in."})
+    if name != cookies.session_name(request.app.state.settings.base_url):
+        # Issue #14: a 0.1.0 cookie still signs in for this release, and this answer moves it to the __Host- name,
+        # whatever answer the route gives (cookies.MoveSession).
+        cookies.move_session(request, token, max(0, int((found[1].expires_at - t).total_seconds())))
     # End the transaction resolve left open, so nothing is held while a handler waits for its request body
     # (json_object). Expired attributes reload later, inside the handler.
     db.commit()
@@ -98,6 +103,11 @@ class BookContext:
     @property
     def owners(self) -> tuple[OwnerName, ...]:
         return owner_options(self.book.kind, self.book.owner_names, self.people)
+
+    def owner_labels(self) -> dict[str, str]:
+        """Every owner key in words, as the owner picker shows it: a member's name or a role (issue #31). A key the
+        picker leaves out (a household of one's second person) keeps the book's own label."""
+        return {o.key: o.label for o in self.book.owner_names} | {o.key: o.label for o in self.owners}
 
 
 def _cant_open(reason: str, role: str) -> dict:

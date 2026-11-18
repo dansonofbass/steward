@@ -21,10 +21,11 @@ from steward.demo_watching import seed_watching
 from steward.inventory.suggestions import refresh
 from steward.db.directory_models import Membership, PendingInvite, User
 from steward.db.models import (
-    Account, AccountType, CategorySource, Institution, Plan, Source, Transaction, UserSetup,
+    Account, AccountType, CategorySource, Institution, Plan, Source, Transaction,
 )
 from steward.engine.version import ENGINE_VERSION
 from steward.events import log_event
+from steward.services.profile import mark
 from steward.settings import Settings
 
 books = open_books(Settings())
@@ -81,7 +82,7 @@ with Session(books.engine_for(ours)) as db:
         log_event(db, "warn", "sync", f"{bank} needs you to sign in again at SimpleFIN", actionable=True)
     seen = deps.now()
     for uid in ours_people:  # the existing specs start on Home, not in Set up Steward (onboarding ruling 15)
-        db.add(UserSetup(user_id=uid, seen_at=seen, confirmed_at=seen))
+        mark(db, uid, seen, confirmed=True)   # seed-demo already marked the demo people seen (issue #30)
     bank_row = db.scalar(select(Transaction).where(Transaction.raw_description == "BEAN & LEAF 0031",
                                                      Transaction.external_id.is_not(None))
                           .order_by(Transaction.posted_at.desc()))

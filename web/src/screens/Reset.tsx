@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, ApiError, json } from '../api/client';
-import { CHANGE_PASSWORD, CHOOSE_PASSWORD, INVITE_LEDE, NEW_PASSWORD, PASSWORD_CHANGED, RESET_LEDE, SIGN_IN } from '../lib/copy';
+import { CHANGE_PASSWORD, CHOOSE_PASSWORD, FORGOT, INVITE_LEDE, NEW_PASSWORD, PASSWORD_CHANGED, RESET_LEDE, RESET_NO_LINK, SIGN_IN } from '../lib/copy';
 import { Button } from '../ui/Button';
 import { Field } from '../ui/Field';
 import { Notice } from '../ui/Notice';
 import { AuthPanel } from './AuthPanel';
 
+/** The page the emailed reset or invite link opens. With no token in the address (a mail app that cut the link, a
+ *  bookmark) it says so before any form, and a link the server finds gone drops the form; both lead to Forgot your
+ *  password for a new link (#19). */
 export default function Reset() {
   const [params] = useSearchParams();
   const token = params.get('token') ?? '';
@@ -17,6 +20,7 @@ export default function Reset() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  const [gone, setGone] = useState(token ? '' : RESET_NO_LINK);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -26,7 +30,8 @@ export default function Reset() {
       await api('/api/auth/reset', json({ token, password }));
       setDone(true);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "That didn't finish. Try again.");
+      if (err instanceof ApiError && (err.body as { gone?: unknown } | null)?.gone === true) setGone(err.message);
+      else setError(err instanceof ApiError ? err.message : "That didn't finish. Try again.");
     }
     setBusy(false);
   }
@@ -36,6 +41,14 @@ export default function Reset() {
       <AuthPanel heading={heading} lede={lede}>
         <Notice>{PASSWORD_CHANGED}</Notice>
         <Link className="login__forgot" to="/login">{SIGN_IN}</Link>
+      </AuthPanel>
+    );
+  }
+  if (gone) {
+    return (
+      <AuthPanel heading={heading} lede={lede}>
+        <Notice tone={token ? 'error' : 'info'}>{gone}</Notice>
+        <Link className="login__forgot" to="/forgot">{FORGOT}</Link>
       </AuthPanel>
     );
   }

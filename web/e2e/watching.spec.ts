@@ -51,10 +51,10 @@ test.describe.serial('watching', () => {
     await page.goto(`/b/${slug}`);
     await expect(page.getByRole('link', { name: 'Home, 6 to look into' })).toBeVisible();
     await page.goto(`/b/${slug}/look-into`);
-    await expect(page.getByText('You can see this book but not change it.')).toBeVisible();
+    await expect(page.getByRole('main').getByText('You can see this book but not change it.')).toBeVisible();
     await shot(page, info.project.name, 'viewer-list');
     await page.getByTestId('flag-row').filter({ hasText: 'Ralphs' }).click();
-    await expect(page.getByText(/is checking:/)).toBeVisible();
+    await expect(page.getByRole('main').getByText(/is checking:/)).toBeVisible();
     await expect(page.getByRole('region', { name: 'What did you find?' })).toHaveCount(0);
     await expect(page.getByText('Only managers can mark flags.', { exact: false })).toBeVisible();
     await shot(page, info.project.name, 'viewer-flag');
@@ -93,7 +93,7 @@ test.describe.serial('watching', () => {
     const checking = page.getByRole('dialog', { name: 'Mark Still checking' });
     await checking.getByLabel('Note (optional)').fill('Calling Margaret this morning to ask about it.');
     await checking.getByRole('button', { name: 'Mark Still checking' }).click();
-    await expect(page.getByText('Alex is checking:')).toBeVisible();
+    await expect(page.getByRole('main').getByText('Alex is checking:')).toBeVisible();
     await shot(page, info.project.name, 'flag-checking');
     await page.getByRole('region', { name: 'What did you find?' }).getByRole('button', { name: 'Handled' }).click();
     const handled = page.getByRole('dialog', { name: 'Mark Handled' });

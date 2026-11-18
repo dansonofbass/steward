@@ -7,7 +7,11 @@ Hardened in Task 2.5 (the Task 5 security review): tokens come from the canonica
 same one the exact pass (known.py) matches on, so a variant spelling can't match one and miss the other. Each text
 is tokenised twice: as written, and with words parted at hidden breaks (camel case, a dropped zero-width space, a
 letter against a digit). A run of digit tokens longer than a window is also joined, so "7 1 4 5 5 5 0 1 0 2" is a
-phone number; and the digits of an identifier that mixes words and a long number are a form of their own."""
+phone number; and the digits of an identifier that mixes words and a long number are a form of their own.
+
+Widened for public issue #2: a name's parts of 2 letters count ("Li"), in the exact pass only (fingerprinted); a known name made only of everyday words
+("August", "Virginia Roth") has its whole form when the caller says so (`everyday`); and an address that starts with a
+house number has its leading 2 to 4 tokens as forms too ("1234 North Elm"), so it is matched typed short."""
 from __future__ import annotations
 
 import hashlib
@@ -65,30 +69,66 @@ def windows(toks: Sequence[str]) -> Iterator[tuple[int, int, str]]:
                 yield a, b, "".join(toks[a:b])
 
 
-def _forms(toks: list[str], name: bool) -> set[str]:
+def _part(t: str) -> bool:
+    """A name's part matched alone: 3 or more characters that aren't all digits, or 2 letters ("Li", "Bo")."""
+    return t not in GENERIC_WORDS and ((len(t) >= 3 and not t.isdigit()) or (len(t) == 2 and t.isalpha()))
+
+
+DIRECTIONS = frozenset("n s e w ne nw se sw north south east west northeast northwest southeast southwest".split())
+
+
+def _leading(toks: list[str]) -> set[str]:
+    """An address's house number and the start of its street, 2 to 4 tokens, when that start names more than generic
+    words and directions: "1234 north elm", never "1234 n"."""
+    return {canon(toks[:k]) for k in range(2, min(len(toks), WINDOW))
+            if not generic(toks[1:k]) and not all(t in DIRECTIONS for t in toks[1:k])}
+
+
+def _forms(toks: list[str], name: bool, everyday: bool = False, address: bool = False) -> set[str]:
     if not toks:
         return set()
     if all(t.isdigit() for t in toks):
         if len("".join(toks)) <= 4:          # 4 digits are allowed to leave (a last 4)
             return set()
-    elif generic(toks):
+    elif generic(toks) and not everyday:
         return set()
     if len(toks) <= WINDOW:
         forms = {canon(toks)}
     else:
         forms = {canon(toks[i:i + WINDOW]) for i in range(len(toks) - WINDOW + 1)}
     forms |= {j for i, k in digit_runs(toks) if len(j := "".join(toks[i:k])) > 4}
+    if address and any(c.isdigit() for c in toks[0]):
+        forms |= _leading(toks)
+        if len(toks) > 2 and toks[1] in DIRECTIONS:          # "1234 Elm St", typed without its "N"
+            forms |= _leading([toks[0], *toks[2:]])
     if name:
-        forms |= {t for t in toks if len(t) >= 3 and not t.isdigit() and t not in GENERIC_WORDS}
+        forms |= {t for t in toks if _part(t)}
     return forms
 
 
-def identifier_forms(identifier: str, *, name: bool) -> set[str]:
-    return _forms(tokens(identifier), name) | _forms(tokens(identifier, split=True), name)
+def identifier_forms(identifier: str, *, name: bool, everyday: bool = False, address: bool = False) -> set[str]:
+    return (_forms(tokens(identifier), name, everyday, address)
+            | _forms(tokens(identifier, split=True), name, everyday, address))
 
 
-def hashes_for(identifiers: Iterable[tuple[str, bool]], salt: str) -> set[str]:
-    return {digest(salt, f) for text, is_name in identifiers for f in identifier_forms(text, name=is_name)}
+def fingerprinted(form: str) -> bool:
+    """Whether a form is sent to the gateway as a fingerprint. A form of 2 letters ("ma", "ko", "li") stays in the
+    exact pass only: tools return ticker symbols and other short codes of 2 letters, so its fingerprint would stop
+    every turn that reads holdings for a member named Wei Ma, while the exact pass has already replaced it in the
+    question and no tool returns a person's name outside store rows, which the exact pass cleans too (review of public
+    issue #2)."""
+    return not (len(form) <= 2 and form.isalpha())
+
+
+def hashes_for(identifiers: Iterable[tuple], salt: str) -> set[str]:
+    """Each item is (text, name) or (text, name, everyday, address), as identifier_forms takes them. Forms that aren't
+    `fingerprinted` are left out."""
+    out: set[str] = set()
+    for text, is_name, *more in identifiers:
+        everyday, address = (*more, False, False)[:2]
+        out |= {digest(salt, f) for f in identifier_forms(text, name=is_name, everyday=everyday, address=address)
+                if fingerprinted(f)}
+    return out
 
 
 def string_forms(text: str) -> Iterator[str]:

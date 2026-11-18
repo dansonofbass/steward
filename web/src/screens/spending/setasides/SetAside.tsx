@@ -6,6 +6,7 @@ import { useAccounts, useSetAside } from '../../../api/hooks';
 import { editSetAside, invalidateSetAsides, replaceSetAside, skipDue, stopSetAside, unmatchPayment } from '../../../api/setasides';
 import type { SetAsideBody, SetAsideDetail, SetAsideDue } from '../../../api/types';
 import { useCanEdit } from '../../../book/BookContext';
+import { useItemTitle } from '../../../frame/itemTitle';
 import { Link, useNavigate } from '../../../book/links';
 import { label } from '../../../lib/categories';
 import { dollars, localYmd, money } from '../../../lib/format';
@@ -29,6 +30,7 @@ import { Sep } from '../../../ui/Sep';
 import '../../transactions.css';
 import '../spending.css';
 import './setasides.css';
+import { today } from '../../../lib/today';
 
 const DUE_ICON = { missed: CircleAlert, paid: CircleCheck, late: CircleCheck, skipped: CircleCheck, next: CalendarClock, upcoming: Calendar };
 
@@ -70,6 +72,7 @@ function Basis({ r }: { r: SetAsideDetail }) {
 export function SetAside() {
   const { id = '0' } = useParams();
   const q = useSetAside(Number(id));
+  useItemTitle(q.data?.name);
   const back = <BackLink to="/spending/setasides">{C.SETTING_ASIDE}</BackLink>;
   if (q.isError) return <div className="screen spending">{back}<Notice tone="error"><p>{q.error.message}</p></Notice></div>;
   if (!q.data) return <div className="screen spending" aria-busy="true">{back}<Skeleton lines={8} /></div>;
@@ -235,7 +238,7 @@ function Detail({ r, back }: { r: SetAsideDetail; back: ReactNode }) {
           editing={{ id: r.id, isEstimate: r.is_estimate }} onSubmit={(_, changes) => void save(changes)} onCancel={() => setEditing(false)} sharedWith={sharedWith} />
       </Sheet>
       <ConfirmSheet open={stopping} title={fill(C.STOP_TITLE, { name: r.name })} body={C.STOP_BODY} action={C.STOP_ACTION} variant="danger" busy={busy === 'stop'} error={error}
-        onConfirm={() => void run('stop', () => stopSetAside(r.id), () => { removal.removed(fill(C.STOPPED, { date: dayLabel(localYmd(new Date().toISOString())) })); setStopping(false); })}
+        onConfirm={() => void run('stop', () => stopSetAside(r.id), () => { removal.removed(fill(C.STOPPED, { date: dayLabel(today()) })); setStopping(false); })}
         onClose={() => setStopping(false)} returnTo={removal.returnTo} />
     </div>
   );

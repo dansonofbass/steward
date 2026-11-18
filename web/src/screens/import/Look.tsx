@@ -12,9 +12,10 @@ type Props = {
   onDone: (include: Record<string, number[]>, simplefinOn: boolean) => void; onClose: () => void;
 };
 
-// A file's rows are history, so the date always carries its year ("Mar 1, 2024").
+// A file's rows are history, so the date always carries its year ("Mar 1, 2024"): today is given as a day in 2000.
+const ALWAYS_YEAR = '2000-01-01';
 const said = (r: { posted_at: string; description: string; amount_cents: number }) =>
-  `${dateLabel(r.posted_at, new Date(2000, 0, 1))} · ${r.description} · ${money(r.amount_cents)}`;
+  `${dateLabel(r.posted_at, ALWAYS_YEAR)} · ${r.description} · ${money(r.amount_cents)}`;
 const shown = (more: number) => (more > 0 ? C.NOT_SHOWN.replace('{n}', count(more)) : null);
 
 /** A sheet over Preview listing one line's rows (P15, P16), at most 200; nothing vanishes unseen. Done sends the
@@ -72,7 +73,7 @@ export function Look({ line, reply, include, simplefinOn, onDone, onClose }: Pro
           <ul className="plain imp-look__rows">
             {(reply.balances?.rows ?? []).map((b) => (
               <li key={`${b.account}-${b.as_of}`}>
-                {b.account} · {dateLabel(b.as_of, new Date(2000, 0, 1))} · {money(b.cents)}{b.kept ? ` · ${C.KEPT}` : ''}
+                {b.account} · {dateLabel(b.as_of, ALWAYS_YEAR)} · {money(b.cents)}{b.kept ? ` · ${C.KEPT}` : ''}
               </li>
             ))}
           </ul>
@@ -81,7 +82,7 @@ export function Look({ line, reply, include, simplefinOn, onDone, onClose }: Pro
           <ul className="plain imp-look__rows">
             {(reply.holdings?.rows ?? []).map((h) => (
               <li key={`${h.account}-${h.as_of}`}>
-                {C.HOLDINGS_LINE.replace('{account}', h.account).replace('{date}', dateLabel(h.as_of, new Date(2000, 0, 1))).replace('{holdings}', h.count === 1 ? C.HOLDINGS_ONE : C.HOLDINGS_N.replace('{n}', count(h.count)))}
+                {C.HOLDINGS_LINE.replace('{account}', h.account).replace('{date}', dateLabel(h.as_of, ALWAYS_YEAR)).replace('{holdings}', h.count === 1 ? C.HOLDINGS_ONE : C.HOLDINGS_N.replace('{n}', count(h.count)))}
                 {h.kept ? ` · ${C.KEPT}` : ''}
               </li>
             ))}

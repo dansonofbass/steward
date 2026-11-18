@@ -13,11 +13,12 @@ To do something with these settings, start from a guide: [access](../guides/acce
 | Variable | Default | In the app | What it does |
 |---|---|---|---|
 | `STEWARD_DATA_DIR` | required | | The folder that holds the books, the directory and the encryption key. The Docker image sets it to `/data`. |
-| `STEWARD_BASE_URL` | required | | The address people open Steward at, like `https://steward.example.com`. Passkeys are tied to it, writes from any other address are refused, and the links in emails and the setup link start with it. |
+| `STEWARD_BASE_URL` | required | | The address people open Steward at, like `https://steward.example.com`. Passkeys are tied to it, writes from any other address are refused, and the links in emails and the setup link start with it. Steward's API answers only at this address's name, at `localhost`, `127.0.0.1` and `[::1]`, and at the names in `STEWARD_ALLOWED_HOSTS`. [S3](../CLAIMS.md#s3) |
 | `STEWARD_HOST` | `127.0.0.1` | | The address Steward listens on. The Docker image sets `0.0.0.0` inside the container; compose publishes the port on `127.0.0.1` only, so Steward answers on this machine unless you choose a way in. [S13](../CLAIMS.md#s13) |
 | `STEWARD_PORT` | `8420` | | The port Steward listens on. The Docker image sets `8420`. |
-| `STEWARD_ENV` | `prod` | | `prod` for a real install. `test` is for the automated tests: it turns off the background jobs and sends no email. In `prod`, Steward refuses to start while a demo sign-in is left in the books. [S14](../CLAIMS.md#s14) |
+| `STEWARD_ENV` | `prod` | | `prod`, `test` or `demo`, in lower case. Any other value stops Steward at start-up. `prod` is for a real install. `test` is for the automated tests: it turns off the background jobs and sends no email. `demo` is for the demo compose file, which keeps the demo sign-ins. In `prod`, Steward refuses to start while a demo sign-in is left in the books. [S14](../CLAIMS.md#s14) |
 | `STEWARD_SESSION_DAYS` | `30` | | How many days a sign-in lasts before the device asks again. |
+| `STEWARD_ALLOWED_HOSTS` | none | | More names Steward's API answers at, separated by commas, such as `steward.lan,100.101.102.103`: no `https://` and no port. An IPv6 address works with or without brackets, as `fd7a:115c::1` or `[fd7a:115c::1]`. Use it when Steward is also reached at a name that isn't in `STEWARD_BASE_URL`, such as a second VPN name, or the address in the gateway's `nas_url`. At any other name the API answers 421 "Misdirected Request", which keeps a hostile page that points its own name at your machine from reaching Steward. |
 | `STEWARD_TRUSTED_PROXIES` | `127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16` | | The addresses Steward believes when they say which address and which scheme a request came in on. Tailscale and the bundled proxy connect from these ranges. |
 | `STEWARD_KEY_FILE` | `steward.key` in the data folder | | Where the encryption key lives, such as a Docker secret at `/run/secrets/steward_key`. Backups never hold it. |
 | `STEWARD_GATEWAY_URL` | none | | The gateway's address, like `http://gateway:8430` in compose. With a paired gateway, Ask, categorizing and PDF reading go through it. Empty means no gateway. |
@@ -80,7 +81,7 @@ The gateway reads `gateway.toml` from its config folder. The file is optional, a
 | `statement_layout_timeout_s` | `120` | Seconds to wait for a layout, from 10 to 600. |
 | `statement_vision_model` | `gemma4:12b-it-qat` | The local model that reads scanned pages. |
 | `statement_page_timeout_s` | `90` | Seconds to wait for one scanned page, from 10 to 600. |
-| `nas_url` | none | For Claude Code only: Steward's address on your tailnet, like `https://steward.tail1234.ts.net`, or on this machine. |
+| `nas_url` | none | For Claude Code only: Steward's address on your tailnet, like `https://steward.tail1234.ts.net`, or on this machine. Its name must be the one in Steward's `STEWARD_BASE_URL` or in its `STEWARD_ALLOWED_HOSTS`. |
 | `mcp` | `false` | `true` lets Claude Code connect over MCP. Off, nothing listens on `mcp_port`. |
 | `mcp_port` | `8431` | The port for Claude Code on 127.0.0.1, from 1024 to 65535 and not the gateway's own `port`. |
 

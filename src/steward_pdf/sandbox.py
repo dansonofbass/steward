@@ -4,10 +4,11 @@ its kernel can confine it; otherwise the gateway runs this same module and Stewa
 parse_extract and parse_render, the checks it runs on its own child (remote-reading P56, P62). Before
 reading, the child sets RLIMIT_AS 1 GiB, RLIMIT_CPU 60 s, RLIMIT_FSIZE 0 (SIGXFSZ ignored, so a write fails instead
 of killing it), RLIMIT_NOFILE 32 and RLIMIT_CORE 0, asks to die with its parent (and dies at once if the parent is
-already gone), sets its own SIGKILL deadline 100 s out, then puts up landlock's wall (no file outside its runtime can be
-opened or listed, though a stat still shows whether a path exists and its metadata, never what it holds) and last
-installs confine's seccomp filter (no network, exec, new process, ptrace, signal to another process, link read, or
-change to a file, its metadata or the child's own confinement; confine's docstring has the exact rules). It reads a
+already gone), sets its own SIGKILL deadline 100 s out, imports the PDF libraries (preload), then puts up landlock's
+wall (no file but the fonts, pdfminer's character maps and its own folder can be opened or listed, though a stat still
+shows whether a path exists and its metadata, never what it holds) and last installs confine's seccomp filter (no
+network, exec, new process, ptrace, signal to another process, link read, or change to a file, its metadata or the
+child's own confinement; confine's docstring has the exact rules). It reads a
 PDF only with both up, on every machine: seccomp alone leaves every file Steward's user can read,
 the book key included, open to a child a crafted PDF took over. It runs with an empty environment, in an
 empty 0700 folder that the parent removes after, under a 90-second wall timeout, with stdout capped at 16 MB; one
@@ -68,6 +69,31 @@ def _limit() -> None:
         os.nice(NICE)
     except OSError:
         pass
+
+
+CODECS = ("utf-8", "utf-16", "utf-16-be", "utf-16-le", "latin-1", "ascii")    # each one the PDF libraries name
+
+
+def preload() -> None:
+    """#12: import, before the wall and before any input is read, everything the child would otherwise load after it,
+    since behind the wall it can't read its own sys.path. The PDF libraries, and what they import only on first use:
+    PIL and its PNG writer for a render, cryptography's backend and pdfminer's password rule for an AES file, and the
+    codecs they decode with (a ToUnicode map is UTF-16BE). Then what the selfcheck's probes import. Nothing here reads
+    a PDF."""
+    import base64  # noqa: F401
+    import codecs
+    import fcntl  # noqa: F401
+    import socket  # noqa: F401
+
+    import pdfminer._saslprep  # noqa: F401
+    import pdfplumber  # noqa: F401
+    import pypdfium2  # noqa: F401
+    from cryptography.hazmat.backends import default_backend
+    from PIL import Image, PngImagePlugin  # noqa: F401
+    default_backend()                                   # imports the OpenSSL backend pdfminer asks for on each AES call
+    Image.preinit()                                     # the plugins Image.save looks up by name
+    for name in CODECS:
+        codecs.lookup(name)
 
 
 def _area(im: dict, w: float, h: float) -> float:
@@ -299,12 +325,14 @@ def main(argv: list[str]) -> int:
     except Exception:                                   # noqa: BLE001 - not Linux x86_64: it stays unconfined
         ready = False
     if ready:                                           # the wall first, so the filter can refuse landlock_* after
+        preload()                                       # before the wall, which keeps sys.path out; a failure here
+        #                                                 ends the child, so nothing reads
         try:
             walled = landlock.restrict(landlock.runtime_paths()) > 0
         except Exception:                               # noqa: BLE001 - no Landlock here: the caller decides (P59)
             walled = False
         try:
-            confine.install()                           # last, before stdin is read or a PDF library imported
+            confine.install()                           # last, before stdin is read
             confined = True
         except Exception:                               # noqa: BLE001 - any failure leaves it unconfined
             confined = False

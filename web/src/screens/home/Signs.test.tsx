@@ -2,8 +2,9 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { SignsData } from '../../api/home';
 import type { BusinessReport } from '../../api/types';
+import { setHouseholdZone } from '../../lib/today';
 import { wrapBook } from '../../test-utils';
-import { HOME } from './fixtures';
+import { HOME, SAVED } from './fixtures';
 import { Signs } from './Signs';
 
 const signs = (patch: Partial<SignsData>): SignsData => ({ ...HOME.signs, ...patch });
@@ -44,16 +45,31 @@ describe('Signs (Home spec, Vital signs)', () => {
     }
   });
 
-  it('Plan: the saved plan, Not by 70, or no plan yet; it opens the Plan', () => {
+  it('Plan: the saved plan with its date (#17), Not by 70, or no plan yet; it opens the Plan', () => {
     const a = show(HOME.signs);
-    expect(tile('Plan: Comfortably at 54')).toHaveAttribute('href', '/b/ours/plan');
+    expect(tile('Plan: Comfortably at 54 · saved Oct 12')).toHaveAttribute('href', '/b/ours/plan');
     a.unmount();
-    const b = show(signs({ plan: { age: null, still: false } }));
-    expect(tile('Plan: Not by 70')).toBeInTheDocument();
+    const b = show(signs({ plan: { age: null, still: false, saved_at: SAVED } }));
+    expect(tile('Plan: Not by 70 · saved Oct 12')).toBeInTheDocument();
     b.unmount();
+    const c = show(signs({ plan: { age: 61, still: false, saved_at: '2025-12-30T12:00:00+00:00' } }));
+    expect(tile('Plan: Comfortably at 61 · saved Dec 30, 2025')).toBeInTheDocument();
+    c.unmount();
     show(signs({ plan: null }));
     expect(tile('Plan: No plan yet')).toBeInTheDocument();
     expect(value('plan')).toHaveClass('is-muted');
+  });
+
+  it("Plan: in January the year is the household's, with the household west of the device (#26)", () => {
+    // Pago Pago (UTC-11) is west of nearly every device: the device's midnight on Jan 1 is still Dec 31 there, which
+    // made this January's save show its year and last December's leave it out.
+    setHouseholdZone('Pacific/Pago_Pago');
+    const jan = (saved_at: string) => wrapBook(<Signs signs={signs({ plan: { age: 54, still: false, saved_at } })} month="2027-01" businessFailed={false} />);
+    const a = jan('2027-01-10T20:00:00+00:00');   // Jan 10, 9 AM at home
+    expect(tile('Plan: Comfortably at 54 · saved Jan 10')).toBeInTheDocument();
+    a.unmount();
+    jan('2026-12-20T20:00:00+00:00');
+    expect(tile('Plan: Comfortably at 54 · saved Dec 20, 2026')).toBeInTheDocument();
   });
 
   it("Net worth: the total and this month's change, green only when up; it opens Accounts", () => {

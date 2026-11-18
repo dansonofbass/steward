@@ -21,7 +21,7 @@ test('a manual balance update shows on the Accounts tab', async ({ page }, testI
   const cents = testInfo.project.name === 'phone' ? 2_500_000 : 2_600_000;
   await page.getByLabel('Balance').fill((cents / 100).toFixed(2));
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByText('Saved.')).toBeVisible();
+  await expect(page.getByRole('main').getByText('Saved.')).toBeVisible();
   // A 529 is not day-to-day, so Home leaves it out; the Accounts tab lists it under Updated manually.
   await tab(page, 'Accounts').click();
   await expect(page.getByRole('heading', { name: 'Accounts', level: 1 })).toBeVisible();
@@ -88,7 +88,7 @@ test('change my password signs other devices out', async ({ page, browser }, tes
   await page.getByLabel('Current password').fill('pw-change-demo-2026');
   await page.getByLabel('New password').fill('pw-changed-demo-2026');
   await page.getByRole('button', { name: 'Change my password' }).click();
-  await expect(page.getByText("Your password is changed. Other devices were signed out. Passkeys still sign in, so remove any you don't recognize.")).toBeVisible();
+  await expect(page.getByRole('main').getByText("Your password is changed. Other devices were signed out. Passkeys still sign in, so remove any you don't recognize.")).toBeVisible();
   expect((await otherPage.request.get('/api/auth/me')).status()).toBe(401);
   expect((await page.request.get('/api/auth/me')).status()).toBe(200);
   await other.close();
@@ -123,6 +123,10 @@ test('banks page shows unlinked state and the event log lists entries', async ({
   await expect(page.getByLabel('Setup token')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Link' })).toBeVisible();
   await expect(page.getByText('Big Bank', { exact: true })).toBeVisible(); // institutions list
+  // Issue #16: Home's Fix opens this page, which names the banks Home's sign-in warnings are about and gives the step.
+  const need = page.getByTestId('sign-in-needed');
+  await expect(need).toContainText('Big Bank needs you to sign in again at SimpleFIN.');
+  await expect(need).toContainText('Sign in again at SimpleFIN Bridge, then link SimpleFIN with a new setup token.');
   await page.goto('/settings/log');
   await expect(page.getByRole('listitem').first()).toBeVisible();
   await page.getByRole('checkbox', { name: 'Unresolved only' }).check();

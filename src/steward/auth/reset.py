@@ -13,6 +13,7 @@ from steward.db.directory_models import Passkey, PasswordReset, User
 from steward.mail import Mailer, mail_ready
 
 TTL_MINUTES = 15
+LINK_GONE = "That link has expired or was already used."   # web/src/lib/copy.ts RESET_LINK_GONE
 log = logging.getLogger("steward.mail")
 
 

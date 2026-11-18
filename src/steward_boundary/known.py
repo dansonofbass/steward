@@ -18,14 +18,16 @@ from steward_boundary.spans import Edit, merge
 class Known:
     text: str                  # the identifier as the book stores it
     replacement: str           # what replaces it: an alias, or a bracket token
-    name: bool = False         # a person's name: each part of 3 or more letters is matched alone too
+    name: bool = False         # a person's name: each part of 3 or more characters, or 2 letters, is matched alone too
+    everyday: bool = False     # a known name made only of everyday words ("August"): kept, as its whole form only
+    address: bool = False      # a street address: its leading tokens from the house number are forms too
 
 
 def forms_table(knowns: Iterable[Known]) -> dict[str, str]:
     """Each form of each identifier and its replacement; the first identifier to claim a form keeps it."""
     table: dict[str, str] = {}
     for k in knowns:
-        for form in sorted(identifier_forms(k.text, name=k.name)):
+        for form in sorted(identifier_forms(k.text, name=k.name, everyday=k.everyday, address=k.address)):
             table.setdefault(form, k.replacement)
     return table
 

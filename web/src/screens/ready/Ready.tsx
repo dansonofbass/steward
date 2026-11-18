@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from '../../book/links';
 import { soundOn } from '../../lib/celebrations';
-import { S_READY, TRY_AGAIN } from '../../lib/copy';
+import { S_BANKS_AND_ACCOUNTS, S_READY, SIGN_IN_STEP, SIGN_IN_STEP_UNLINKED, TRY_AGAIN } from '../../lib/copy';
 import { nextLine } from '../../lib/lines';
 import { momentAllowed } from '../../lib/momentAllowed';
 import { Acorn } from '../../ui/Acorn';
@@ -63,6 +63,10 @@ export default function Ready() {
     void ready.refetch();
   };
   const panel = (row: ReadyRow): ReactNode => {
+    if (row.key === 'money' && Array.isArray(row.extra.sign_in) && row.extra.sign_in.length > 0) {
+      // Unlinking leaves the warnings open, so the step follows Banks: Update now only while SimpleFIN is linked.
+      return <><p>{row.extra.linked === true ? SIGN_IN_STEP : SIGN_IN_STEP_UNLINKED}</p><p className="ready__links"><Link className="link" to="/settings/banks">{S_BANKS_AND_ACCOUNTS}</Link></p></>;
+    }
     if (row.key === 'money') {
       return <p className="ready__links"><Link className="link" to="/settings/banks">{LINK_BANK}</Link><Link className="link" to="/settings/import">{IMPORT_FILE}</Link></p>;
     }

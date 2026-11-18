@@ -10,14 +10,36 @@ test.beforeAll(async () => { await restoreVault(); });
 const RUNS = 5;
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 
-test('Home is interactive under 1.5 s on a throttled phone', async ({ page }) => {
+// Issue #24: layout shift on Home, the session-window CLS of web.dev/cls (gaps under 1 s, windows under 5 s), counted
+// from the first paint until the strip, Since and the fonts have all landed. Budget 0.1, the "good" line.
+const CLS_BUDGET = 0.1;
+const watchLayoutShift = () => {
+  const w = window as unknown as { __cls: number };
+  w.__cls = 0;
+  let windowValue = 0;
+  let first = 0;
+  let last = 0;
+  new PerformanceObserver((list) => {
+    for (const e of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean })[]) {
+      if (e.hadRecentInput) continue;
+      if (windowValue && e.startTime - last < 1000 && e.startTime - first < 5000) windowValue += e.value;
+      else { windowValue = e.value; first = e.startTime; }
+      last = e.startTime;
+      w.__cls = Math.max(w.__cls, windowValue);
+    }
+  }).observe({ type: 'layout-shift', buffered: true });
+};
+
+test('Home is interactive under 1.5 s on a throttled phone, and nothing on it moves', async ({ page }) => {
   await loginAs(page, 'alex');
+  await page.addInitScript(watchLayoutShift);
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Network.enable');
   await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 30, downloadThroughput: (25 * 1024 * 1024) / 8, uploadThroughput: (10 * 1024 * 1024) / 8 });
   await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
   const times: number[] = [];
+  const shifts: number[] = [];
   for (let i = 0; i < RUNS; i++) {
     await page.goto('about:blank');
     await page.goto('/', { waitUntil: 'commit' });
@@ -25,9 +47,17 @@ test('Home is interactive under 1.5 s on a throttled phone', async ({ page }) =>
     await page.waitForFunction(() => performance.getEntriesByName('home-ready').length > 0);
     // Home re-marks on remount; the first entry after a fresh navigation is the load we want.
     times.push(await page.evaluate(() => performance.getEntriesByName('home-ready')[0].startTime));
+    await page.getByTestId('flow-strip').waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    // The shifts are reported with the next frame; two frames on, every one from the arrivals above is counted.
+    shifts.push(await page.evaluate(() => new Promise<number>((done) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => done((window as unknown as { __cls: number }).__cls)));
+    })));
   }
   console.log(`PERF home-ready: median ${median(times).toFixed(0)} ms over ${RUNS} runs, cold cache (budget 1500 ms); runs ${times.map((t) => t.toFixed(0)).join(', ')}`);
+  console.log(`PERF home-cls: worst ${Math.max(...shifts).toFixed(3)} over ${RUNS} runs (budget ${CLS_BUDGET}); runs ${shifts.map((s) => s.toFixed(3)).join(', ')}`);
   expect(median(times)).toBeLessThan(1500);
+  expect(Math.max(...shifts)).toBeLessThan(CLS_BUDGET);
 });
 
 test('a review action round-trips under 150 ms', async ({ page }) => {

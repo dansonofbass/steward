@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from steward.advisor import grants as G
-from steward.auth.sessions import COOKIE
+from steward.auth.cookies import HOST_SESSION as COOKIE
 from steward.db.directory_models import User
 from steward.db.models import AdvisorOutgoing, ChatConversation
 from steward.deps import NO_SUCH_BOOK

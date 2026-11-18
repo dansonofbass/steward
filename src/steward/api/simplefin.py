@@ -9,7 +9,7 @@ from steward.db.models import SimplefinLink
 from steward.deps import BookContext, book_db, not_recorded, now, open_book, real_book_only, recorded, sample_ok
 from steward.inventory.changes import record
 from steward.services.simplefin.client import SimplefinError, claim, parse_setup_token
-from steward.services.simplefin.sync import sync_now
+from steward.services.simplefin.sync import needs_sign_in, sync_now
 
 router = APIRouter(dependencies=[Depends(open_book), Depends(real_book_only)])
 
@@ -26,7 +26,7 @@ def _run(request: Request):
     from steward.books.owners import default_owner
     from steward.inventory.accounts import parent_hook
     st, book = request.app.state, request.state.book.book
-    return sync_now(st.books.engine_for(book), st.http, st.model, now(), st.settings.allowed_hosts,
+    return sync_now(st.books.engine_for(book), st.http, st.model, now(), st.settings.simplefin_allowed_hosts,
                     default_owner=default_owner(book.owner_names), after=parent_hook(book.kind), household=book.kind == "household")
 
 
@@ -36,18 +36,19 @@ def _lock(request: Request):
 
 @router.get("/simplefin")
 @sample_ok
-def status(db: Session = Depends(book_db)):
+def status(db: Session = Depends(book_db), ctx: BookContext = Depends(open_book)):
     link = _link(db)
     return {"linked": link is not None,
             "last_sync_at": link.last_sync_at.isoformat() if link and link.last_sync_at else None,
-            "last_error": link.last_error if link else None}
+            "last_error": link.last_error if link else None,
+            "sign_in": needs_sign_in(db, ctx.is_manager)}   # issue #16: the banks Home's Fix is about
 
 
 @router.post("/simplefin/link", status_code=201)
 @recorded
 def link(body: LinkIn, request: Request, db: Session = Depends(book_db), ctx: BookContext = Depends(open_book)):
     st = request.app.state
-    hosts = st.settings.allowed_hosts
+    hosts = st.settings.simplefin_allowed_hosts
     if _link(db) is not None:
         raise HTTPException(409, detail={"error": "SimpleFIN is already linked. Unlink it first."})
     db.rollback()  # no transaction open while we talk to SimpleFIN

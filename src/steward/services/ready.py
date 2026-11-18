@@ -71,12 +71,17 @@ def household_row(profile_done: int, profile_total: int, plan_done: int, plan_to
 
 
 def money_row(*, money_in: bool, linked: bool, last_sync: datetime | None, sync_failed: bool, accounts: int,
-              last_import: datetime | None, waiting: int, today: date) -> Row:
-    extra = {"linked": linked, "failed": sync_failed}
+              last_import: datetime | None, waiting: int, today: date, sign_in: list[str] | None = None) -> Row:
+    sign_in = sign_in or []
+    extra = {"linked": linked, "failed": sync_failed, "sign_in": sign_in}
     if not money_in:
         return Row("money", "needs", "Nothing is in yet.", "Add", extra=extra)
     if sync_failed:
         return Row("money", "needs", "The last bank sync didn't work.", "Check", extra=extra)
+    if sign_in:     # issue #16: the need Home's For you shows, with Fix there too
+        detail = (f"{sign_in[0]} needs you to sign in again at SimpleFIN." if len(sign_in) == 1
+                  else f"{len(sign_in)} banks need you to sign in again at SimpleFIN.")
+        return Row("money", "needs", detail, "Fix", extra=extra)
     wait = "" if waiting <= 0 else f" · {waiting} {'waits' if waiting == 1 else 'wait'} in Review"
     if linked:
         head = "Linked" + (f" · updated {_local_day(last_sync, today)}" if last_sync else "")

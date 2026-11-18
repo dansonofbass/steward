@@ -2,7 +2,8 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { SinceData } from '../../api/home';
 import { wrapBook } from '../../test-utils';
-import HomeSince, { whenWord } from './HomeSince';
+import HomeSince from './HomeSince';
+import { whenWord } from './sinceWhen';
 
 const SINCE: SinceData = {
   from: '2026-10-27T19:00:00+00:00', from_day: '2026-10-27', over_month: false, more: 0, net_worth_cents: 210_000,

@@ -46,6 +46,13 @@ export const useSentDetail = (key: string | null) => useQuery({
   queryKey: ['chat', 'sent', 'one', key], enabled: key !== null,
   queryFn: () => api<SentDetail>(`/api/chat/sent/${encodeURIComponent(key ?? '')}`),
 });
+/** The fixed instructions and tools behind a Getting ready row's prefix_sha256 (issue #3); null when the gateway is away. */
+export type Instructions = { prefix: string | null; sha256: string; system: string; tools: { name: string; description: string; input_schema: unknown }[]; hashed: string };
+/** Kept for the page's life once shown; a null answer (gateway away) is asked again the next time it opens. */
+export const useInstructions = (enabled: boolean) => useQuery({
+  queryKey: ['chat', 'instructions'], enabled, staleTime: (q) => (q.state.data?.instructions ? Infinity : 0),
+  queryFn: () => api<{ instructions: Instructions | null }>('/api/chat/instructions'),
+});
 export const setChatOn = (on: boolean) => api<ChatStatus>('/api/chat/on', json({ on }));
 export const setBudget = (body: { cap_dollars: number; model: string }) => api<{ ok: true }>('/api/chat/budget', json(body));
 

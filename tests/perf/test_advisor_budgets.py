@@ -19,6 +19,7 @@ from steward.app import create_app
 from steward.demo import seed, seed_people
 from steward.services.plan_cache import PlanCache
 from steward_boundary.canonical import canonical, sha256_hex
+from steward_boundary.tools import MERCHANT as T_MERCHANT
 from tests.advisor.helpers import call
 from tests.advisor.rig import gateway_rig
 from tests.factories import login
@@ -55,6 +56,37 @@ def test_exact_pass_over_1000_characters_with_50_names_under_20_ms():
     _check("exact_pass_1000_50_names", statistics.median(times) * FACTOR, 20)
 
 
+SYLLABLES = ["KA", "LO", "MI", "NU", "PE", "RA", "SO", "TI", "VE", "ZU"]
+SHOPS = ["MARKET", "CAFE", "GRILL", "SUPPLY", "OUTFITTERS", "BAKERY", "HARDWARE", "PHARMACY", "TAVERN", "BOOKS",
+         "GARAGE", "FLORIST", "DELI", "CYCLES", "OPTICAL", "SALON", "TAILOR", "NURSERY", "PIZZA", "TACOS", "SUSHI",
+         "DINER", "COFFEE", "GROCER", "KITCHEN"]
+
+
+def _add_distinct_lines(db, n):
+    """The seed holds about 250 distinct bank lines; a household five years in has thousands. These add `n` more, spread
+    over the five years: about a thousand stores, a Zelle or a transfer to a person now and then, and a refund, so
+    merchant_detail's scan of every line (merchant.py, _lines_of) and load_identifiers' payees meet a real book's
+    count (the final review of public issue #1)."""
+    from sqlalchemy import select
+
+    from steward.db.models import Account, AccountType, CategorySource, Transaction
+    chk = db.scalar(select(Account.id).where(Account.type == AccountType.checking).order_by(Account.id))
+    names = [f"{a}{b}N {shop}" for a in SYLLABLES for b in SYLLABLES[:4] for shop in SHOPS]       # 1,000 stores
+    for i in range(n):
+        name = names[i % len(names)]
+        raw, cents = f"{name} #{i:05d} BREA CA", -(500 + i % 9000)
+        if i % 50 == 0:
+            raw = f"ZELLE TO {FIRST[i % 10].upper()} {LAST[i % 5].upper()} CONF {i:06d}"
+        elif i % 50 == 1:
+            raw, cents = f"ONLINE TRANSFER FROM {FIRST[i % 10].upper()} {LAST[i % 5].upper()} REF {i:06d}", 4000
+        elif i % 50 == 2:
+            raw, cents = f"{name} #{i:05d} CREDIT TO CARD", 1200
+        db.add(Transaction(account_id=chk, posted_at=date.fromordinal(TODAY.toordinal() - i * 1826 // n),
+                           amount_cents=cents, raw_description=raw, category="shopping",
+                           category_source=CategorySource.rule))
+    db.flush()
+
+
 @pytest.fixture(scope="module")
 def big(tmp_path_factory):
     from steward.books.registry import open_books
@@ -71,6 +103,7 @@ def big(tmp_path_factory):
     ours = books.book("ours")
     with Session(books.engine_for(ours)) as db:
         seed(db, years=5, seed=11)
+        _add_distinct_lines(db, 5000)
         set_chat_on(db, True, None, NOW)
         db.commit()
     with Session(books.directory) as ddb:
@@ -83,7 +116,9 @@ def big(tmp_path_factory):
 TOOLS = {"book_summary": {}, "accounts": {"include_closed": True}, "balance_history": {"months": 60, "by_account_type": True},
          "cash_flow": {"months": 60, "by": "category"}, "recurring": {}, "holdings": {}, "debts": {}, "facts": {},
          "spending_by_category": {"start": "2025-10-14", "end": "2026-10-13", "compare_previous": True},
-         "savings_checklist": {}}
+         "savings_checklist": {},
+         "merchant_detail": {"reason": "Totals can't name them.", "start": "2026-07-14", "end": "2026-10-13",
+                             "category": None, "payees": None}}
 
 
 PARENT_TOOLS = {"inventory": {"kind": None}, "money_in_monthly": {"months": 24}, "premiums": {},
@@ -166,6 +201,41 @@ def test_each_tool_over_5_years_under_200_ms_p95(big, name):
         times.append((time.perf_counter() - t0) * 1000)
         assert out["error"] is None
     _check(f"tool_{name}", _p95(times) * FACTOR, 200)
+
+
+def test_merchant_detail_by_payee_alias_under_200_ms_p95_and_cold_under_400_ms(big):
+    """merchant_detail asked for payees by alias, which reads every bank line of each, over the book's ~5,250 distinct
+    lines. Cold, with the caches by text emptied as after a restart, the first call parses every line once, so it has
+    the first question's larger budget."""
+    from sqlalchemy import select
+
+    from steward.advisor import identifiers
+    from steward.db.models import AdvisorAlias
+    from steward.watch.payees import payee
+    s, books, ours, people, jr = big
+    engine = books.engine_for(ours)
+    call(engine, ours, people, jr, "recurring", {}, TODAY)          # gives payees their aliases
+    with Session(engine) as db:
+        aliases = list(db.scalars(select(AdvisorAlias.alias).where(AdvisorAlias.kind == "payee")
+                                  .order_by(AdvisorAlias.id).limit(5)))
+    assert aliases
+    inp = {**TOOLS["merchant_detail"], "payees": aliases}
+    call(engine, ours, people, jr, T_MERCHANT, inp, TODAY)
+    times = []
+    for _ in range(20):
+        t0 = time.perf_counter()
+        out = call(engine, ours, people, jr, T_MERCHANT, inp, TODAY)
+        times.append((time.perf_counter() - t0) * 1000)
+        assert out["error"] is None and out["content"]["payees"], out
+    _check("tool_merchant_detail_payees", _p95(times) * FACTOR, 200)
+    cold = []
+    for args in (TOOLS["merchant_detail"], inp) * 2:
+        for cached in (payee, identifiers._generic, identifiers._form):
+            cached.cache_clear()
+        t0 = time.perf_counter()
+        assert call(engine, ours, people, jr, T_MERCHANT, args, TODAY)["error"] is None
+        cold.append((time.perf_counter() - t0) * 1000)
+    _check("tool_merchant_detail_cold", statistics.median(cold) * FACTOR, 400)
 
 
 def test_plan_tools_cached_and_uncached(big):

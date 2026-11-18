@@ -64,7 +64,7 @@ describe('Settings → Chat', () => {
   it('the lede names the store and payee names a manager approves, and that the gateway can miss a name (16d)', async () => {
     stubRaw(ROUTES);
     wrapBook(<ChatSettings />);
-    expect(await screen.findByText("Ask Claude about a book's money. Steward sends figures, not the account numbers and names it holds, except store and payee names a manager approves; a payee can be a person. Your gateway looks for other names and can miss one. Each part sent is logged.")).toBeInTheDocument();
+    expect(await screen.findByText("Ask Claude about a book's money. Steward sends figures, not the account numbers and names it holds, except store and payee names a manager approves. Your gateway looks for other names and can miss one. Each part sent is logged.")).toBeInTheDocument();
   });
   it("shows the gateway's checks and how to stop chat without Steward", async () => {
     stubRaw(ROUTES);

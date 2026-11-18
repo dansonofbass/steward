@@ -51,10 +51,11 @@ def staleness_days(latest_as_of: date | None, today: date) -> int | None:
     return None if latest_as_of is None else (today - latest_as_of).days
 
 
-def account_out(db: Session, a: Account, today: date) -> dict:
+def account_out(db: Session, a: Account, today: date, labels: Mapping[str, str]) -> dict:
+    """`labels`: BookContext.owner_labels(), so the owner reads as a member's name or a role, never its key (#31)."""
     lb = latest_balance(db, a.id)
     return {
-        "id": a.id, "name": a.name, "type": a.type.value, "owner": a.owner,
+        "id": a.id, "name": a.name, "type": a.type.value, "owner": a.owner, "owner_label": labels.get(a.owner, a.owner),
         "source": a.source.value, "institution": a.institution.name, "is_active": a.is_active,
         "rate_bp": a.rate_bp, "advisory_fee_bp": a.advisory_fee_bp, "loan_id": a.loan_id,
         "balance_cents": lb[1] if lb else None, "as_of": lb[0].isoformat() if lb else None,

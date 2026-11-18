@@ -1,9 +1,9 @@
 
 .biz-years { max-width: 320px; }
 .biz-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); margin: 0; }
-.biz-sum dt { color: var(--ink-muted); font-size: var(--fs-small, 0.875rem); }
+.biz-sum dt { color: var(--ink-muted); font-size: var(--fs-small, 0.8203125rem); }
 .biz-sum dd { margin: 0; }
-.biz-range { font-size: 1.375rem; font-weight: 600; margin: 0; }
+.biz-range { font-size: 1.2890625rem; font-weight: 600; margin: 0; }
 .biz-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--s-3); }
 .biz-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
 /* The Schedule C lines are one card with a line between rows, like Accounts' groups, not five cards 8 px apart. */
@@ -25,15 +25,18 @@ div.biz-line { cursor: default; }   /* a viewer's home-office line, which goes n
 .business-settings .stack--tight { gap: var(--s-2); }
 .biz-hint { margin: 0 0 0 calc(20px + var(--s-3)); }
 .biz-rules { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
-.biz-rule { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); min-height: 44px; overflow-wrap: anywhere; }
+.biz-rule { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); min-height: 44px; }
+/* A long rule breaks inside its own words when it must; the Remove button keeps its label whole ("Rem / ove", #22). */
+.biz-rule > span { min-width: 0; overflow-wrap: anywhere; }
+.biz-rule > .btn { flex: none; }
 .biz-year-switch { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
-.biz-year-switch .biz-years { flex: 1 1 12rem; }
+.biz-year-switch .biz-years { flex: 1 1 11.25rem; }
 
 .biz-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .biz-table th, .biz-table td { padding: var(--s-2) var(--s-1); text-align: right; border-bottom: 1px solid var(--line); }
 .biz-table th[scope="row"] { padding-left: 0; text-align: left; font-weight: 400; color: var(--ink-muted); }
 .biz-points { display: none; }
-.biz-point h3 { margin: 0 0 var(--s-1); font-size: 1rem; }
+.biz-point h3 { margin: 0 0 var(--s-1); font-size: 0.9375rem; }
 .biz-point dl { margin: 0; display: grid; gap: var(--s-1); }
 .biz-point dl > div { display: flex; justify-content: space-between; gap: var(--s-3); border-bottom: 1px solid var(--line);
   padding-bottom: var(--s-1); }

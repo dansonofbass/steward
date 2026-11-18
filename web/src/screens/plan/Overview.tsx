@@ -15,6 +15,7 @@ import { peopleFrom } from './people';
 import { PlanReadyLine } from './PlanReady';
 import { SaveBar } from './SaveBar';
 import { usePlanSave } from './usePlanSave';
+import { thisYear } from '../../lib/today';
 
 export function savedByText(plan: SavedPlan | null): string {
   if (!plan) return NOT_SAVED_YET;
@@ -25,7 +26,7 @@ export function savedByText(plan: SavedPlan | null): string {
  *  it; moving a lever is Try changes' job. With nothing saved yet, the foot offers the first save. */
 export function Overview({ data }: { data: PlanReady }) {
   const facts = useFacts();
-  const planYear = data.result.band[0]?.year ?? new Date().getFullYear();
+  const planYear = data.result.band[0]?.year ?? thisYear();
   const people = peopleFrom(data.names, facts.data?.facts, planYear, data.result.band[0]?.jr_age ?? 40);
   const saver = usePlanSave(data, people.names.jr);
   const [history, setHistory] = useState(false);

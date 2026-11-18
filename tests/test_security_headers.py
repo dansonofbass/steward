@@ -13,7 +13,8 @@ from pathlib import Path
 from fastapi import FastAPI, Response
 from fastapi.testclient import TestClient
 
-from steward.api.headers import SecurityHeaders, content_security_policy
+from steward.api.headers import TRUSTED_TYPES_POLICY, SecurityHeaders, content_security_policy
+from steward.api.hosts import HostCheck
 from steward.api.limits import BodyLimit
 from steward.api.origin import SameOrigin
 from steward.app import create_app
@@ -107,9 +108,9 @@ def test_refusals_carry_the_headers_too(client):
     assert r.status_code == 413 and r.headers["referrer-policy"] == "no-referrer"
 
 
-def test_the_layers_go_headers_then_origin_check_outermost_and_the_body_cap_innermost(app):
+def test_the_layers_go_headers_then_host_and_origin_checks_outermost_and_the_body_cap_innermost(app):
     order = [m.cls for m in app.user_middleware]          # outermost first
-    assert order[:3] == [RequestLog, SecurityHeaders, SameOrigin] and order[-1] is BodyLimit
+    assert order[:4] == [RequestLog, SecurityHeaders, HostCheck, SameOrigin] and order[-1] is BodyLimit
 
 
 def test_a_compressed_read_keeps_the_headers(signed_in, db):
@@ -120,3 +121,30 @@ def test_a_compressed_read_keeps_the_headers(signed_in, db):
         raw = b"".join(r.iter_raw())
     assert r.headers["content-encoding"] == "gzip" and len(json.loads(gzip.decompress(raw))["accounts"]) == 12
     assert r.headers["x-content-type-options"] == "nosniff" and r.headers["referrer-policy"] == "no-referrer"
+
+
+def test_the_page_requires_trusted_types_turns_off_device_features_refuses_frames_and_reports(settings, books,
+                                                                                               tmp_path):
+    """Issue #14: extra layers on the page. Trusted Types with one named policy (celebrate.ts, the only HTML sink); a
+    static Permissions-Policy; X-Frame-Options beside frame-ancestors for older clients; and where to report."""
+    settings.web_dir = _dist(tmp_path)
+    with TestClient(create_app(settings, books), base_url=BASE) as c:
+        page, api = c.get("/transactions"), c.get("/api/health")
+    csp = page.headers["content-security-policy"]
+    for d in ("require-trusted-types-for 'script'", f"trusted-types {TRUSTED_TYPES_POLICY}",
+              "report-uri /api/csp-report", "report-to csp"):
+        assert f"; {d}" in csp, d
+    assert page.headers["x-frame-options"] == "DENY"
+    assert page.headers["reporting-endpoints"] == 'csp="/api/csp-report"'
+    features = dict(p.strip().split("=") for p in page.headers["permissions-policy"].split(","))
+    assert {"camera", "microphone", "geolocation", "payment", "usb"} <= set(features)
+    assert set(features.values()) == {"()"}
+    # Passkeys, copying a setup link and the cheer's sound stay on.
+    assert not {"publickey-credentials-get", "publickey-credentials-create", "clipboard-write", "autoplay"} & set(features)
+    for name in ("x-frame-options", "permissions-policy", "reporting-endpoints"):
+        assert name not in api.headers, name
+
+
+def test_the_policy_name_is_the_one_celebrate_ts_creates():
+    source = (WEB / "src/celebrate/celebrate.ts").read_text(encoding="utf-8")
+    assert f"createPolicy('{TRUSTED_TYPES_POLICY}'" in source

@@ -7,7 +7,7 @@
 .st--closed { color: var(--ink-muted); }
 .src { color: var(--ink-muted); font-weight: 400; }
 /* ---------- Overview (candidate: InventoryOverview) ---------- */
-.totals { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: var(--s-3); }
 @media (min-width: 900px) { .totals { grid-template-columns: repeat(5, 1fr); } }
 .total { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-3) var(--s-4); color: inherit; text-decoration: none; }
 .total:hover { background: var(--surface-2); }
@@ -33,7 +33,7 @@
 .fl__per { font-size: var(--fs-1); color: var(--ink-muted); text-align: right; }
 .flowbox__foot { padding: var(--s-3) var(--s-4); border-top: 1px solid var(--line); font-size: var(--fs-1); color: var(--ink-muted); }
 .attn { color: inherit; text-decoration: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-4); padding: var(--s-3) var(--s-4); }
-.attn__main { display: flex; align-items: center; gap: var(--s-3); flex: 1 1 14rem; }
+.attn__main { display: flex; align-items: center; gap: var(--s-3); flex: 1 1 13.125rem; }
 .attn__main > svg { color: var(--warn); }
 .attn__main strong { font-weight: 600; }
 /* ---------- Inventory list (candidate: ItemGroup, ItemRow) ---------- */
@@ -63,13 +63,13 @@
   .irow .money { grid-column: 6; grid-row: 1; }
 }
 .owner { color: var(--ink); }
-.count-pill { display: inline-flex; align-items: center; min-width: 20px; padding: 0 6px; border-radius: var(--r-pill); background: var(--surface-2); font: 600 var(--fs-1)/20px var(--font); color: var(--ink-muted); justify-content: center; }
+.count-pill { display: inline-flex; align-items: center; min-width: 20px; padding: 0 6px; border-radius: var(--r-pill); background: var(--surface-2); font: 600 var(--fs-1)/1.25rem var(--font); color: var(--ink-muted); justify-content: center; }
 .filter .count-pill { background: transparent; color: inherit; padding: 0 0 0 2px; }
 /* ---------- Item page (candidate: ItemPage) ---------- */
 .item { display: grid; gap: var(--s-6); }
 @media (min-width: 900px) { .item { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; } }
 .item__col { display: flex; flex-direction: column; gap: var(--s-6); min-width: 0; }
-.ifacts { display: grid; grid-template-columns: minmax(7.5rem, auto) 1fr; gap: var(--s-3) var(--s-4); margin: 0; }
+.ifacts { display: grid; grid-template-columns: minmax(7.03125rem, auto) 1fr; gap: var(--s-3) var(--s-4); margin: 0; }
 .ifacts dt { color: var(--ink-muted); font-size: var(--fs-1); padding-top: 2px; }
 .ifacts dd { margin: 0; }
 .ifacts dd.num-row { display: flex; align-items: center; gap: var(--s-3); }
@@ -78,7 +78,7 @@
 .ifacts dd .st, .ifacts dd .src { vertical-align: -5px; margin-right: var(--s-1); }
 @media (max-width: 639px) { .ifacts { grid-template-columns: 1fr; gap: 2px; } .ifacts dd { padding-bottom: var(--s-3); } .ifacts dd:last-child { padding-bottom: 0; } }
 .balance { display: flex; flex-direction: column; gap: var(--s-1); }
-.balance .money--xl { font-size: var(--fs-6); }
+.balance .money--xl { font-size: var(--fs-figure); }
 .sec-h { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
 .sec-h h2 { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-4); }
 .files { padding: 0; overflow: hidden; }
@@ -93,7 +93,7 @@
 .hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .hist li { display: grid; grid-template-columns: auto 1fr; gap: 2px var(--s-3); padding: var(--s-3) 0; border-bottom: 1px solid var(--line); }
 .hist li:last-child { border-bottom: 0; }
-.hist__when { font-size: var(--fs-1); color: var(--ink-muted); white-space: nowrap; padding-top: 2px; min-width: 5.5rem; }
+.hist__when { font-size: var(--fs-1); color: var(--ink-muted); white-space: nowrap; padding-top: 2px; min-width: 5.15625rem; }
 .hist__what { display: flex; flex-direction: column; gap: 2px; }
 .diff-line { font-size: var(--fs-1); color: var(--ink-muted); }
 .diff-line del { text-decoration-color: var(--ink-muted); }

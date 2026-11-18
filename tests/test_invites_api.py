@@ -210,7 +210,7 @@ def test_cancelling_an_invite_to_a_new_address_removes_the_account_and_closes_it
     ddb.rollback()
     assert ddb.scalar(select(User).where(User.email == "new.person@example.com")) is None
     r = client.post("/api/auth/reset", json={"token": token, "password": "a-long-new-password-1"})
-    assert (r.status_code, r.json()) == (400, {"error": "That link has expired or was already used."})
+    assert (r.status_code, r.json()) == (400, {"error": "That link has expired or was already used.", "gone": True})
 
 
 def test_an_invited_account_with_another_open_invite_is_kept(world, client, ddb, books, app):

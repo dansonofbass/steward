@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setCurrentBook } from './api/book';
@@ -7,7 +7,9 @@ import type { BookSummary } from './api/types';
 import { makeQueryClient } from './queryClient';
 import { routes } from './routes';
 import { TARGETS } from './screens/spending/fixtures';
-import { stubFetch } from './test-utils';
+import { ACCTS } from './screens/accounts/fixtures';
+import { GIFT_PAGE, PARENT } from './screens/watching/fixtures';
+import { reply, stubFetch } from './test-utils';
 
 afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); setCurrentBook('ours'); });
 const book = (slug: string, name: string): BookSummary => ({
@@ -81,6 +83,32 @@ describe('Set targets has its own address', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Set targets' })).toBeInTheDocument();
     expect(await screen.findByTestId('sumcard')).toBeInTheDocument();
     expect(screen.queryByText('That is not a category Spending tracks.')).toBeNull();
+  });
+});
+
+describe("a page for one item is titled by its name (issue #29)", () => {
+  it("an account's page takes the account's name once it has loaded, and the fixed noun before", async () => {
+    let answer: (v: Response) => void = () => {};
+    const accounts = new Promise<Response>((r) => { answer = r; });
+    stubFetch({ '/api/auth/me': ME, '/api/accounts': () => accounts, '/api/transactions': { transactions: [], next_cursor: null } });
+    const router = createMemoryRouter(routes, { initialEntries: ['/b/ours/accounts/1'] });
+    render(<QueryClientProvider client={makeQueryClient()}><RouterProvider router={router} /></QueryClientProvider>);
+    await waitFor(() => expect(document.title).toBe('Account · Steward'));
+    answer(reply({ accounts: ACCTS }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Checking ••6789' })).toBeInTheDocument();
+    // Privacy ruling: the title goes into the browser's history and sync, so it names the account without its number.
+    await waitFor(() => expect(document.title).toBe('Checking · Steward'));
+  });
+
+  it("a flag's page keeps the fixed noun: a flag's title describes a money worry", async () => {
+    const parentBook: BookSummary = { ...book(PARENT.slug, PARENT.name), kind: 'parent', owners: PARENT.owners };
+    stubFetch({ '/api/auth/me': { ...ME, books: [...ME.books, parentBook] }, '/api/flags/41': GIFT_PAGE });
+    const router = createMemoryRouter(routes, { initialEntries: [`/b/${PARENT.slug}/look-into/41`] });
+    render(<QueryClientProvider client={makeQueryClient()}><RouterProvider router={router} /></QueryClientProvider>);
+    expect(await screen.findByRole('heading', { level: 1, name: GIFT_PAGE.title })).toBeInTheDocument();
+    // The flag has loaded and its page has rendered; flushing React's pending work leaves the title on the noun.
+    await act(async () => {});
+    expect(document.title).toBe('Something to look into · Steward');
   });
 });
 

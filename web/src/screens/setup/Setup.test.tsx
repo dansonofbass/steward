@@ -69,17 +69,21 @@ describe('the first-run page (release spec, section 6)', () => {
     expect(passkeys.registerThisDevice).toHaveBeenCalledWith(expect.any(String), 'pw-first-person-1');
   });
 
-  it("shows the server's words when the link is gone, and asks for the link when there's none", async () => {
+  it("shows the server's words when the link is gone, with the install guide's command set as code (#20)", async () => {
     stubFetch({ 'POST /api/setup/check': () => reply({ error: C.LINK_GONE }, 400) });
     open(`/setup#${TOKEN}`);
-    expect(await screen.findByText(C.LINK_GONE)).toBeInTheDocument();
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe(C.LINK_GONE);
+    expect(alert.querySelector('code')?.textContent).toBe('docker compose run --rm steward steward setup');
     expect(screen.queryByLabelText(C.YOUR_NAME)).toBeNull();
   });
 
-  it('with no token in the address it asks for the link and sends nothing', () => {
+  it('with no token in the address it asks for the link, gives the command as code, and sends nothing', () => {
     const f = stubFetch({});
     open('/setup');
-    expect(screen.getByText(C.NO_LINK)).toBeInTheDocument();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe(C.NO_LINK);
+    expect(alert.querySelector('code')?.textContent).toBe('docker compose run --rm steward steward setup');
     expect(f).not.toHaveBeenCalled();
   });
 });

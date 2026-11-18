@@ -37,6 +37,7 @@ INVITE_ACCEPT = Rule(10, WINDOW)         # a link works once; tokens are 32 rand
 SETUP = Rule(10, WINDOW)                 # the first-run link (check and use): one person, a few tries
 MAIL_TEST = Rule(5, WINDOW)              # each test sends a real email, to the signed-in manager only
 PAIR = Rule(5, WINDOW)                   # pairing by code: Steward's 5 per device, beside the gateway's own window
+CSP_REPORT = Rule(20, WINDOW)            # issue #14: each report writes a log line; a regression shows in the first few
 
 
 def try_again(until: datetime, t: datetime) -> str:

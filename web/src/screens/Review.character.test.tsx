@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POOLS } from '../lib/lines';
 import { HOME } from './home/fixtures';
 import { inList, stubFetch, wrapBook } from '../test-utils';
+import { LiveRegions } from '../ui/Live';
 import Review from './Review';
 
 const fx = vi.hoisted(() => ({
@@ -98,9 +99,11 @@ describe('All caught up (spec 3.7)', () => {
   it('under reduced motion the still acorn and its words stay and are announced, and no motion is asked for', async () => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q, addEventListener: () => {}, removeEventListener: () => {} }));
     stubFetch({ ...inList(), '/api/review': queue([]) });
-    wrapBook(<Review />);
-    const status = (await screen.findByTestId('caught-up-line')).closest('[role="status"]')!;   // PR 1's always-mounted status is the other one
-    expect(status.querySelector('svg.acorn')).not.toBeNull();
+    wrapBook(<LiveRegions><Review /></LiveRegions>);
+    const line = await screen.findByTestId('caught-up-line');
+    expect(line.closest('.review__done')!.querySelector('svg.acorn')).not.toBeNull();
+    // Announced through the page's polite region (issue #23), the line with it.
+    await waitFor(() => expect(screen.getByTestId('live-said')).toHaveTextContent(line.textContent!));
     await Promise.resolve();
     expect(fx.acorn).not.toHaveBeenCalled();
   });

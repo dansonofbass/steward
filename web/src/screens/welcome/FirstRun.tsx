@@ -2,8 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Check } from 'lucide-react';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { api } from '../../api/client';
-import type { Me } from '../../api/types';
+import { freshMe } from '../../api/hooks';
 import { bookHref, useBook } from '../../book/BookContext';
 import { Link, useNavigate } from '../../book/links';
 import { soundOn } from '../../lib/celebrations';
@@ -131,7 +130,7 @@ function Hello({ state, go }: Go & { state: WelcomeState }) {
       await saveZone();
       const sample = await makeSample();
       // BookScope sends an address it cannot find in /me to another book: /me must know the Sample first.
-      await qc.fetchQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/auth/me'), staleTime: 0 });
+      await freshMe(qc);
       navigate(bookHref(sample.slug, '/'));
     } catch (err) {
       setError(failure(err));

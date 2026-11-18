@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { inList, reply, stubFetch, wrapBook } from '../test-utils';
+import { LiveRegions } from '../ui/Live';
 import Review from './Review';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -25,17 +26,18 @@ describe('Review (roadmap 12: clearer counts, All caught up)', () => {
 
   it('says All caught up when nothing is waiting', async () => {
     stubFetch({ ...inList(), '/api/review': { ...REVIEW, uncategorized: [], count: 0, duplicate_count: 0, business: [], business_count: 0 } });
-    wrapBook(<Review />);
-    // Two status regions now: the caught-up note and the (empty) motion-off line that is always mounted.
-    await waitFor(() => expect(screen.getAllByRole('status').some((e) => e.textContent?.includes('All caught up.'))).toBe(true));
+    wrapBook(<LiveRegions><Review /></LiveRegions>);
+    // Said through the page's polite region (issue #23); the note itself is not a live region added with its words.
+    await waitFor(() => expect(screen.getByTestId('live-said')).toHaveTextContent('All caught up.'));
+    const note = screen.getByText('All caught up.').closest('.review__done');
+    expect(note).not.toHaveAttribute('role');
     expect(screen.queryByTestId('review-counts')).toBeNull();
   });
 
   it('says Nothing here yet on a book with no transactions at all, not All caught up (phase 17, 2.7)', async () => {
     stubFetch({ ...inList(), '/api/review': { ...REVIEW, uncategorized: [], count: 0, duplicate_count: 0, business: [], business_count: 0, empty: true } });
-    wrapBook(<Review />);
-    await waitFor(() => expect(screen.getAllByRole('status')
-      .some((e) => e.textContent?.includes('Nothing here yet. Import a file and Steward starts sorting.'))).toBe(true));
+    wrapBook(<LiveRegions><Review /></LiveRegions>);
+    await waitFor(() => expect(screen.getByTestId('live-said')).toHaveTextContent('Nothing here yet. Import a file and Steward starts sorting.'));
     expect(screen.queryByText('All caught up.')).toBeNull();
   });
 
@@ -157,7 +159,7 @@ describe('Review from the first run (guided setup spec 2.4)', () => {
     expect(await screen.findByRole('link', { name: 'Back to setup' })).toBeInTheDocument();
     first.unmount();
     wrapBook(<Review />, {}, '/b/ours/review');
-    await waitFor(() => expect(screen.getAllByRole('status').some((e) => e.textContent?.includes('All caught up.'))).toBe(true));
+    expect(await screen.findByText('All caught up.')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Back to setup' })).toBeNull();
   });
 });

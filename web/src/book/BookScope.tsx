@@ -15,6 +15,7 @@ import { Nav, navItems } from '../ui/Nav';
 import { BookCtx, bookHref, useBook, useIsHousehold } from './BookContext';
 import { BookSwitcher } from './BookSwitcher';
 import { pickBook, readLastBook, writeLastBook } from './lastBook';
+import { noteProfileOpened, profileOpened } from './profileVisit';
 import { welcomeShown } from './welcomeVisit';
 
 // The Sample's ribbon and its Undo are one lazy chunk: only a Sample, or a Sample just removed, loads it.
@@ -22,7 +23,7 @@ const SampleFrame = lazyScreen(() => import('./sample/Sample'));
 
 /** The screens of one book (spec 2.4, 2.8). Sets the book before anything below renders, so every query hashes and
  *  fetches under it; cancels the previous book's requests on a switch; sends a household manager who hasn't seen
- *  Profile there from the book's Home (Engineering choice 16). The frame is the tabs, the phone's top bar and the
+ *  an unfinished Profile there from the book's Home, once a session (Engineering choice 16, issue #30). The frame is the tabs, the phone's top bar and the
  *  initials at the foot of the rail (decision 4). */
 export function BookScope() {
   const { slug = '' } = useParams();
@@ -50,7 +51,7 @@ export function BookScope() {
   if (me.isPending) return <div className="screen" aria-busy="true" />;
   if (!book) {
     const fallback = pickBook(books, readLastBook());
-    if (!fallback) return <div className="screen"><EmptyState title={NO_BOOKS} body={NO_BOOKS_BODY} /></div>;
+    if (!fallback) return <div className="screen"><EmptyState page title={NO_BOOKS} body={NO_BOOKS_BODY} /></div>;
     return <Navigate to={bookHref(fallback.slug, '/')} replace />;
   }
   // The welcome comes first, once per page load, and holds Profile's first visit until it is done (spec 2.1).
@@ -58,12 +59,12 @@ export function BookScope() {
     return <Navigate to={bookHref(book.slug, '/welcome')} replace />;
   }
   if (atHome && book.available && book.kind === 'household' && book.role === 'manager' && book.profile?.seen === false
-    && !book.welcome && !book.sample) {
-    return <Navigate to={bookHref(book.slug, '/profile')} replace />;
+    && book.profile.finished !== true && !book.welcome && !book.sample && !profileOpened(book.slug)) {
+    return <ToProfile slug={book.slug} />;
   }
   const body = book.available
     ? <Outlet key={book.slug} />
-    : <div className="screen"><EmptyState title={CANT_OPEN_BOOK} body={book.reason ?? CANT_OPEN_BODY} /></div>;
+    : <div className="screen"><EmptyState page title={CANT_OPEN_BOOK} body={book.reason ?? CANT_OPEN_BODY} /></div>;
   const many = books.length > 1;
   return (
     <BookCtx.Provider value={book}>
@@ -79,6 +80,12 @@ export function BookScope() {
       {book.available && <AskHost key={book.slug} />}
     </BookCtx.Provider>
   );
+}
+
+/** Home's one trip to Profile this session: noted once it has happened, and Profile says why it opened. */
+function ToProfile({ slug }: { slug: string }) {
+  useEffect(() => noteProfileOpened(slug), [slug]);
+  return <Navigate to={bookHref(slug, '/profile')} replace state={{ fromHome: true }} />;
 }
 
 /** Plan and Profile exist only in household books; anywhere else they open the book's Home, or `to` (a parent

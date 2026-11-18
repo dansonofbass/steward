@@ -1,10 +1,20 @@
 /* A section's tabs: one line with a hairline under it, the text flush with the page's left edge and the current tab
-   underlined. On a phone the row wraps onto a second line rather than run off the edge, so no label is ever cut
-   ("Next dolla…", phase 17). */
+   underlined. A row too long for the screen (five tabs on a phone) stays one row and scrolls sideways, never wrapping a
+   tab onto a line of its own (#22). Each edge with more tabs beyond it fades out (SubNav sets .more-start and
+   .more-end), so a tab cut by the edge reads as more to scroll to, not as a cut label ("Next dolla…", phase 17). */
+@property --subnav-fade-start { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --subnav-fade-end { syntax: "<length>"; inherits: false; initial-value: 0px; }
 .subnav {
+  --subnav-fade: 2.34375rem;
   display: flex; gap: var(--s-5); box-shadow: inset 0 -1px 0 var(--line);
-  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  scroll-padding-inline: var(--subnav-fade);   /* a tab given focus stops clear of the fade */
+  mask-image: linear-gradient(to right, transparent, #000 var(--subnav-fade-start), #000 calc(100% - var(--subnav-fade-end)), transparent);
+  transition: --subnav-fade-start var(--dur-quick) var(--ease), --subnav-fade-end var(--dur-quick) var(--ease);
 }
+.subnav.more-start { --subnav-fade-start: var(--subnav-fade); }
+.subnav.more-end { --subnav-fade-end: var(--subnav-fade); }
+.subnav:dir(rtl) { mask-image: linear-gradient(to left, transparent, #000 var(--subnav-fade-start), #000 calc(100% - var(--subnav-fade-end)), transparent); }
 .subnav::-webkit-scrollbar { display: none; }
 .subnav a {
   display: inline-flex; align-items: center; flex: none; min-height: 44px; padding: 0;
@@ -17,5 +27,6 @@
 .subnav a:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 4px; }
 
 @media (max-width: 899px) {
-  .subnav { flex-wrap: wrap; column-gap: var(--s-4); row-gap: 0; overflow-x: visible; }
+  .subnav { column-gap: var(--s-4); }
 }
+@media (prefers-reduced-motion: reduce) { .subnav { transition: none; } }

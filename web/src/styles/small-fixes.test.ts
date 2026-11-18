@@ -10,10 +10,15 @@ describe('small fixes (phase 17, 2.7)', () => {
     expect(rule(care, '.care-legend svg')).toBe('flex: none;');
   });
 
-  it('a phone tab row wraps onto a second line instead of cutting a label ("Next dolla…")', () => {
-    const phone = rules(readCss('ui/SubNav.css')).find((r) => r.sel.includes('.subnav') && r.body.includes('flex-wrap'));
-    expect(phone?.body).toBe('flex-wrap: wrap; column-gap: var(--s-4); row-gap: 0; overflow-x: visible;');
-    expect(readCss('ui/SubNav.css')).toMatch(/@media \(max-width: 899px\) \{\s*\.subnav \{ flex-wrap: wrap;/);
+  // #22 replaced the wrap: a five-tab row wrapped its fifth tab onto a line by itself. The row stays one line and
+  // scrolls, and an edge with more beyond it fades, so a tab the edge cuts reads as more to scroll to ("Next dolla…").
+  it('a phone tab row stays one line and scrolls, faded at an edge with more tabs beyond it (#22)', () => {
+    const css = readCss('ui/SubNav.css');
+    expect(rules(css).some((r) => r.sel.includes('.subnav') && r.body.includes('flex-wrap'))).toBe(false);
+    expect(rule(css, '.subnav')).toContain('overflow-x: auto;');
+    expect(rule(css, '.subnav')).toContain('mask-image: linear-gradient(to right, transparent, #000 var(--subnav-fade-start), #000 calc(100% - var(--subnav-fade-end)), transparent);');
+    expect(rule(css, '.subnav.more-start')).toBe('--subnav-fade-start: var(--subnav-fade);');
+    expect(rule(css, '.subnav.more-end')).toBe('--subnav-fade-end: var(--subnav-fade);');
   });
 
   it("Appearance's switches sit beside their words, not across the card", () => {

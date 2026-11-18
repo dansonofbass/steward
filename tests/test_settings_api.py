@@ -1,5 +1,6 @@
 from sqlalchemy import select
 
+from steward.auth.cookies import HOST_SESSION
 from steward.db.models import AccountType, EventLog
 from steward.events import log_event
 from tests.factories import make_account, make_user
@@ -12,13 +13,13 @@ def login(client, db, username="jr"):
 
 def test_change_own_password_keeps_this_device_and_signs_out_others(client, db):
     login(client, db)                                   # session A, now in the client's jar
-    cookie_a = client.cookies["steward_session"]
+    cookie_a = client.cookies[HOST_SESSION]
     client.post("/api/auth/login", json={"username": "jr", "password": "pw-one-two-3", "device_label": "laptop"})
     # the jar now holds session B (the laptop); the password change is made from B
     r = client.post("/api/auth/password", json={"current_password": "pw-one-two-3", "new_password": "new-pw-four-5678"})
     assert r.status_code == 204
     assert client.get("/api/auth/me").status_code == 200   # B, the device that made the change, stays signed in
-    client.cookies.set("steward_session", cookie_a)
+    client.cookies.set(HOST_SESSION, cookie_a)
     assert client.get("/api/auth/me").status_code == 401   # A was signed out
     client.cookies.clear()
     assert client.post("/api/auth/login", json={"username": "jr", "password": "new-pw-four-5678"}).status_code == 200
@@ -74,4 +75,4 @@ def test_change_password_is_locked_after_five_wrong_tries(client, db):
     r = client.post("/api/auth/password", json={"current_password": "pw-one-two-3", "new_password": "new-pw-four-5678"})
     assert r.status_code == 423 and "Too many tries" in r.json()["error"] and "locked_until" in r.json()
     r = client.post("/api/auth/login", json={"username": "jr", "password": "new-pw-four-5678"})
-    assert r.status_code == 423  # the password was not changed (and the account is locked)
+    assert r.status_code == 401  # the password was not changed, and this device is locked (issue #7: as a wrong one)

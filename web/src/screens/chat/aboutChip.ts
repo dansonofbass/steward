@@ -5,13 +5,14 @@ import { label } from '../../lib/categories';
 import { dateLabel, money } from '../../lib/format';
 import { fill, type AboutWire } from './askApi';
 import * as C from './copy';
+import { thisYear } from '../../lib/today';
 
 const LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 /** "October", or "October 2025" when it isn't this year. */
 export function monthWord(ym: string, today: Date): string {
   const name = LONG[Number(ym.slice(5, 7)) - 1];
-  return Number(ym.slice(0, 4)) === today.getFullYear() ? name : `${name} ${ym.slice(0, 4)}`;
+  return Number(ym.slice(0, 4)) === thisYear(today) ? name : `${name} ${ym.slice(0, 4)}`;
 }
 
 export type Thing = { thing: string; alias: string | null };

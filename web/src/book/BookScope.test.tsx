@@ -11,9 +11,10 @@ import { ACCTS } from '../screens/accounts/fixtures';
 import { reply, stubFetch } from '../test-utils';
 import { BookScope } from './BookScope';
 import { ToBook } from './ToBook';
+import { forgetProfileOpened } from './profileVisit';
 import { noteWelcomeShown } from './welcomeVisit';
 
-afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); setCurrentBook('ours'); });
+afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); sessionStorage.clear(); forgetProfileOpened(); setCurrentBook('ours'); });
 const REVIEW = { uncategorized: [], count: 0, duplicates: [], duplicate_count: 0, top_categories: [], business: [], business_count: 0 };
 const book = (slug: string, extra: Partial<BookSummary> = {}): BookSummary => ({
   slug, name: slug === 'ours' ? 'Ours' : 'Mom', kind: slug === 'ours' ? 'household' : 'parent', role: 'manager',
@@ -78,6 +79,21 @@ describe('BookScope', () => {
     stubFetch({ '/api/auth/me': me([book('ours', { profile: { seen: false, confirmed: false, later_until: null } })]), '/api/review': REVIEW });
     mount('/b/ours');
     expect(await screen.findByText('Profile screen')).toBeInTheDocument();
+  });
+  it('opens Profile from Home at most once a session, and says why (issue 30)', async () => {
+    stubFetch({ '/api/auth/me': me([book('ours', { profile: { seen: false, confirmed: false, later_until: null, finished: false } })]), '/api/review': REVIEW, '/api/accounts': { accounts: [] } });
+    const first = mount('/b/ours');
+    expect(await screen.findByText('Profile screen')).toBeInTheDocument();
+    first.unmount();
+    mount('/b/ours');
+    expect(await screen.findByText('loading')).toBeInTheDocument();
+    expect(screen.queryByText('Profile screen')).toBeNull();
+  });
+  it('never opens a finished profile from Home, seen or not (issue 30)', async () => {
+    stubFetch({ '/api/auth/me': me([book('ours', { profile: { seen: false, confirmed: false, later_until: null, finished: true } })]), '/api/review': REVIEW, '/api/accounts': { accounts: [] } });
+    mount('/b/ours');
+    expect(await screen.findByText('loading')).toBeInTheDocument();
+    expect(screen.queryByText('Profile screen')).toBeNull();
   });
   it('sends a household maker with an unmarked welcome to /welcome once this visit', async () => {
     stubFetch({ '/api/auth/me': me([book('maker', { kind: 'household', welcome: 'first_run' })]), '/api/review': REVIEW, '/api/accounts': { accounts: [] } });   // its own slug: the visit is remembered per page load

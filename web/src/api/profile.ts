@@ -11,7 +11,8 @@ export type SectionState = {
   key: SectionKey; status: SectionStatus; minutes: number; resume_step: string | null;
   by_id: number | null; by: string | null; at: string | null; missing: string | null;
 };
-export type ProfileMarks = { seen: boolean; confirmed: boolean; later_until: string | null };
+/** finished (in /me only): whether an unseen profile is finished; null once seen, when nothing reads it (issue #30). */
+export type ProfileMarks = { seen: boolean; confirmed: boolean; later_until: string | null; finished?: boolean | null };
 export type Role = 'jr' | 'spouse';
 export type ProfilePerson = { user_id: number; display_name: string };
 export type ProfileState = {

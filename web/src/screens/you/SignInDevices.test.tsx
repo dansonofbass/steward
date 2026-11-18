@@ -26,6 +26,18 @@ describe('Sign-in and devices', () => {
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(callsTo(fetchMock, 'DELETE', '/api/auth/passkeys/4')).toHaveLength(1));
   });
+  it('after removing a passkey, tells this device which passkeys still sign in (issue #13)', async () => {
+    const accepted = { rp_id: 'nas.example.ts.net', user_id: 'MQ', credential_ids: ['Y3JlZC0y'] };
+    const signalAllAcceptedCredentials = vi.fn(async () => undefined);
+    vi.stubGlobal('PublicKeyCredential', Object.assign(function PublicKeyCredential() {}, { signalAllAcceptedCredentials }));
+    stubFetch({ ...ROUTES, 'DELETE /api/auth/passkeys/4': () => reply({ accepted }) });
+    wrap(<SignInDevices />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove iPhone' }));
+    expect(signalAllAcceptedCredentials).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Remove' }));
+    await waitFor(() => expect(signalAllAcceptedCredentials).toHaveBeenCalledWith(
+      { rpId: 'nas.example.ts.net', userId: 'MQ', allAcceptedCredentialIds: ['Y3JlZC0y'] }));
+  });
   it('signing out another device asks first and says the other devices stay', async () => {
     const fetchMock = stubFetch({ ...ROUTES, 'DELETE /api/auth/sessions/11': () => new Response(null, { status: 204 }) });
     wrap(<SignInDevices />);
