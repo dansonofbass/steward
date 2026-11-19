@@ -91,6 +91,11 @@ def display(text: str) -> str:
 
 def _clean_card(s: str) -> str:
     W = words()
+    authorized = re.match(r"^(?:PURCHASE|RECURRING PAYMENT) AUTHORIZED ON "
+                          r"(?:0[1-9]|1[0-2])/(?:0[1-9]|[12][0-9]|3[01])(?: |$)", s)
+    if authorized:
+        s = s[authorized.end():]
+        s = re.sub(r"(?:^| )CARD [0-9]{4}$", "", s)
     s = W.drop.sub(" ", tidy(s)).replace("/", " ")
     s = re.sub(r"\s+", " ", s).strip()
     for lead in W.lead:

@@ -42,6 +42,38 @@ def test_payment_app_lines_are_named_by_their_recipient(raw, merchant, expected)
     assert known_label(expected) == expected.name
 
 
+@pytest.mark.parametrize("raw, key, name", [
+    ("PURCHASE AUTHORIZED ON 03/15 STARBUCKS CARD 1234", "STARBUCKS", "Starbucks"),
+    ("RECURRING PAYMENT AUTHORIZED ON 03/15 NETFLIX CARD 1234", "NETFLIX", "Netflix"),
+    ("PURCHASE AUTHORIZED ON 04/01 WALMART CARD 5678", "WALMART", "Walmart"),
+    ("  purchase  authorized on\t03/15  starbucks\ncard 1234  ", "STARBUCKS", "Starbucks"),
+    ("PURCHASE AUTHORIZED ON 03/15 STARBUCKS", "STARBUCKS", "Starbucks"),
+    ("PURCHASE AUTHORIZED ON 03/15 STUDIO 54 CARD 1234", "STUDIO", "Studio"),
+    ("PURCHASE AUTHORIZED ON 03/15 AUTHORIZED PAYMENT CARD SHOP CARD 1234",
+     "AUTHORIZED PAYMENT CARD SHOP", "Authorized Payment Card Shop"),
+    ("PURCHASE AUTHORIZED ON 03/15 TARGET BREA CA CARD 1234", "TARGET", "Target"),
+])
+def test_authorized_card_payees(raw, key, name):
+    assert payee(raw) == Payee(key, name, "card")
+
+
+def test_authorized_card_identity_ignores_date_and_card_but_not_store():
+    first = payee("PURCHASE AUTHORIZED ON 03/15 STARBUCKS CARD 1234")
+    assert first.key == payee("PURCHASE AUTHORIZED ON 03/16 STARBUCKS CARD 5678").key
+    assert first.key == payee("STARBUCKS").key
+    assert first.key != payee("PURCHASE AUTHORIZED ON 03/15 WALMART CARD 1234").key
+
+
+@pytest.mark.parametrize("date", ["", "03/", "03/15/2026", "99/99", "YESTERDAY"])
+def test_unsupported_authorization_dates_keep_existing_parsing(date):
+    assert payee(f"PURCHASE AUTHORIZED ON {date} STARBUCKS CARD 1234").key.startswith("AUTHORIZED ON")
+
+
+@pytest.mark.parametrize("tail", ["", "CARD 1234"])
+def test_authorized_card_without_a_merchant_has_no_key(tail):
+    assert payee(f"PURCHASE AUTHORIZED ON 03/15 {tail}").key == ""
+
+
 def test_two_recipients_through_one_app_are_two_payees():
     assert payee("PAYPAL *JOHNDOE").key != payee("PAYPAL *SCAMMERLLC").key
     assert payee("PAYPAL *JOHNDOE").key != payee("VENMO *JOHNDOE").key

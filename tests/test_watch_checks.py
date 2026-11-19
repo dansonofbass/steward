@@ -23,6 +23,12 @@ def checks_of(t: Txn, *others: Txn, rules: Rules = Rules(), start: Txn = OPEN) -
     return sorted(h.check for h in check(History([start, *others, t]), t, rules))
 
 
+def test_known_authorized_card_store_does_not_cover_another_store():
+    known = Known(payee("PURCHASE AUTHORIZED ON 03/15 STARBUCKS CARD 1234").key)
+    assert known.covers(payee("PURCHASE AUTHORIZED ON 03/16 STARBUCKS CARD 5678").key, 5000)
+    assert not known.covers(payee("PURCHASE AUTHORIZED ON 03/15 WALMART CARD 1234").key, 5000)
+
+
 # -- Scam pattern -------------------------------------------------------------------------------------------------
 def test_a_gift_card_is_urgent_and_also_large():
     earlier = T(2, 30, -2347, "CVS/PHARMACY #04411 BREA CA", category="shopping")
