@@ -60,7 +60,7 @@ describe('Get Steward ready', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Copy' })[0]);
     expect(write).toHaveBeenCalledWith('STEWARD_BASE_URL=https://nas.example.ts.net');
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
-    expect(await screen.findByText('Not yet. Steward is still running with http://nas.lan:8420. Restart it after saving the file.')).toBeInTheDocument();
+    expect(await screen.findByText('Not yet. Steward is still running with http://nas.lan:8420. Restart it after saving the file.', { selector: '.ready__check p' })).toBeVisible();
   });
 
   it('with no clipboard (plain http) it never says Copied: the line is selected for copying by hand, and the note says so', async () => {
@@ -81,7 +81,7 @@ describe('Get Steward ready', () => {
     wrapBook(<Ready />, {}, '/b/ours/settings/ready');
     fireEvent.click(await screen.findByRole('button', { name: /Secure address/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
-    expect(await screen.findByText('Took effect.')).toBeInTheDocument();
+    expect(await screen.findByText('Took effect.', { selector: '.ready__check p' })).toBeVisible();
     expect(screen.getByText('Nothing needs you.')).toBeInTheDocument();
   });
 

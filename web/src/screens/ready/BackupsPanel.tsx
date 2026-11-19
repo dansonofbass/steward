@@ -1,11 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
-import { SAVE, SAVED } from '../../lib/copy';
+import { SAVE } from '../../lib/copy';
 import { Button } from '../../ui/Button';
 import { Field, FormError } from '../../ui/Field';
 import { useSheetSaved } from '../../ui/Sheet';
 import { saveBackups, type InstallSettings, type ReadyRow } from './api';
 import { COPIES_GO, OFF, PING_URL, REMOVE, REMOVE_PING, SET_IN_FILE, TIME } from './copy';
+import { Saved } from './Saved';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -64,7 +65,7 @@ export function BackupsPanel({ s }: { s: InstallSettings['backups']; row: ReadyR
       {error && <FormError>{error}</FormError>}
       <div className="ready__check">
         {Object.keys(change).length > 0 && <Button type="submit" busy={busy}>{SAVE}</Button>}
-        {saved && <span role="status">{SAVED}</span>}
+        {saved && <Saved />}
       </div>
       <p className="small muted">{COPIES_GO.replace('{dir}', s.dir)}</p>
     </form>

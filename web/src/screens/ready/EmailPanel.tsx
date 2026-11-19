@@ -1,16 +1,24 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
-import { SAVE, SAVED } from '../../lib/copy';
+import { SAVE } from '../../lib/copy';
 import { useRemoval } from '../../lib/useRemoval';
 import { Button } from '../../ui/Button';
 import { ConfirmSheet } from '../../ui/ConfirmSheet';
 import { Field, FormError } from '../../ui/Field';
+import { useSayShown } from '../../ui/Live';
 import { RemovalLine } from '../../ui/RemovalLine';
 import { useSheetSaved } from '../../ui/Sheet';
 import { removeEmail, saveEmail, sendTest, type InstallSettings } from './api';
 import { EMAIL_REMOVED, FROM, HOST, PASSWORD, PASSWORD_AGAIN, PORT, REMOVE, REMOVE_EMAIL, REMOVE_EMAIL_BODY, REMOVE_EMAIL_LABEL, SEND_TEST, SET, SET_IN_FILE, USER } from './copy';
+import { Saved } from './Saved';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+function TestResult({ text, ok }: { text: string; ok: boolean }) {
+  const el = useRef<HTMLParagraphElement>(null);
+  useSayShown(el);
+  return <p ref={el} className={ok ? undefined : 'field__error'}>{text}</p>;
+}
 
 /** Email: the five lines Steward sends invites and resets with. A settings file that owns them shows read-only. */
 export function EmailPanel({ s }: { s: InstallSettings['email'] }) {
@@ -95,10 +103,10 @@ export function EmailPanel({ s }: { s: InstallSettings['email'] }) {
         {!env && <Button type="submit" busy={busy === 'save'}>{SAVE}</Button>}
         <Button variant="quiet" busy={busy === 'test'} onClick={() => void test()}>{SEND_TEST}</Button>
         {s.source === 'app' && <Button variant="quiet" aria-label={REMOVE_EMAIL_LABEL} onClick={() => setRemoving(true)}>{REMOVE}</Button>}
-        {saved && <span role="status">{SAVED}</span>}
+        {saved && <Saved />}
       </div>
       <RemovalLine removal={removal} holdsFocus />
-      {tested && <p className={tested.ok ? undefined : 'field__error'} role="status">{tested.text}</p>}
+      {tested && <TestResult {...tested} />}
       <ConfirmSheet open={removing} title={REMOVE_EMAIL} body={REMOVE_EMAIL_BODY} action={REMOVE} variant="danger" busy={busy === 'remove'}
         onConfirm={() => void remove()} onClose={() => setRemoving(false)} returnTo={removal.returnTo} />
     </form>

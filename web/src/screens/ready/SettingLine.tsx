@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { gw } from '../../lib/gatewayName';
 import { Button } from '../../ui/Button';
 import { CopyButton } from '../../ui/CopyButton';
+import { useSayShown } from '../../ui/Live';
 import type { BootLine } from './api';
 import { ADD_GATEWAY_LINE, ADD_LINE, CHECK_AGAIN, COPY, COPY_SELECTED, NOT_YET, NOT_YET_UNSET, RESTART, TOOK_EFFECT } from './copy';
 
@@ -26,6 +27,12 @@ function CopyCode({ text }: { text: string }) {
   );
 }
 
+function CheckResult({ text }: { text: string }) {
+  const el = useRef<HTMLParagraphElement>(null);
+  useSayShown(el);
+  return <p ref={el}>{text}</p>;
+}
+
 /** A setting only a file can change: the line to add, where it goes, and Check again, which says whether it took. */
 export function SettingLine({ line, done, checked, onCheck, checking }: {
   line: BootLine; done: boolean; checked: boolean; onCheck: () => void; checking: boolean;
@@ -41,7 +48,7 @@ export function SettingLine({ line, done, checked, onCheck, checking }: {
       {!gateway && <CopyCode text={RESTART} />}
       <div className="ready__check">
         <Button variant="quiet" busy={checking} onClick={onCheck}>{CHECK_AGAIN}</Button>
-        {result && <p role="status">{result}</p>}
+        {result && <CheckResult text={result} />}
       </div>
     </div>
   );
